@@ -1,3 +1,11 @@
+= 13.3.8 (2024-10-01) =
+* Bug Fix: Critical Error when generating feed
+* Bug Fix: Duplicated empty feed with no data
+* Bug Fix: Parent description and short description don't work
+* Bug Fix: Price Rounding attribute not working as intended.
+* Improvement: Add filter to alter product id on preocessing product data
+* Improvement: Option to  modify cart_link and add_to_cart_link attribute/URL
+
 = 13.3.7 (2024-09-18) =
 * Bug Fix: Bestprice feed does not work
 * Bug Fix: Description splits into multiple columns in the CSV feed

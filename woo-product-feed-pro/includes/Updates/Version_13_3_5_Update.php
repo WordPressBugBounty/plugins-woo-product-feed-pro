@@ -56,11 +56,16 @@ class Version_13_3_5_Update extends Abstract_Class {
      * @since 13.3.5
      */
     public function update() {
-        global $wpdb;
-
         $cron_projects = maybe_unserialize( get_option( 'cron_projects' ), array() );
         if ( $cron_projects ) {
-            foreach ( $cron_projects as $project_data ) {
+            foreach ( $cron_projects as $key => $project_data ) {
+
+                // Skip if the project hash is empty.
+                if ( empty( $project_data['project_hash'] ) ) {
+                    unset( $cron_projects[ $key ] );
+                    continue;
+                }
+
                 $feed = new Product_Feed( $project_data['project_hash'] ?? 0 );
 
                 $country_code = isset( $project_data['countries'] ) ? Product_Feed_Helper::get_code_from_legacy_country_name( $project_data['countries'] ) : '';
@@ -87,7 +92,7 @@ class Version_13_3_5_Update extends Abstract_Class {
                         'rules'                      => $project_data['rules2'] ?? array(),
                         'products_count'             => $project_data['nr_products'] ?? 0,
                         'total_products_processed'   => $project_data['nr_products_processed'] ?? 0,
-                        'utm_enabled'                => isset( $project_data['utm_enabled'] ) && 'on' === $project_data['utm_enabled'] ? 'yes' : 'no',
+                        'utm_enabled'                => isset( $project_data['utm_on'] ) && 'on' === $project_data['utm_on'] ? 'yes' : 'no',
                         'utm_source'                 => $project_data['utm_source'] ?? '',
                         'utm_medium'                 => $project_data['utm_medium'] ?? '',
                         'utm_campaign'               => $project_data['utm_campaign'] ?? '',
@@ -103,6 +108,9 @@ class Version_13_3_5_Update extends Abstract_Class {
 
                 $feed->save();
             }
+
+            // Update the cron_projects option.
+            update_option( 'cron_projects', $cron_projects, false );
         } else {
             // Revert deleted old options, for backward compatibility.
             $this->_revert_legacy_options();

@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.6
-Stable tag: 13.3.7
+Stable tag: 13.3.8
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -130,6 +130,9 @@ Our plugin supports the Curcy Currency Switcher
 = Polylang support (Elite version) =
 Our plugin supports Polylang
 
+= TranslatePress support (Elite version) =
+Our plugin support TranslatePress
+
 = Google Shopping product feed tutorial =
 [youtube https://www.youtube.com/watch?v=2XzxwKDufGw]
 
@@ -160,6 +163,7 @@ Our plugin supports Polylang
 * Supports Aelia Currency Switcher (Elite)
 * Supports Curcy Currency Switcher (Elite)
 * Supports Polylang (Elite)
+* Supports TranslatePress (Elite)
 * Supports Yoasts primary category feature
 * Supports Rankmaths primary category feature
 * Supports the official "WooCommerce Brands" plugin
@@ -186,6 +190,7 @@ Some of the above mentioned feature can only be used by users who upgraded to th
 * Aelia currency switcher support
 * Curcy currency switcher support
 * Polylang support
+* TranslatePress support
 * Addition of the extra fields on your product edit pages
 * Data manipulation feature
 * WooCommerce structured data bug fix
@@ -380,6 +385,14 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.3.8 (2024-10-01) =
+* Bug Fix: Critical Error when generating feed
+* Bug Fix: Duplicated empty feed with no data
+* Bug Fix: Parent description and short description don't work
+* Bug Fix: Price Rounding attribute not working as intended.
+* Improvement: Add filter to alter product id on preocessing product data
+* Improvement: Option to  modify cart_link and add_to_cart_link attribute/URL
 
 = 13.3.7 (2024-09-18) =
 * Bug Fix: Bestprice feed does not work

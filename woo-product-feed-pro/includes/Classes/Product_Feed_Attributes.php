@@ -182,6 +182,7 @@ class Product_Feed_Attributes extends Abstract_Class {
             'review_rating'     => 'Review rating',
             'author'            => 'Author',
             'installment'       => 'Installment',
+            'calculated'        => 'Plugin calculation',
             'product_detail 1'  => 'Product detail 1',
             'product_detail 2'  => 'Product detail 2',
             'product_detail 3'  => 'Product detail 3',
@@ -432,11 +433,15 @@ class Product_Feed_Attributes extends Abstract_Class {
 
         $result = $wpdb->get_col( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-        foreach ( $result as $value ) {
-            $product_variations_attributes = array_merge( $product_variations_attributes, array_keys( maybe_unserialize( $value ) ) );
+        if ( ! empty( $result ) ) {
+            foreach ( $result as $value ) {
+                $temp_value = maybe_unserialize( $value );
+                if ( is_array( $temp_value ) && ! empty( $temp_value ) ) {
+                    $product_variations_attributes = array_merge( $product_variations_attributes, array_keys( $temp_value ) );
+                }
+            }
+            $product_variations_attributes = array_unique( $product_variations_attributes );
         }
-
-        $product_variations_attributes = array_unique( $product_variations_attributes );
 
         return $product_variations_attributes ? $product_variations_attributes : array();
     }

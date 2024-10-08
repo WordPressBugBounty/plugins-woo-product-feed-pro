@@ -55,37 +55,63 @@ class Product_Feed_Admin extends Abstract_Class {
 
         $product_feed = Product_Feed_Helper::get_product_feed();
         $country_code = isset( $project_data['countries'] ) ? Product_Feed_Helper::get_code_from_legacy_country_name( $project_data['countries'] ) : '';
+
+        /**
+         * Filter the product feed properties.
+         *
+         * @since 13.3.7
+         * @param array        $props        The product feed properties.
+         * @param Product_Feed $product_feed The product feed instance.
+         * @param array        $project_data The project data from form submission.
+         * @return array
+         */
         $product_feed->set_props(
-            array(
-                'title'                                  => $project_data['projectname'] ?? '',
-                'status'                                 => 'processing',
-                'country'                                => $country_code,
-                'channel_hash'                           => $project_data['channel_hash'] ?? '',
-                'file_name'                              => $project_data['project_hash'] ?? '',
-                'file_format'                            => $project_data['fileformat'] ?? '',
-                'delimiter'                              => $project_data['delimiter'] ?? '',
-                'refresh_interval'                       => $project_data['cron'] ?? '',
-                'include_product_variations'             => isset( $project_data['product_variations'] ) && 'on' === $project_data['product_variations'] ? 'yes' : 'no',
-                'only_include_default_product_variation' => isset( $project_data['default_variations'] ) && 'on' === $project_data['default_variations'] ? 'yes' : 'no',
-                'only_include_lowest_product_variation'  => isset( $project_data['lowest_price_variations'] ) && 'on' === $project_data['lowest_price_variations'] ? 'yes' : 'no',
-                'create_preview'                         => isset( $project_data['preview_feed'] ) && 'on' === $project_data['preview_feed'] ? 'yes' : 'no',
-                'refresh_only_when_product_changed'      => isset( $project_data['products_changed'] ) && 'on' === $project_data['products_changed'] ? 'yes' : 'no',
-                'attributes'                             => $project_data['attributes'] ?? array(),
-                'mappings'                               => $project_data['mappings'] ?? array(),
-                'filters'                                => $project_data['rules'] ?? array(),
-                'rules'                                  => $project_data['rules2'] ?? array(),
-                'products_count'                         => $project_data['nr_products'] ?? 0,
-                'total_products_processed'               => $project_data['nr_products_processed'] ?? 0,
-                'utm_enabled'                            => isset( $project_data['utm_on'] ) && 'on' === $project_data['utm_on'] ? 'yes' : 'no',
-                'utm_source'                             => $project_data['utm_source'] ?? '',
-                'utm_medium'                             => $project_data['utm_medium'] ?? '',
-                'utm_campaign'                           => $project_data['utm_campaign'] ?? '',
-                'utm_term'                               => $project_data['utm_term'] ?? '',
-                'utm_content'                            => $project_data['utm_content'] ?? '',
-                'utm_total_product_orders_lookback'      => $project_data['total_product_orders_lookback'] ?? '',
-                'legacy_project_hash'                    => $project_data['project_hash'] ?? '',
+            apply_filters(
+                'adt_create_product_feed_props',
+                array(
+                    'title'                             => $project_data['projectname'] ?? '',
+                    'status'                            => 'processing',
+                    'country'                           => $country_code,
+                    'channel_hash'                      => $project_data['channel_hash'] ?? '',
+                    'file_name'                         => $project_data['project_hash'] ?? '',
+                    'file_format'                       => $project_data['fileformat'] ?? '',
+                    'delimiter'                         => $project_data['delimiter'] ?? '',
+                    'refresh_interval'                  => $project_data['cron'] ?? '',
+                    'include_product_variations'        => isset( $project_data['product_variations'] ) && 'on' === $project_data['product_variations'] ? 'yes' : 'no',
+                    'only_include_default_product_variation' => isset( $project_data['default_variations'] ) && 'on' === $project_data['default_variations'] ? 'yes' : 'no',
+                    'only_include_lowest_product_variation' => isset( $project_data['lowest_price_variations'] ) && 'on' === $project_data['lowest_price_variations'] ? 'yes' : 'no',
+                    'create_preview'                    => isset( $project_data['preview_feed'] ) && 'on' === $project_data['preview_feed'] ? 'yes' : 'no',
+                    'refresh_only_when_product_changed' => isset( $project_data['products_changed'] ) && 'on' === $project_data['products_changed'] ? 'yes' : 'no',
+                    'attributes'                        => $project_data['attributes'] ?? array(),
+                    'mappings'                          => $project_data['mappings'] ?? array(),
+                    'filters'                           => $project_data['rules'] ?? array(),
+                    'rules'                             => $project_data['rules2'] ?? array(),
+                    'products_count'                    => $project_data['nr_products'] ?? 0,
+                    'total_products_processed'          => $project_data['nr_products_processed'] ?? 0,
+                    'utm_enabled'                       => isset( $project_data['utm_on'] ) && 'on' === $project_data['utm_on'] ? 'yes' : 'no',
+                    'utm_source'                        => $project_data['utm_source'] ?? '',
+                    'utm_medium'                        => $project_data['utm_medium'] ?? '',
+                    'utm_campaign'                      => $project_data['utm_campaign'] ?? '',
+                    'utm_term'                          => $project_data['utm_term'] ?? '',
+                    'utm_content'                       => $project_data['utm_content'] ?? '',
+                    'utm_total_product_orders_lookback' => $project_data['total_product_orders_lookback'] ?? '',
+                    'legacy_project_hash'               => $project_data['project_hash'] ?? '',
+                ),
+                $product_feed,
+                $project_data
             )
         );
+
+        /**
+         * Action before saving the product feed.
+         *
+         * @since 13.3.7
+         *
+         * @param Product_Feed_Factory $product_feed The new product feed.
+         * @param array                $project_data The project data from form submission.
+         */
+        do_action( 'adt_create_product_feed_before_save', $product_feed, $project_data );
+
         $product_feed->save();
 
         /**
@@ -328,7 +354,7 @@ class Product_Feed_Admin extends Abstract_Class {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
-        $original_feed = Product_Feed_Helper::get_product_feed( sanitize_text_field( $_POST['project_hash'] ) );
+        $original_feed = Product_Feed_Helper::get_product_feed( sanitize_text_field( $_POST['id'] ) );
         if ( ! $original_feed->id ) {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }
@@ -382,7 +408,7 @@ class Product_Feed_Admin extends Abstract_Class {
          * @param Product_Feed_Factory $feed           The cloned product feed.
          * @param Product_Feed_Factory $original_feed  The original product feed.
          */
-        apply_filters( 'adt_clone_product_feed_before_save', $feed, $original_feed );
+        do_action( 'adt_clone_product_feed_before_save', $feed, $original_feed );
 
         $feed->save();
 
@@ -416,9 +442,9 @@ class Product_Feed_Admin extends Abstract_Class {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
-        $project_hash = sanitize_text_field( $_POST['project_hash'] );
+        $feed_id = sanitize_text_field( $_POST['id'] );
 
-        $feed = Product_Feed_Helper::get_product_feed( $project_hash );
+        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
         if ( ! $feed->id ) {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }
@@ -465,9 +491,9 @@ class Product_Feed_Admin extends Abstract_Class {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
-        $project_hash = sanitize_text_field( $_POST['project_hash'] );
+        $feed_id = sanitize_text_field( $_POST['id'] );
 
-        $feed = Product_Feed_Helper::get_product_feed( $project_hash );
+        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
         if ( ! $feed->id ) {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }
@@ -504,9 +530,9 @@ class Product_Feed_Admin extends Abstract_Class {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
-        $project_hash = sanitize_text_field( $_POST['project_hash'] );
+        $feed_id = sanitize_text_field( $_POST['id'] );
 
-        $feed = Product_Feed_Helper::get_product_feed( $project_hash );
+        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
         if ( ! $feed->id ) {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }

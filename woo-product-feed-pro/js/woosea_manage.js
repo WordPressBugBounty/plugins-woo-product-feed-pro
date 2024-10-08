@@ -578,6 +578,7 @@ jQuery(function ($) {
     var nonce = $('#_wpnonce').val();
     var $row = $(this).closest('tr');
     var $feedStatus = $row.find('.woo-product-feed-pro-feed-status span');
+    var feed_id = $row.data('id');
 
     if (action == 'gear') {
       $('tr')
@@ -598,7 +599,7 @@ jQuery(function ($) {
             data: {
               action: 'woosea_project_copy',
               security: nonce,
-              project_hash: project_hash,
+              id: feed_id,
             },
           })
 
@@ -621,7 +622,7 @@ jQuery(function ($) {
           data: {
             action: 'woosea_project_delete',
             security: nonce,
-            project_hash: project_hash,
+            id: feed_id,
           },
         });
 
@@ -656,7 +657,7 @@ jQuery(function ($) {
             data: {
               action: 'woosea_project_cancel',
               security: nonce,
-              project_hash: project_hash,
+              id: feed_id,
             },
           })
           .done(function (response) {
@@ -689,7 +690,7 @@ jQuery(function ($) {
             data: {
               action: 'woosea_project_refresh',
               security: nonce,
-              project_hash: project_hash,
+              id: feed_id,
             },
           })
           .done(function () {

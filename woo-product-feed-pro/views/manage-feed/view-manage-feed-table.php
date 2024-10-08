@@ -38,6 +38,7 @@ foreach ( $product_feeds_query->get_posts() as $product_feed ) :
         <tr 
             class="woo-product-feed-pro-table-row <?php echo 'processing' === $product_feed->status ? 'processing' : ''; ?>" 
             data-project_hash="<?php echo esc_attr( $product_feed->legacy_project_hash ); ?>"
+            data-id="<?php echo esc_attr( $product_feed->id ); ?>"
         >
             <td>
                 <label class="woo-product-feed-pro-switch">

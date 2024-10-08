@@ -2,14 +2,14 @@
 # This file is distributed under the GPL3.
 msgid ""
 msgstr ""
-"Project-Id-Version: Product Feed PRO for WooCommerce 13.3.7\n"
+"Project-Id-Version: Product Feed PRO for WooCommerce 13.3.8\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woo-product-feed-pro\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-09-18T01:17:30+00:00\n"
+"POT-Creation-Date: 2024-10-08T02:06:25+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: woo-product-feed-pro\n"
@@ -42,12 +42,12 @@ msgstr ""
 #: bootstrap-old.php:634
 #: includes/Classes/Heartbeat.php:33
 #: includes/Classes/Product_Feed_Admin.php:42
-#: includes/Classes/Product_Feed_Admin.php:110
-#: includes/Classes/Product_Feed_Admin.php:275
-#: includes/Classes/Product_Feed_Admin.php:324
-#: includes/Classes/Product_Feed_Admin.php:412
-#: includes/Classes/Product_Feed_Admin.php:461
-#: includes/Classes/Product_Feed_Admin.php:500
+#: includes/Classes/Product_Feed_Admin.php:136
+#: includes/Classes/Product_Feed_Admin.php:301
+#: includes/Classes/Product_Feed_Admin.php:350
+#: includes/Classes/Product_Feed_Admin.php:438
+#: includes/Classes/Product_Feed_Admin.php:487
+#: includes/Classes/Product_Feed_Admin.php:526
 #: includes/Classes/WP_Admin.php:382
 #: includes/Classes/WP_Admin.php:410
 #: includes/Classes/WP_Admin.php:429
@@ -138,13 +138,13 @@ msgstr ""
 
 #: includes/Classes/Heartbeat.php:37
 #: includes/Classes/Product_Feed_Admin.php:46
-#: includes/Classes/Product_Feed_Admin.php:114
-#: includes/Classes/Product_Feed_Admin.php:279
-#: includes/Classes/Product_Feed_Admin.php:328
-#: includes/Classes/Product_Feed_Admin.php:416
-#: includes/Classes/Product_Feed_Admin.php:465
-#: includes/Classes/Product_Feed_Admin.php:504
-#: includes/Classes/Product_Feed_Attributes.php:514
+#: includes/Classes/Product_Feed_Admin.php:140
+#: includes/Classes/Product_Feed_Admin.php:305
+#: includes/Classes/Product_Feed_Admin.php:354
+#: includes/Classes/Product_Feed_Admin.php:442
+#: includes/Classes/Product_Feed_Admin.php:491
+#: includes/Classes/Product_Feed_Admin.php:530
+#: includes/Classes/Product_Feed_Attributes.php:519
 msgid "You do not have permission to manage product feed."
 msgstr ""
 
@@ -161,84 +161,84 @@ msgstr ""
 msgid "Advanced Coupons"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:287
-#: includes/Classes/Product_Feed_Admin.php:333
-#: includes/Classes/Product_Feed_Admin.php:423
-#: includes/Classes/Product_Feed_Admin.php:472
-#: includes/Classes/Product_Feed_Admin.php:511
+#: includes/Classes/Product_Feed_Admin.php:313
+#: includes/Classes/Product_Feed_Admin.php:359
+#: includes/Classes/Product_Feed_Admin.php:449
+#: includes/Classes/Product_Feed_Admin.php:498
+#: includes/Classes/Product_Feed_Admin.php:537
 msgid "Product feed not found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:450
+#: includes/Classes/Product_Feed_Admin.php:476
 msgid "Product feed process has been cancelled."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:487
+#: includes/Classes/Product_Feed_Admin.php:513
 msgid "Product feed has been refreshed."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:520
+#: includes/Classes/Product_Feed_Admin.php:546
 msgid "Product feed has been deleted."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:644
+#: includes/Classes/Product_Feed_Admin.php:670
 #: views/manage-feed/step/woosea-generate-feed-step-0.php:84
 msgid "General feed settings"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:650
+#: includes/Classes/Product_Feed_Admin.php:676
 #: views/manage-feed/step/woosea-generate-feed-step-7.php:137
 msgid "Field mapping"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:656
+#: includes/Classes/Product_Feed_Admin.php:682
 #: views/manage-feed/step/woosea-generate-feed-step-4.php:114
 msgid "Feed filters and rules"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:662
+#: includes/Classes/Product_Feed_Admin.php:688
 #: views/manage-feed/step/woosea-generate-feed-step-5.php:109
 msgid "Conversion & Google Analytics settings"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:673
+#: includes/Classes/Product_Feed_Admin.php:699
 #: views/manage-feed/step/woosea-generate-feed-step-1.php:196
 msgid "Category mapping"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:740
+#: includes/Classes/Product_Feed_Admin.php:766
 msgid "Feed settings"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:750
+#: includes/Classes/Product_Feed_Admin.php:776
 msgid "Start product feed processing"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:761
+#: includes/Classes/Product_Feed_Admin.php:787
 msgid "Cancel product feed processing"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:768
+#: includes/Classes/Product_Feed_Admin.php:794
 msgid "Copy product feed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:774
+#: includes/Classes/Product_Feed_Admin.php:800
 msgid "Delete product feed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:784
+#: includes/Classes/Product_Feed_Admin.php:810
 msgid "Download product feed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:520
+#: includes/Classes/Product_Feed_Attributes.php:525
 msgid "No attributes found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:528
+#: includes/Classes/Product_Feed_Attributes.php:533
 msgid "No channel data found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:534
+#: includes/Classes/Product_Feed_Attributes.php:539
 msgid "Channel file not found."
 msgstr ""
 
@@ -639,16 +639,16 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: views/manage-feed/view-manage-feed-table.php:83
+#: views/manage-feed/view-manage-feed-table.php:84
 msgid "Feed URL"
 msgstr ""
 
-#: views/manage-feed/view-manage-feed-table.php:91
+#: views/manage-feed/view-manage-feed-table.php:92
 msgid "Whoops, there is no active product feed for this project as the project has been disabled or did not run yet."
 msgstr ""
 
 #. translators: %s: close <a> tag.
-#: views/manage-feed/view-manage-feed-table.php:110
+#: views/manage-feed/view-manage-feed-table.php:111
 msgid "You haven't configured a product feed yet, %1$splease create one first%3$s or read our tutorial on %2$show to set up your very first Google Shopping product feed%3$s."
 msgstr ""
 

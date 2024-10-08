@@ -2480,6 +2480,7 @@ class WooSEA_Get_Products {
             'cache_results'          => false,
             'update_post_term_cache' => false,
             'update_post_meta_cache' => false,
+            'suppress_filters'       => true,
         );
 
         /**
@@ -2508,24 +2509,31 @@ class WooSEA_Get_Products {
 
         while ( $prods->have_posts() ) :
             $prods->the_post();
-            global $product;
+
             $attr_line   = '';
             $catname     = array();
             $catlink     = array();
             $xml_product = array();
 
-            $child_id  = get_the_ID();
-            $parent_id = wp_get_post_parent_id( $child_id );
-            $post      = get_post( $parent_id );
+            /**
+             * Filter the product ID that is being processed.
+             * 
+             * @since 13.3.7.1
+             * 
+             * @param int          $product_id The product ID.
+             * @param Product_Feed $feed       The product feed instance.
+             * @return int The product ID.
+             */
+            $product_id = apply_filters( 'adt_product_feed_get_product_id', get_the_ID(), $feed );
+            $product    = wc_get_product( $product_id );
 
-            // When WordPress user is an admin and runs the process of creating product feeds also products are put in the feed
-            // with a status other than published. This is unwanted behaviour so we skip all products that are not on publish.
-            $status = get_post_status( $parent_id );
-            if ( $status != 'publish' ) {
+            if ( ! is_a( $product, 'WC_Product' ) ) {
                 continue;
             }
-
-            $product_data['id'] = get_the_ID();
+            
+            $parent_id          = wp_get_post_parent_id( $product_id );
+            $parent_product     = $parent_id > 0 ? wc_get_product( $parent_id ) : null;
+            $product_data['id'] = $product_id;
 
             // Only products that have been sold are allowed to go through
             if ( $feed->utm_total_product_orders_lookback > 0 ) {
@@ -2542,8 +2550,8 @@ class WooSEA_Get_Products {
             $product_data['sku_id']                = $product_data['id'];
             $product_data['wc_post_id_product_id'] = 'wc_post_id_' . $product_data['id'];
             $product_data['publication_date']      = date( 'F j, Y, G:i a' );
-            $product_data['add_to_cart_link']      = get_site_url() . '/shop/?add-to-cart=' . $product_data['id'];
-            $product_data['cart_link']             = get_site_url() . '/cart/?add-to-cart=' . $product_data['id'];
+            $product_data['add_to_cart_link']      = trailingslashit( wc_get_page_permalink( 'shop' ) ) . '?add-to-cart=' . $product_data['id'];
+            $product_data['cart_link']             = trailingslashit( wc_get_cart_url() ) . '?add-to-cart=' . $product_data['id'];
 
             // Get product creation date
             if ( ! empty( $product->get_date_created() ) ) {
@@ -2770,10 +2778,10 @@ class WooSEA_Get_Products {
             $product_data['categories']          = implode( '||', $catname );
 
             // Raw descriptions, unfiltered
-            $product_data['raw_description']       = do_shortcode( wpautop( $post->post_content ) );
-            $product_data['raw_short_description'] = do_shortcode( wpautop( $post->post_excerpt ) );
-            $product_data['description']           = $this->woosea_sanitize_html( $post->post_content );
-            $product_data['short_description']     = $this->woosea_sanitize_html( $post->post_excerpt );
+            $product_data['raw_description']       = do_shortcode( wpautop( $product->get_description() ) );
+            $product_data['raw_short_description'] = do_shortcode( wpautop( $product->get_short_description() ) );
+            $product_data['description']           = $this->woosea_sanitize_html( $product->get_description() );
+            $product_data['short_description']     = $this->woosea_sanitize_html( $product->get_short_description() );
 
             // Strip out Visual Composer short codes, including the Visual Composer Raw HTML
             $product_data['description']       = preg_replace( '/\[vc_raw_html.*\[\/vc_raw_html\]/', '', $product_data['description'] );
@@ -2800,8 +2808,8 @@ class WooSEA_Get_Products {
             $product_data['raw_short_description'] = mb_substr( $product_data['raw_short_description'], 0, 5000 );
 
             // Parent variable description
-            $product_data['mother_description']       = $product_data['description'];
-            $product_data['mother_short_description'] = $product_data['short_description'];
+            $product_data['mother_description']       = $parent_product ? $this->woosea_sanitize_html( $parent_product->get_description() ) : $product_data['description'];
+            $product_data['mother_short_description'] = $parent_product ? $this->woosea_sanitize_html( $parent_product->get_short_description() ) : $product_data['short_description'];
 
             /**
              * Check of we need to add Google Analytics UTM parameters
@@ -2835,7 +2843,7 @@ class WooSEA_Get_Products {
             }
 
             // get_stock only works as of WC 5 and higher?
-            $product_data['availability'] = $this->get_stock( $child_id );
+            $product_data['availability'] = $this->get_stock( $product_id );
 
             /**
              * When 'Enable stock management at product level is active
@@ -2897,7 +2905,7 @@ class WooSEA_Get_Products {
             }
 
             $product_data['author']   = get_the_author();
-            $product_data['quantity'] = $this->clean_quantity( $child_id, '_stock' );
+            $product_data['quantity'] = $this->clean_quantity( $product_id, '_stock' );
             if ( is_object( $product ) ) {
                 $product_data['visibility'] = $product->get_catalog_visibility();
             }
@@ -3342,28 +3350,27 @@ class WooSEA_Get_Products {
                 $product_data['system_sale_price'] = wc_format_localized_price( $product_data['system_sale_price'] );
             }
 
-            // Add rounded price options
+            // Rounded prices.
+            $number_of_decimals  = wc_get_price_decimals();
             $decimal_separator   = wc_get_price_decimal_separator();
-            $float_price         = floatval( $product_data['price'] );
-            $float_regular_price = floatval( $product_data['regular_price'] );
-            $float_sale_price    = floatval( $product_data['sale_price'] );
+            $thousand_separator  = wc_get_price_thousand_separator();
+            $rounded_precisions  = apply_filters( 'adt_product_feed_data_rounded_price_precisions', 0, $feed );
+            $rounded_mode        = apply_filters( 'adt_product_feed_data_rounded_price_mode', PHP_ROUND_HALF_UP, $feed );
+            $rounded_prices      = array(
+                'price'             => 'rounded_price',
+                'regular_price'     => 'rounded_regular_price',
+                'sale_price'        => 'rounded_sale_price',
+                'price_forced'      => 'price_forced_rounded',
+                'net_price'         => 'net_price_rounded',
+                'net_regular_price' => 'net_regular_price_rounded',
+                'net_sale_price'    => 'net_sale_price_rounded',
+                'sale_price_forced' => 'sale_price_forced_rounded',
+            );
 
-            if ( $decimal_separator == ',' ) {
-                $product_data['rounded_price']         = str_replace( ',', '.', $product_data['price'] );
-                $product_data['rounded_price']         = round( number_format( $product_data['rounded_price'], 2, '.', '' ) );
-                $product_data['rounded_regular_price'] = str_replace( ',', '.', $product_data['regular_price'] );
-                $product_data['rounded_regular_price'] = round( number_format( $product_data['rounded_regular_price'], 2, '.', '' ) );
-
-                if ( $product_data['sale_price'] > 0 ) {
-                    $product_data['rounded_sale_price'] = str_replace( ',', '.', $product_data['sale_price'] );
-                    $product_data['rounded_sale_price'] = round( number_format( $float_sale_price, 2, '.', '' ) );
+            foreach ( $rounded_prices as $price_key => $rounded_key ) {
+                if ( array_key_exists( $price_key, $product_data ) && is_numeric( $product_data[ $price_key ] ) ) {
+                    $product_data[ $rounded_key ] = round( number_format( $product_data[ $price_key ], $number_of_decimals, $decimal_separator, $thousand_separator ), $rounded_precisions, $rounded_mode );
                 }
-            } else {
-                // $product_data['rounded_price'] = round($float_price,0);
-                // $product_data['rounded_regular_price'] = (string) round($float_regular_price,0);
-                // $product_data['rounded_sale_price'] = round($float_sale_price,0);
-                $product_data['rounded_regular_price'] = $float_regular_price;
-                $product_data['rounded_sale_price']    = $float_sale_price;
             }
 
             // Calculate discount percentage
@@ -4935,6 +4942,7 @@ class WooSEA_Get_Products {
             }
         endwhile;
         wp_reset_query();
+        wp_reset_postdata();
 
         // Add processed products to array
         // if(get_option('woosea_duplicates')){
