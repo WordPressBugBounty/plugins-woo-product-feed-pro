@@ -197,7 +197,7 @@ $attributes = $fields_obj->get_channel_attributes();
                                         <td>
                                             <?php
                                             if ( $row_v['feed_name'] == 'g:price' ) {
-                                                echo "<input type='text' name='attributes[$c][prefix]' value='$currency' class='input-field-medium'>";
+                                                echo "<input type='text' name='attributes[$c][prefix]' value='$currency ' class='input-field-medium'>";
                                             } else {
                                                 echo "<input type='text' name='attributes[$c][prefix]' class='input-field-medium'>";
                                             }

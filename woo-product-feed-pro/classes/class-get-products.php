@@ -3296,8 +3296,38 @@ class WooSEA_Get_Products {
                 }
             }
 
+            // Calculate discount percentage
+            if ( isset( $product_data['rounded_sale_price'] ) ) {
+                if ( $product_data['rounded_regular_price'] > 0 ) {
+                    $disc                                = round( ( $product_data['rounded_sale_price'] * 100 ) / $product_data['rounded_regular_price'], 0 );
+                    $product_data['discount_percentage'] = 100 - $disc;
+                    // $product_data['discount_percentage'] = round(100-(($product_data['sale_price']/$product_data['regular_price'])*100),2);
+                }
+            }
+
+            // Rounded prices.
+            $decimal_separator   = wc_get_price_decimal_separator();
+            $number_of_decimals  = apply_filters( 'adt_product_feed_data_rounded_price_number_of_decimals', 2, $feed );
+            $rounded_precisions  = apply_filters( 'adt_product_feed_data_rounded_price_precisions', 0, $feed );
+            $rounded_mode        = apply_filters( 'adt_product_feed_data_rounded_price_mode', PHP_ROUND_HALF_UP, $feed );
+            $rounded_prices      = array(
+                'price'             => 'rounded_price',
+                'regular_price'     => 'rounded_regular_price',
+                'sale_price'        => 'rounded_sale_price',
+                'price_forced'      => 'price_forced_rounded',
+                'net_price'         => 'net_price_rounded',
+                'net_regular_price' => 'net_regular_price_rounded',
+                'net_sale_price'    => 'net_sale_price_rounded',
+                'sale_price_forced' => 'sale_price_forced_rounded',
+            );
+
+            foreach ( $rounded_prices as $price_key => $rounded_key ) {
+                if ( array_key_exists( $price_key, $product_data ) && is_numeric( $product_data[ $price_key ] ) ) {
+                    $product_data[ $rounded_key ] = number_format( round( $product_data[ $price_key ], $rounded_precisions, $rounded_mode ), $number_of_decimals, $decimal_separator, '' );
+                }
+            }
+
             // Localize the price attributes
-            $decimal_separator             = wc_get_price_decimal_separator();
             $product_data['price']         = wc_format_localized_price( $product_data['price'] );
             $product_data['regular_price'] = wc_format_localized_price( $product_data['regular_price'] );
 
@@ -3348,38 +3378,6 @@ class WooSEA_Get_Products {
 
             if ( ! empty( $product_data['system_sale_price'] ) ) {
                 $product_data['system_sale_price'] = wc_format_localized_price( $product_data['system_sale_price'] );
-            }
-
-            // Rounded prices.
-            $number_of_decimals  = wc_get_price_decimals();
-            $decimal_separator   = wc_get_price_decimal_separator();
-            $thousand_separator  = wc_get_price_thousand_separator();
-            $rounded_precisions  = apply_filters( 'adt_product_feed_data_rounded_price_precisions', 0, $feed );
-            $rounded_mode        = apply_filters( 'adt_product_feed_data_rounded_price_mode', PHP_ROUND_HALF_UP, $feed );
-            $rounded_prices      = array(
-                'price'             => 'rounded_price',
-                'regular_price'     => 'rounded_regular_price',
-                'sale_price'        => 'rounded_sale_price',
-                'price_forced'      => 'price_forced_rounded',
-                'net_price'         => 'net_price_rounded',
-                'net_regular_price' => 'net_regular_price_rounded',
-                'net_sale_price'    => 'net_sale_price_rounded',
-                'sale_price_forced' => 'sale_price_forced_rounded',
-            );
-
-            foreach ( $rounded_prices as $price_key => $rounded_key ) {
-                if ( array_key_exists( $price_key, $product_data ) && is_numeric( $product_data[ $price_key ] ) ) {
-                    $product_data[ $rounded_key ] = round( number_format( $product_data[ $price_key ], $number_of_decimals, $decimal_separator, $thousand_separator ), $rounded_precisions, $rounded_mode );
-                }
-            }
-
-            // Calculate discount percentage
-            if ( isset( $product_data['rounded_sale_price'] ) ) {
-                if ( $product_data['rounded_regular_price'] > 0 ) {
-                    $disc                                = round( ( $product_data['rounded_sale_price'] * 100 ) / $product_data['rounded_regular_price'], 0 );
-                    $product_data['discount_percentage'] = 100 - $disc;
-                    // $product_data['discount_percentage'] = round(100-(($product_data['sale_price']/$product_data['regular_price'])*100),2);
-                }
             }
 
             if ( ! empty( $feed_attributes ) ) {

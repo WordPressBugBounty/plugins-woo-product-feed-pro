@@ -1,3 +1,6 @@
+= 13.3.8.1 (2024-10-10) =
+* Bug Fix: Rounded price attributes is causing fatal error
+
 = 13.3.8 (2024-10-01) =
 * Bug Fix: Critical Error when generating feed
 * Bug Fix: Duplicated empty feed with no data

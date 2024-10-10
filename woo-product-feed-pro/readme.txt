@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.6
-Stable tag: 13.3.8
+Stable tag: 13.3.8.1
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -385,6 +385,9 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.3.8.1 (2024-10-10) =
+* Bug Fix: Rounded price attributes is causing fatal error
 
 = 13.3.8 (2024-10-01) =
 * Bug Fix: Critical Error when generating feed
