@@ -6,22 +6,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 
 <style type="text/css">
-    .pfp-failed-dependency-notice p {
+    .pfp-allow-tracking-notice p {
         max-width: 100%;
     }
 
-    .pfp-failed-dependency-notice p:after {
+    .pfp-allow-tracking-notice p:after {
         content: '';
         display: table;
         clear: both;
     }
 
-    .pfp-failed-dependency-notice .heading {
+    .pfp-allow-tracking-notice .heading {
         display: flex;
         align-items: center;
     }
 
-    .pfp-failed-dependency-notice .heading img {
+    .pfp-allow-tracking-notice .heading img {
         float: left;
         margin-right: 15px;
         max-width: 120px;
@@ -29,28 +29,28 @@ if ( ! defined( 'ABSPATH' ) ) {
         height: auto;
     }
 
-    .pfp-failed-dependency-notice .heading span {
-    display: inline-flex;
+    .pfp-allow-tracking-notice .heading span {
+        display: inline-flex;
         margin-top: 6px;
         font-size: 16px;
         font-weight: bold;
         text-transform: capitalize;
-        color: #ce1508;
+        color: #e63e77;
         letter-spacing: -0.2px;
         font-family: "Lato", -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
     }
 
-    .pfp-failed-dependency-notice .heading span:before {
+    .pfp-allow-tracking-notice .heading span:before {
         content: "\f534";
         font-family: dashicons;
         margin-right: 4px;
     }
 
-    .pfp-failed-dependency-notice .action-wrap {
+    .pfp-allow-tracking-notice .action-wrap {
         margin-bottom: 15px;
     }
 
-    .pfp-failed-dependency-notice .action-wrap .action-button {
+    .pfp-allow-tracking-notice .action-wrap .action-button {
         display: inline-block;
         padding: 8px 23px;
         margin-right: 10px;
@@ -61,28 +61,38 @@ if ( ! defined( 'ABSPATH' ) ) {
         color: #000000;
     }
 
-    .pfp-failed-dependency-notice .action-wrap .action-button.disabled {
+    .pfp-allow-tracking-notice .action-wrap .action-button.disabled {
         opacity: 0.7 !important;
         pointer-events: none;
     }
 
-    .pfp-failed-dependency-notice .action-wrap .action-button.gray {
+    .pfp-allow-tracking-notice .action-wrap .action-button.gray {
         background: #cccccc;
     }
 
-    .pfp-failed-dependency-notice .action-wrap .action-button:hover {
+    .pfp-allow-tracking-notice .action-wrap .action-button:hover {
         opacity: 0.8;
     }
 
-    .pfp-failed-dependency-notice .action-wrap span {
+    .pfp-allow-tracking-notice .action-wrap span {
         color: #035E6B;
     }
 </style>
-<div class="notice notice-error pfp-failed-dependency-notice">
+<div class="notice notice-info pfp-allow-tracking-notice">
     <p class="heading">
         <img src="<?php echo esc_url( WOOCOMMERCESEA_IMAGES_URL . 'adt-logo.png' ); ?>" alt="Product Feed Pro for WooCommerce" />
-        <span><?php esc_html_e( 'Action required', 'woo-product-feed-pro' ); ?></span>
+        <span><?php esc_html_e( 'Usage Tracking Persmission', 'woo-product-feed-pro' ); ?></span>
     </p>
     <?php echo wp_kses_post( $message ); ?>
-    <?php echo wp_kses_post( $failed_dependencies ); ?>
+    <p class="action-wrap">
+        <button class="button button-primary adt-pfp-allow-tracking-notice-action-button" data-value="1">
+            <?php esc_attr_e( 'Allow Tracking', 'woo-product-feed-pro' ); ?>
+        </button>
+        <button class="button button-default adt-pfp-allow-tracking-notice-action-button" data-value="0">
+            <?php esc_attr_e( 'Do Not Allow', 'woo-product-feed-pro' ); ?>
+        </button>
+    </p>
+    <?php
+        wp_nonce_field( 'adt_pfp_allow_tracking_nonce', 'adt_pfp_allow_tracking_nonce' );
+    ?>
 </div>

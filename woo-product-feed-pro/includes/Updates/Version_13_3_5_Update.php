@@ -149,7 +149,17 @@ class Version_13_3_5_Update extends Abstract_Class {
                 ! get_site_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION )
             ) || $this->force_update
         ) {
-            $this->update();
+            if ( is_multisite() ) {
+                global $wpdb;
+                $blog_ids = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs}" );
+                foreach ( $blog_ids as $blog_id ) {
+                    switch_to_blog( $blog_id );
+                    $this->update();
+                    restore_current_blog();
+                }
+            } else {
+                $this->update();
+            }
         }
     }
 }

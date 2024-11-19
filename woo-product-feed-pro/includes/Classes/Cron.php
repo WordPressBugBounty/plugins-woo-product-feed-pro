@@ -21,87 +21,6 @@ class Cron extends Abstract_Class {
 
     use Singleton_Trait;
 
-    /***************************************************************************
-     * Cron actions
-     * **************************************************************************
-     */
-
-    /**
-     * Register own cron hook(s), it will execute the woosea_create_all_feeds that will generate all feeds on scheduled event.
-     *
-     * This is the legacy cron job to run the product feeds at a certain time.
-     * The cron is running every hour and will check if the feed needs to be updated at that time.
-     * ( daily, twicedaily, hourly, no refresh ) are the options.
-     * The base is at hour 07 and 19. x_x
-     * We will refactor this to individual cron jobs for each feed using Action Scheduler.
-     *
-     * @since 13.3.5
-     * @access public
-     */
-    public function run_product_feed_cron() {
-        $product_feeds_query = new Product_Feed_Query(
-            array(
-                'post_status'    => array( 'publish' ),
-                'posts_per_page' => -1,
-            ),
-            'edit'
-        );
-
-        if ( $product_feeds_query->have_posts() ) {
-            // Make sure content of feeds is not being cached.
-            Product_Feed_Helper::disable_cache();
-
-            // Get the current hour.
-            $hour = gmdate( 'H' );
-
-            foreach ( $product_feeds_query->get_posts() as $product_feed ) {
-
-                if ( ! $product_feed instanceof Product_Feed ) {
-                    continue;
-                }
-
-                $interval = $product_feed->refresh_interval;
-
-                if ( ( 'daily' === $interval && '07' === $hour ) ||
-                    ( 'twicedaily' === $interval && ( '19' === $hour || '07' === $hour ) ) ||
-                    // Re-start daily and twicedaily projects that are hanging. (not sure what this means, but we keep it here).
-                    ( ( 'twicedaily' === $interval || 'daily' === $interval ) && 'processing' === $product_feed->status ) ||
-                    ( 'hourly' === $interval )
-                ) {
-                    $product_feed->run_batch_event();
-                } elseif ( 'no refresh' === $interval && '26' === $hour ) { // phpcs:ignore
-                    // It is never hour 26, so this project will never refresh. (Seriusly?!!).
-                }
-            }
-        }
-    }
-
-    /**
-     * Set project history: amount of products in the feed.
-     *
-     * @since 13.3.5
-     * @access public
-     *
-     * @param int $id The project ID.
-     **/
-    public function update_project_history( $id ) {
-        $feed = Product_Feed_Helper::get_product_feed( $id );
-        if ( ! $feed->id ) {
-            return;
-        }
-
-        // Filter the amount of history products in the system report.
-        $max_history_products = apply_filters( 'adt_product_feed_max_history_products', 10 );
-
-        $products_count = 0;
-        $file           = $feed->get_file_path();
-        $file_format    = $feed->file_format;
-        $products_count = file_exists( $file ) ? $this->get_product_counts_from_file( $file, $file_format, $feed ) : 0;
-
-        $feed->add_history_product( $products_count );
-        $feed->save();
-    }
-
     /**
      * Get the amount of products in the feed file.
      *
@@ -154,13 +73,202 @@ class Cron extends Abstract_Class {
     }
 
     /**
+     * Update product feed.
+     *
+     * This method is used to update the product feed after generating the products from the legacy code base.
+     *
+     * @since 13.3.5
+     * @access public
+     *
+     * @param int $feed_id     Feed ID.
+     * @param int $batch_size  Offset step size.
+     */
+    public function update_product_feed( $feed_id, $batch_size ) {
+        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
+        if ( ! Product_Feed_Helper::is_a_product_feed( $feed ) && ! $feed->id ) {
+            return false;
+        }
+
+        // User would like to see a preview of their feed, retrieve only 5 products by default.
+        $preview_count = $feed->create_preview ? apply_filters( 'adt_product_feed_preview_products', 5, $feed ) : null;
+
+        // Get total of published products to process.
+        $published_products = $preview_count ? $preview_count : Product_Feed_Helper::get_total_published_products( $feed->include_product_variations );
+
+        /**
+         * Filter the total number of products to process.
+         *
+         * @since 13.3.5
+         *
+         * @param int $published_products Total number of published products to process.
+         * @param \AdTribes\PFP\Factories\Product_Feed $feed The product feed instance.
+         */
+        $published_products = apply_filters( 'adt_product_feed_total_published_products', $published_products, $feed );
+
+        // Update the feed with the total number of products.
+        $feed->products_count           = intval( $published_products );
+        $feed->total_products_processed = min( $feed->total_products_processed + $batch_size, $feed->products_count );
+
+        /**
+         * Batch processing.
+         *
+         * If the batch size is less than the total number of published products, then we need to create a batch.
+         * The batching logic is from the legacy code base as it's has the batch size.
+         * We need to refactor this logic so it's not stupid.
+         */
+        if ( $feed->total_products_processed >= $published_products || $batch_size >= $published_products ) { // End of processing.
+            $upload_dir = wp_upload_dir();
+            $base       = $upload_dir['basedir'];
+            $path       = $base . '/woo-product-feed-pro/' . $feed->file_format;
+            $tmp_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '_tmp.' . $feed->file_format;
+            $new_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '.' . $feed->file_format;
+
+            // Move the temporary file to the final file.
+            if ( copy( $tmp_file, $new_file ) ) {
+                wp_delete_file( $tmp_file );
+            }
+
+            // Set status to ready.
+            $feed->status = 'ready';
+
+            // Set counters back to 0.
+            $feed->total_products_processed = 0;
+
+            // Set last updated date and time.
+            $feed->last_updated = gmdate( 'd M Y H:i:s' );
+        }
+
+        // Save feed changes.
+        $feed->save();
+
+        if ( 'ready' === $feed->status ) {
+            // Check the amount of products in the feed and update the history count.
+            as_schedule_single_action( time() + 1, ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS, array( 'feed_id' => $feed->id ) );
+        } else {
+            // Set the next scheduled event.
+            $feed->run_batch_event();
+        }
+    }
+
+    /**
+     * Get total published products.
+     *
+     * @param Product_Feed $feed The product feed instance.
+     *
+     * @return int
+     */
+    private function _get_total_published_products( $feed ) {
+        // Get total of published products to process.
+        if ( $feed->create_preview ) {
+            // User would like to see a preview of their feed, retrieve only 5 products by default.
+            $published_products = apply_filters( 'adt_product_feed_preview_products', 5, $feed );
+        } elseif ( $feed->include_product_variations ) {
+            $published_products = Product_Feed_Helper::get_total_published_products( true );
+        } else {
+            $published_products = Product_Feed_Helper::get_total_published_products();
+        }
+
+        /**
+         * Filter the total number of products to process.
+         *
+         * @since 13.3.5
+         *
+         * @param int $published_products Total number of published products to process.
+         * @param \AdTribes\PFP\Factories\Product_Feed $feed The product feed instance.
+         */
+        return apply_filters( 'adt_product_feed_total_published_products', intval( $published_products ), $feed );
+    }
+
+    /***************************************************************************
+     * Action Scheduler
+     * **************************************************************************
+     */
+
+    /**
+     * Generate product feed callback.
+     *
+     * @since 13.3.9
+     * @access public
+     *
+     * @param int $feed_id The feed ID.
+     */
+    public function as_generate_product_feed_callback( $feed_id ) {
+        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
+        if ( ! $feed->id ) {
+            return;
+        }
+
+        Product_Feed_Helper::disable_cache();
+
+        $feed->run_batch_event();
+    }
+
+    /**
+     * Process product feed in batch.
+     *
+     * @since 13.3.9
+     * @access public
+     *
+     * @param int $feed_id The feed ID.
+     */
+    public function as_generate_product_feed_batch_callback( $feed_id ) {
+        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
+        if ( $feed->id ) {
+            /**
+             * Check if the feed is stopped.
+             *
+             * If in the middle of processing a feed and the feed is stopped by the user.
+             * This is to avoid the feed from continuing to process when the user has stopped it.
+             */
+            if ( 'stopped' === $feed->status ) {
+                return;
+            }
+
+            $feed->status      = 'processing';
+            $get_product_class = new \WooSEA_Get_Products();
+            $get_product_class->woosea_get_products( $feed );
+        }
+    }
+
+    /**
+     * Set project history: amount of products in the feed.
+     *
+     * @since 13.3.5
+     * @access public
+     *
+     * @param int $feed_id The Feed ID.
+     **/
+    public function as_product_feed_update_stats( $feed_id ) {
+        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
+        if ( ! $feed->id ) {
+            return;
+        }
+
+        // Filter the amount of history products in the system report.
+        $max_history_products = apply_filters( 'adt_product_feed_max_history_products', 10 );
+
+        $products_count = 0;
+        $file           = $feed->get_file_path();
+        $file_format    = $feed->file_format;
+        $products_count = file_exists( $file ) ? $this->get_product_counts_from_file( $file, $file_format, $feed ) : 0;
+
+        $feed->add_history_product( $products_count );
+        $feed->save();
+    }
+
+
+    /**
      * Run the class
      *
      * @codeCoverageIgnore
      * @since 13.3.5
      */
     public function run() {
-        add_action( 'woosea_cron_hook', array( $this, 'run_product_feed_cron' ), 1, 1 );
-        add_action( 'woosea_update_project_stats', array( $this, 'update_project_history' ), 1, 1 );
+        add_action( 'adt_after_product_feed_generation', array( $this, 'update_product_feed' ), 10, 2 );
+
+        // Action Scheduler.
+        add_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED, array( $this, 'as_generate_product_feed_callback' ), 1, 1 );
+        add_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH, array( $this, 'as_generate_product_feed_batch_callback' ), 1, 1 );
+        add_action( ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS, array( $this, 'as_product_feed_update_stats' ), 1, 1 );
     }
 }

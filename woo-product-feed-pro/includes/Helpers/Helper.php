@@ -102,6 +102,18 @@ class Helper {
     }
 
     /**
+     * Utility function that determines if the paid plugin is active or not.
+     *
+     * @since 13.3.4
+     * @access public
+     *
+     * @return boolean True if active, false otherwise.
+     */
+    public static function has_paid_plugin_active() {
+        return self::is_plugin_active( 'woo-product-feed-elite/woocommerce-sea.php' );
+    }
+
+    /**
      * Utility function that determines if a plugin is installed or not.
      *
      * @since 13.3.4
@@ -124,9 +136,48 @@ class Helper {
      * @return boolean True if Product Feed Pro or Elite, false otherwise.
      */
     public static function is_plugin_page() {
-        $screen         = get_current_screen();
+        $screen = get_current_screen();
+        if ( ! $screen ) {
+            return false;
+        }
+
         $is_plugin_page = strpos( $screen->id, 'product-feed-pro' ) !== false || strpos( $screen->id, 'product-feed-elite' ) !== false;
         return apply_filters( 'adt_is_plugin_page', $is_plugin_page );
+    }
+
+    /**
+     * Check if current screen is related to WC.
+     *
+     * @since 13.3.9
+     * @access public
+     *
+     * @return boolean True if WC screen, false otherwise.
+     */
+    public static function is_wc_screen() {
+        $screen = get_current_screen();
+        if ( ! $screen ) {
+            return false;
+        }
+
+        $wc_screens = array(
+            'woocommerce_page_wc-settings',
+            'woocommerce_page_wc-reports',
+            'woocommerce_page_wc-status',
+            'woocommerce_page_wc-addons',
+            'plugins',
+            'woocommerce_page_wc-orders',
+        );
+
+        // Get the post type parameter from the URL.
+        $post_type = sanitize_text_field( $_GET['post_type'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+        $post_types = array(
+            'shop_coupon',
+            'shop_order',
+            'product',
+        );
+
+        return in_array( $post_type, $post_types, true ) || in_array( $screen->id, $wc_screens, true );
     }
 
     /**
@@ -219,5 +270,175 @@ class Helper {
      */
     public static function stripslashes_recursive( $data ) {
         return is_array( $data ) ? stripslashes_deep( $data ) : stripslashes( $data );
+    }
+
+    /**
+     * Check to see if the given URL looks like a dev site
+     *
+     * @param string $url URL to check.
+     *
+     * @since  13.3.9
+     * @access public
+     *
+     * @return bool If it appears to be a dev site
+     */
+    public static function is_dev_url( $url = '' ) {
+
+        $is_local_url = false;
+
+        // Check if testing constant is set.
+        if ( defined( 'ADT_PFP_TESTING_SITE' ) && ADT_PFP_TESTING_SITE ) {
+            return false;
+        }
+
+        // Use site's URL if nothing provided.
+        if ( empty( $url ) ) {
+            $url = get_bloginfo( 'url' );
+        }
+
+        // Trim it up.
+        $url = strtolower( trim( $url ) );
+
+        // Need to get the host...so let's add the scheme so we can use parse_url.
+        if ( false === strpos( $url, 'http://' ) && false === strpos( $url, 'https://' ) ) {
+            $url = 'http://' . $url;
+        }
+
+        $url_parts = wp_parse_url( $url );
+        $host      = ! empty( $url_parts['host'] ) ? $url_parts['host'] : false;
+
+        if ( ! empty( $url ) && ! empty( $host ) ) {
+            if ( false !== ip2long( $host ) ) {
+                if ( ! filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                    $is_local_url = true;
+                }
+            } elseif ( 'localhost' === $host ) {
+                $is_local_url = true;
+            }
+
+            $tlds_to_check = array( '.local', ':8888', ':8080', ':8081', '.invalid', '.example', '.test' );
+            foreach ( $tlds_to_check as $tld ) {
+                if ( false !== strpos( $host, $tld ) ) {
+                    $is_local_url = true;
+                    break;
+                }
+            }
+            if ( substr_count( $host, '.' ) > 1 ) {
+                $subdomains_to_check = array( 'dev.', '*.staging.', 'beta.', 'test.' );
+                foreach ( $subdomains_to_check as $subdomain ) {
+                    $subdomain = str_replace( '.', '(.)', $subdomain );
+                    $subdomain = str_replace( array( '*', '(.)' ), '(.*)', $subdomain );
+                    if ( preg_match( '/^(' . $subdomain . ')/', $host ) ) {
+                        $is_local_url = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $is_local_url;
+    }
+
+    /**
+     * Check if current database version supports json.
+     *
+     * @since 13.3.9
+     * @access public
+     *
+     * @return bool True if database supports json, false otherwise.
+     */
+    public static function is_db_supports_json() {
+        global $wpdb;
+
+        $supports_json  = false;
+        $db_server_info = is_callable( array( $wpdb, 'db_server_info' ) ) ? $wpdb->db_server_info() : $wpdb->db_version();
+        if ( false !== strpos( $db_server_info, 'MariaDB' ) ) {
+            $supports_json = version_compare(
+                PHP_VERSION_ID >= 80016 ? $wpdb->db_version() : preg_replace( '/[^0-9.].*/', '', str_replace( '5.5.5-', '', $db_server_info ) ),
+                '10.2',
+                '>='
+            );
+        } else {
+            $supports_json = version_compare( $wpdb->db_version(), '5.7', '>=' );
+        }
+
+        return $supports_json;
+    }
+
+    /**
+     * Custom recursive function using array_walk_recursive to access keys and sanitize values.
+     *
+     * @since 13.3.9
+     * @access public
+     *
+     * @param array    $input_array The array to walk through.
+     * @param callable $callback    The callback function.
+     * @param mixed    ...$args     Additional arguments to pass to the callback.
+     *
+     * @return array
+     */
+    public static function array_walk_recursive_with_callback( $input_array, $callback, ...$args ) {
+        $func = function ( &$item, $key ) use ( $callback, $args ) {
+            $item = call_user_func( $callback, $item, $key, ...$args );
+        };
+        array_walk_recursive( $input_array, $func );
+        return $input_array;
+    }
+
+    /**
+     * Custom sanitize callback that preserves whitespace.
+     *
+     * @since 13.3.9
+     * @access public
+     *
+     * @param string $str     The value to sanitize.
+     * @param string $key     The key of the value being sanitized.
+     * @param mixed  ...$args Additional arguments to pass to the callback.
+     *
+     * @return string
+     */
+    public static function custom_product_feeds_data_sanitize_text_field( $str, $key = null, ...$args ) { // phpcs:ignore
+        if ( is_object( $str ) || is_array( $str ) ) {
+            return '';
+        }
+
+        $str = (string) $str;
+
+        $filtered = wp_check_invalid_utf8( $str );
+
+        if ( str_contains( $filtered, '<' ) ) {
+            $filtered = wp_pre_kses_less_than( $filtered );
+            // This will strip extra whitespace for us.
+            $filtered = wp_strip_all_tags( $filtered, false );
+
+            /*
+             * Use HTML entities in a special case to make sure that
+             * later newline stripping stages cannot lead to a functional tag.
+             */
+            $filtered = str_replace( "<\n", "&lt;\n", $filtered );
+        }
+
+        $filtered = preg_replace( '/[\r\n\t ]+/', ' ', $filtered );
+
+        if ( ! is_null( $key ) && ! in_array( $key, array( 'prefix', 'suffix' ), true ) ) {
+            $filtered = trim( $filtered );
+        }
+
+        // Remove percent-encoded characters.
+        $found = false;
+        while ( preg_match( '/%[a-f0-9]{2}/i', $filtered, $match ) ) {
+            $filtered = str_replace( $match[0], '', $filtered );
+            $found    = true;
+        }
+
+        if ( $found ) {
+            // Strip out the whitespace that may now exist after removing percent-encoded characters.
+            $filtered = preg_replace( '/ +/', ' ', $filtered );
+            if ( ! is_null( $key ) && ! in_array( $key, array( 'prefix', 'suffix' ), true ) ) {
+                $filtered = trim( $filtered );
+            }
+        }
+
+        return $filtered;
     }
 }

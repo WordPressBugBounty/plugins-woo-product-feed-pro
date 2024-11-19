@@ -160,8 +160,6 @@ table.woo-product-feed-pro-table.woo-product-feed-pro-table--other-settings {
 table.woo-product-feed-pro-table.woo-product-feed-pro-table--manage-settings tr td:nth-child(2),
 table.woo-product-feed-pro-table.woo-product-feed-pro-table--other-settings tr td:nth-child(2) {
   text-align: right;
-  display: flex;
-  justify-content: flex-end;
 }
 
 /* The switch - the box around the slider */
@@ -170,6 +168,10 @@ table.woo-product-feed-pro-table.woo-product-feed-pro-table--other-settings tr t
   display: inline-block;
   width: 38px;
   height: 24px;
+}
+
+.woo-product-feed-pro-form-style-2 .woo-product-feed-pro-switch {
+  display: inline-block;
 }
 
 /* Hide default HTML checkbox */

@@ -34,13 +34,17 @@ class WooSEA_Get_Products {
      */
     public function woosea_sanitize_html( $string ) {
         if ( ! empty( $string ) ) {
-            $string = htmlentities( wp_kses( trim( $string ), array() ), ENT_QUOTES | ENT_SUBSTITUTE | ENT_XML1, 'UTF-8' );
+            // Remove script and style tags and their content from the string.
+            $string = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $string );
+
+            // Replace tags by space rather than deleting them, first we add a space before the tag, then we strip the tags.
+            // This is to prevent words from sticking together.
+            $string = str_replace('<', ' <', $string);
+            $string = strip_shortcodes( strip_tags( $string ) );
+            $string = htmlentities( $string, ENT_QUOTES | ENT_SUBSTITUTE | ENT_XML1, 'UTF-8' );
 
             // Remove new line breaks.
             $string = str_replace( array( "\r", "\n" ), '', $string );
-
-            // Replace % with its encoded equivalent.
-            $string = str_replace( "%", '%25', $string );
 
             if ( in_array( $this->file_format, array( 'csv', 'tsv', 'txt' ) ) ) {
                 // Replace commas with their hexadecimal representation.
@@ -78,78 +82,68 @@ class WooSEA_Get_Products {
         // Loop through all product reviews for this specific products (ternary operators)
         foreach ( $reviews as $review_raw ) {
 
-            // Only reviews that are approved will make it to the feed
-            if ( $review_raw->comment_approved == 1 ) {
+            $review                          = array();
+            $review['review_reviewer_image'] = empty( $product_data['reviewer_image'] ) ? '' : $product_data['reviewer_image'];
+            $review['review_ratings']        = get_comment_meta( $review_raw->comment_ID, 'rating', true );
+            $review['review_id']             = $review_raw->comment_ID;
 
-                $review                          = array();
-                $review['review_reviewer_image'] = empty( $product_data['reviewer_image'] ) ? '' : $product_data['reviewer_image'];
-                $review['review_ratings']        = get_comment_meta( $review_raw->comment_ID, 'rating', true );
-                $review['review_id']             = $review_raw->comment_ID;
+            $user   = ! empty( $review_raw->user_id ) ? get_userdata( $review_raw->user_id ) : false;
+            $author = '';
 
-                // Names need to be anonomyzed
-                if ( empty( $review_raw->comment_author ) ) {
-                    if ( ! empty( $review_raw->user_id ) ) {
-                        $user   = get_userdata( $review_raw->user_id );
-                        $author = $user->first_name . ' ' . substr( $user->last_name, 0, 1 ) . '.'; // this is the actual line you want to change
-                    } else {
-                        $author = __( 'Anonymous' );
-                    }
+            if ( ! empty( $user ) ) {
+                if ( ! empty( $user->first_name ) ) {
+                    $author  = $user->first_name ?? '';
+                    $author .= ! empty( $user->last_name ) ? ' ' . substr( $user->last_name, 0, 1 ) . '.' : '';
                 } else {
-                    $user = get_userdata( $review_raw->user_id );
-                    if ( ! empty( $user ) ) {
-                        $author = $user->first_name . ' ' . substr( $user->last_name, 0, 1 ) . '.'; // this is the actual line you want to change
-                    } else {
-                        $author = $review_raw->comment_author;
-                        if ( ! empty( $author ) ) {
-                            if ( str_contains( $author, ' ' ) ) {
-                                $expl_author = explode( ' ', $author );
-                                if ( is_array( $expl_author ) ) {
-                                    $sliced_author = array_slice( $expl_author, 0, 2 );
-                                    $author        = $sliced_author[0] . ' ' . substr( $sliced_author[1], 0, 1 ) . '.';
-                                } else {
-                                    $author = __( 'Anonymous' );
-                                }
-                            } else {
-                                $author = $review_raw->comment_author;
-                            }
-                        } else {
-                            $author = __( 'Anonymous' );
-                        }
+                    // If first name is empty, try to use last name then display name.
+                    $author = ! empty( $user->last_name ) ? $user->last_name : $user->display_name;
+                }
+            } elseif ( ! empty( $review_raw->comment_author ) ) {
+                $author = $review_raw->comment_author;
+
+                if ( str_contains( $author, ' ' ) ) {
+                    $expl_author = explode( ' ', $author );
+                    if ( ! empty( $expl_author ) && is_array( $expl_author ) ) {
+                        $sliced_author  = array_slice( $expl_author, 0, 2 );
+                        $author         = $sliced_author[0] ?? '';
+                        $author        .= ! empty( $sliced_author[1] ) ? ' ' . substr( $sliced_author[1], 0, 1 ) . '.' : '';
                     }
                 }
-
-                $author = str_replace( '&amp;', '', $author );
-                $author = ucfirst( $author );
-
-                // Remove strange charachters from reviewer name
-                $review['reviewer_name'] = $this->woosea_sanitize_html( $author );
-                $review['reviewer_name'] = preg_replace( '/\[(.*?)\]/', ' ', $review['reviewer_name'] );
-                $review['reviewer_name'] = str_replace( '&#xa0;', '', $review['reviewer_name'] );
-                $review['reviewer_name'] = str_replace( ':', '', $review['reviewer_name'] );
-                $review['reviewer_name'] = $this->woosea_utf8_for_xml( $review['reviewer_name'] );
-
-                $review['reviewer_id']      = $review_raw->user_id;
-                $review['review_timestamp'] = $review_raw->comment_date;
-
-                // Remove strange characters from review title
-                $review['title'] = empty( $product_data['title'] ) ? '' : $product_data['title'];
-                $review['title'] = $this->woosea_sanitize_html( $review['title'] );
-                $review['title'] = preg_replace( '/\[(.*?)\]/', ' ', $review['title'] );
-                $review['title'] = str_replace( '&#xa0;', '', $review['title'] );
-                $review['title'] = $this->woosea_utf8_for_xml( $review['title'] );
-
-                // Remove strange charchters from review content
-                $review['content'] = $review_raw->comment_content;
-                $review['content'] = $this->woosea_sanitize_html( $review['content'] );
-                $review['content'] = preg_replace( '/\[(.*?)\]/', ' ', $review['content'] );
-                $review['content'] = str_replace( '&#xa0;', '', $review['content'] );
-                $review['content'] = $this->woosea_utf8_for_xml( $review['content'] );
-
-                $review['review_product_name'] = $product_data['title'];
-                $review['review_url']          = $product_data['link'] . '#tab-reviews';
-                $review['review_product_url']  = $product_data['link'];
-                array_push( $approved_reviews, $review );
+            } else {
+                $author = 'Anonymous';
             }
+
+            $author = str_replace( '&amp;', '', $author );
+            $author = ! empty( $author ) ? ucfirst( $author ) : $author;
+
+            // Remove strange charachters from reviewer name
+            $review['reviewer_name'] = $this->woosea_sanitize_html( $author );
+            $review['reviewer_name'] = preg_replace( '/\[(.*?)\]/', ' ', $review['reviewer_name'] );
+            $review['reviewer_name'] = str_replace( '&#xa0;', '', $review['reviewer_name'] );
+            $review['reviewer_name'] = str_replace( ':', '', $review['reviewer_name'] );
+            $review['reviewer_name'] = $this->woosea_utf8_for_xml( $review['reviewer_name'] );
+
+            $review['reviewer_id']      = $review_raw->user_id;
+            $review['review_timestamp'] = $review_raw->comment_date;
+
+            // Remove strange characters from review title
+            $review['title'] = empty( $product_data['title'] ) ? '' : $product_data['title'];
+            $review['title'] = $this->woosea_sanitize_html( $review['title'] );
+            $review['title'] = preg_replace( '/\[(.*?)\]/', ' ', $review['title'] );
+            $review['title'] = str_replace( '&#xa0;', '', $review['title'] );
+            $review['title'] = $this->woosea_utf8_for_xml( $review['title'] );
+
+            // Remove strange charchters from review content
+            $review['content'] = $review_raw->comment_content;
+            $review['content'] = $this->woosea_sanitize_html( $review['content'] );
+            $review['content'] = preg_replace( '/\[(.*?)\]/', ' ', $review['content'] );
+            $review['content'] = str_replace( '&#xa0;', '', $review['content'] );
+            $review['content'] = $this->woosea_utf8_for_xml( $review['content'] );
+
+            $review['review_product_name'] = $product_data['title'];
+            $review['review_url']          = $product_data['link'] . '#tab-reviews';
+            $review['review_product_url']  = $product_data['link'];
+            array_push( $approved_reviews, $review );
         }
         $review_count   = $product->get_review_count();
         $review_average = $product->get_average_rating();
@@ -1378,7 +1372,7 @@ class WooSEA_Get_Products {
                                             $product->$k = rawurldecode( $attr_value );
                                         }
                                     } else {
-                                        $product->$k = rawurldecode( $v );
+                                        $product->$k = $v;
                                     }
                                 }
                             }
@@ -2220,82 +2214,83 @@ class WooSEA_Get_Products {
 
             // Write each row of the products array
             foreach ( $products as $row ) {
-
                 foreach ( $row as $k => $v ) {
                     $pieces = explode( "','", $v );
-                    foreach ( $pieces as $k_inner => $v ) {
-                        if ( ( $fields != 'standard' ) && ( $fields != 'customfeed' ) ) {
-                            $v = $this->get_alternative_key( $channel_attributes, $v );
-                        }
-
-                        // For CSV fileformat the keys need to get stripped of the g:
-                        if ( $header === 'true' && in_array( $feed->file_format, array( 'csv', 'txt', 'tsv' ), true ) ) {
-                            $v = str_replace( 'g:', '', $v );
-                        }
-
-                        // Remove any double quotes from the values.
-                        $v = trim( $v, "\"'" );
-
-                        // Hexadecimal comma to comma
-                        $v = str_replace( '\x2C', ',', $v );
-
-                        $pieces[ $k_inner ] = $v;
-                    }
-
-                    // Convert tab delimiter
-                    if ( $feed->delimiter == 'tab' ) {
-                        $csv_delimiter = "\t";
-                    } else {
-                        $csv_delimiter = $feed->delimiter;
-                    }
-
-                    if ( $fields == 'google_local' ) {
-                        $tab_line = '';
-
-                        if ( $header == 'false' ) {
-                            // Get the store codes
-                            foreach ( $feed->attributes as $k => $v ) {
-                                if ( preg_match( '/\|/', $k ) ) {
-                                    $stores_local = $k;
-                                }
+                    if ( ! empty( $pieces ) ) {
+                        foreach ( $pieces as $k_inner => $v ) {
+                            if ( ( $fields != 'standard' ) && ( $fields != 'customfeed' ) ) {
+                                $v = $this->get_alternative_key( $channel_attributes, $v );
                             }
-
-                            $store_ids = explode( '|', $stores_local );
-                            if ( is_array( $store_ids ) ) {
-
-                                foreach ( $store_ids as $store_key => $store_value ) {
-                                    $pieces[1] = $store_value;
-
-                                    if ( ! empty( $store_value ) ) {
-                                        foreach ( $pieces as $t_key => $t_value ) {
-                                            $tab_line .= $t_value . "$csv_delimiter";
-                                        }
-                                        $tab_line  = rtrim( $tab_line, $csv_delimiter );
-                                        $tab_line .= PHP_EOL;
+    
+                            // For CSV fileformat the keys need to get stripped of the g:
+                            if ( $header === 'true' && in_array( $feed->file_format, array( 'csv', 'txt', 'tsv' ), true ) ) {
+                                $v = str_replace( 'g:', '', $v );
+                            }
+    
+                            // Remove any double quotes from the values.
+                            $v = trim( $v, "\"'" );
+    
+                            // Hexadecimal comma to comma
+                            $v = str_replace( '\x2C', ',', $v );
+    
+                            $pieces[ $k_inner ] = $v;
+                        }
+    
+                        // Convert tab delimiter
+                        if ( $feed->delimiter == 'tab' ) {
+                            $csv_delimiter = "\t";
+                        } else {
+                            $csv_delimiter = $feed->delimiter;
+                        }
+    
+                        if ( $fields == 'google_local' ) {
+                            $tab_line = '';
+    
+                            if ( $header == 'false' ) {
+                                // Get the store codes
+                                foreach ( $feed->attributes as $k => $v ) {
+                                    if ( preg_match( '/\|/', $k ) ) {
+                                        $stores_local = $k;
                                     }
                                 }
-                                fwrite( $fp, $tab_line );
+    
+                                $store_ids = explode( '|', $stores_local );
+                                if ( is_array( $store_ids ) ) {
+    
+                                    foreach ( $store_ids as $store_key => $store_value ) {
+                                        $pieces[1] = $store_value;
+    
+                                        if ( ! empty( $store_value ) ) {
+                                            foreach ( $pieces as $t_key => $t_value ) {
+                                                $tab_line .= $t_value . "$csv_delimiter";
+                                            }
+                                            $tab_line  = rtrim( $tab_line, $csv_delimiter );
+                                            $tab_line .= PHP_EOL;
+                                        }
+                                    }
+                                    fwrite( $fp, $tab_line );
+                                } else {
+                                    // Only one store code entered
+                                    foreach ( $pieces as $t_key => $t_value ) {
+                                        $tab_line .= $t_value . "$csv_delimiter";
+                                    }
+    
+                                    $tab_line  = rtrim( $tab_line, $csv_delimiter );
+                                    $tab_line .= PHP_EOL;
+                                    fwrite( $fp, $tab_line );
+                                }
                             } else {
-                                // Only one store code entered
                                 foreach ( $pieces as $t_key => $t_value ) {
                                     $tab_line .= $t_value . "$csv_delimiter";
                                 }
-
                                 $tab_line  = rtrim( $tab_line, $csv_delimiter );
                                 $tab_line .= PHP_EOL;
                                 fwrite( $fp, $tab_line );
                             }
                         } else {
-                            foreach ( $pieces as $t_key => $t_value ) {
-                                $tab_line .= $t_value . "$csv_delimiter";
-                            }
-                            $tab_line  = rtrim( $tab_line, $csv_delimiter );
-                            $tab_line .= PHP_EOL;
-                            fwrite( $fp, $tab_line );
+                            $pieces = array_map( 'trim', $pieces );
+                            fputcsv( $fp, $pieces, $csv_delimiter );
                         }
-                    } else {
-                        $pieces = array_map( 'trim', $pieces );
-                        fputcsv( $fp, $pieces, $csv_delimiter );
                     }
                 }
             }
@@ -2420,8 +2415,7 @@ class WooSEA_Get_Products {
                 }
 
                 // Somehow it requires an array, we will do this for now until we refactor the file writing process.
-                $products[] = array( $attr );
-                $file       = $this->woosea_create_csvtxt_feed( $products, $feed, 'true' );
+                $file = $this->woosea_create_csvtxt_feed( array( array( $attr ) ), $feed, 'true' );
             }
         } else {
             $products[] = array();
@@ -2480,7 +2474,8 @@ class WooSEA_Get_Products {
             'cache_results'          => false,
             'update_post_term_cache' => false,
             'update_post_meta_cache' => false,
-            'suppress_filters'       => true,
+            'suppress_filters'       => false,
+            'custom_query'           => 'adt_published_products_and_variations', // Custom flag to trigger the filter
         );
 
         /**
@@ -2835,7 +2830,8 @@ class WooSEA_Get_Products {
                 $product_data['link_no_tracking'] = $vlink_piece[0];
             }
 
-            $product_data['condition']     = ucfirst( get_post_meta( $product_data['id'], '_woosea_condition', true ) );
+            $product_data['condition']     = get_post_meta( $product_data['id'], '_woosea_condition', true );
+            $product_data['condition']     = is_string( $product_data['condition'] ) ? ucfirst( $product_data['condition'] ) : $product_data['condition'];
             $product_data['purchase_note'] = get_post_meta( $product_data['id'], '_purchase_note' );
 
             if ( empty( $product_data['condition'] ) || $product_data['condition'] == 'Array' ) {
@@ -2857,35 +2853,41 @@ class WooSEA_Get_Products {
             }
             $product_data['stock_status'] = $stock_status;
 
-            if ( $stock_status == 'outofstock' ) {
+            if ( 'outofstock' === $stock_status ) {
                 $product_data['availability'] = 'out of stock';
-                if ( ( $feed_channel['taxonomy'] == 'google_shopping' ) && ( $feed_channel['fields'] == 'google_shopping' ) ) {
+                if ( ( 'google_shopping' === $feed_channel['taxonomy'] ) && ( 'google_shopping' ===  $feed_channel['fields'] ) ) {
                     $product_data['availability'] = 'out_of_stock';
-                    if ( $feed_channel['name'] == 'Twitter' ) {
+                    if ( 'Twitter' === $feed_channel['name'] ) {
                         $product_data['availability'] = 'out of stock';
                     }
+                } elseif ( ( 'google_shopping' === $feed_channel['taxonomy'] ) && ( 'google_local' === $feed_channel['fields'] ) ) {
+                    $product_data['availability'] = 'out_of_stock';
                 }
                 if ( preg_match( '/fruugo/i', $feed_channel['fields'] ) ) {
                     $product_data['availability'] = 'OUTOFSTOCK';
                 }
             } elseif ( $stock_status == 'onbackorder' ) {
                 $product_data['availability'] = 'on backorder';
-                if ( ( $feed_channel['taxonomy'] == 'google_shopping' ) && ( $feed_channel['fields'] == 'google_shopping' ) ) {
+                if ( ( 'google_shopping' === $feed_channel['taxonomy'] ) && ( 'google_shopping' ===  $feed_channel['fields'] ) ) {
                     $product_data['availability'] = 'backorder';
-                    if ( $feed_channel['name'] == 'Twitter' ) {
+                    if ( 'Twitter' === $feed_channel['name'] ) {
                         $product_data['availability'] = 'available for order';
                     }
+                } elseif ( ( 'google_shopping' === $feed_channel['taxonomy'] ) && ( 'google_local' === $feed_channel['fields'] ) ) {
+                    $product_data['availability'] = 'on_display_to_order';
                 }
                 if ( preg_match( '/fruugo/i', $feed_channel['fields'] ) ) {
                     $product_data['availability'] = 'OUTOFSTOCK';
                 }
             } else {
                 $product_data['availability'] = 'in stock';
-                if ( ( $feed_channel['taxonomy'] == 'google_shopping' ) && ( $feed_channel['fields'] == 'google_shopping' ) ) {
+                if ( ( 'google_shopping' === $feed_channel['taxonomy'] ) && ( 'google_shopping' ===  $feed_channel['fields'] ) ) {
                     $product_data['availability'] = 'in_stock';
-                    if ( $feed_channel['name'] == 'Twitter' ) {
+                    if ( 'Twitter' === $feed_channel['name'] ) {
                         $product_data['availability'] = 'in stock';
                     }
+                } elseif ( ( 'google_shopping' === $feed_channel['taxonomy'] ) && ( 'google_local' === $feed_channel['fields'] ) ) {
+                    $product_data['availability'] = 'in_stock';
                 }
                 if ( preg_match( '/fruugo/i', $feed_channel['fields'] ) ) {
                     $product_data['availability'] = 'INSTOCK';
@@ -2893,19 +2895,28 @@ class WooSEA_Get_Products {
             }
 
             // Create future availability dates
-            if ( $stock_status == 'onbackorder' ) {
-                $product_data['availability_date_plus1week'] = date( 'Y-m-d', strtotime( '+1 week' ) );
-                $product_data['availability_date_plus2week'] = date( 'Y-m-d', strtotime( '+2 week' ) );
-                $product_data['availability_date_plus3week'] = date( 'Y-m-d', strtotime( '+3 week' ) );
-                $product_data['availability_date_plus4week'] = date( 'Y-m-d', strtotime( '+4 week' ) );
-                $product_data['availability_date_plus5week'] = date( 'Y-m-d', strtotime( '+5 week' ) );
-                $product_data['availability_date_plus6week'] = date( 'Y-m-d', strtotime( '+6 week' ) );
-                $product_data['availability_date_plus7week'] = date( 'Y-m-d', strtotime( '+7 week' ) );
-                $product_data['availability_date_plus8week'] = date( 'Y-m-d', strtotime( '+8 week' ) );
+            if ( $product->is_on_backorder() ) {
+                $now = new WC_DateTime( 'now', new DateTimeZone( 'UTC' ) );
+                // Set local timezone or offset.
+                if ( get_option( 'timezone_string' ) ) {
+                    $now->setTimezone( new DateTimeZone( wc_timezone_string() ) );
+                } else {
+                    $now->set_utc_offset( wc_timezone_offset() );
+                }
+
+                $now->setTime(0, 0);
+
+                $plus_week_to = 8;
+                $date         = new WC_DateTime( $now );
+                for ($i = 1; $i <= $plus_week_to; $i++) {
+                    $date_plus_week = clone $date;
+                    $date_plus_week->modify("+$i week");
+                    $product_data["availability_date_plus{$i}week"] = $date_plus_week->__toString();
+                }
             }
 
             $product_data['author']   = get_the_author();
-            $product_data['quantity'] = $this->clean_quantity( $product_id, '_stock' );
+            $product_data['quantity'] = $product->get_stock_quantity();
             if ( is_object( $product ) ) {
                 $product_data['visibility'] = $product->get_catalog_visibility();
             }
@@ -3163,7 +3174,7 @@ class WooSEA_Get_Products {
                             }
 
                             // Unset sale price when it is 0.00
-                            if ( $product_data['sale_price'] == '0.00' ) {
+                            if ( isset( $product_data['sale_price'] ) && $product_data['sale_price'] == '0.00' ) {
                                 unset( $product_data['sale_price'] );
                             }
                         }
@@ -3183,7 +3194,7 @@ class WooSEA_Get_Products {
                             }
 
                             // Unset sale price when it is 0.00
-                            if ( $product_data['sale_price'] == '0.00' ) {
+                            if ( isset( $product_data['sale_price'] ) && $product_data['sale_price'] == '0.00' ) {
                                 unset( $product_data['sale_price'] );
                             }
                         }
@@ -3232,7 +3243,7 @@ class WooSEA_Get_Products {
 
             // Is the Discount Rules for WooCommerce by FlyCart plugin active, check for sale prices
             if ( Helper::is_plugin_active( 'woo-discount-rules/woo-discount-rules.php' ) ) {
-                $discount = apply_filters( 'advanced_woo_discount_rules_get_product_discount_price_from_custom_price', false, $product, 1, $product_data['sale_price'], 'discounted_price', true, true );
+                $discount = apply_filters( 'advanced_woo_discount_rules_get_product_discount_price_from_custom_price', false, $product, 1, $product_data['sale_price'] ?? 0, 'discounted_price', true, true );
                 if ( $discount !== false ) {
                     // round discounted price on proper decimals
                     $decimals = wc_get_price_decimals();
@@ -3270,7 +3281,7 @@ class WooSEA_Get_Products {
                         $replaceWith                   = '';
                         $product_data['price']         = preg_replace( '/,/', $replaceWith, $product_data['price'], 1 );
                         $product_data['regular_price'] = preg_replace( '/,/', $replaceWith, $product_data['regular_price'], 1 );
-                        if ( $product_data['sale_price'] > 0 ) {
+                        if ( isset( $product_data['sale_price'] ) && $product_data['sale_price'] > 0 ) {
                             $product_data['sale_price'] = preg_replace( '/,/', $replaceWith, $product_data['sale_price'], 1 );
                         }
                     }
@@ -3466,7 +3477,7 @@ class WooSEA_Get_Products {
                 if ( $thousand_separator != ',' ) {
                     $product_data['price']         = floatval( str_replace( ',', '.', str_replace( '.', '', $product_data['price'] ) ) );
                     $product_data['regular_price'] = floatval( str_replace( ',', '.', str_replace( '.', '', $product_data['regular_price'] ) ) );
-                    if ( $product_data['sale_price'] > 0 ) {
+                    if ( isset( $product_data['sale_price'] ) && $product_data['sale_price'] > 0 ) {
                         $product_data['sale_price'] = floatval( str_replace( ',', '.', str_replace( '.', '', $product_data['sale_price'] ) ) );
                     }
                     if ( isset( $product_data['regular_price_forced'] ) ) {
@@ -3493,7 +3504,7 @@ class WooSEA_Get_Products {
             // Vivino prices
             $product_data['vivino_price']         = floatval( str_replace( ',', '.', str_replace( ',', '.', $product_data['price'] ) ) );
             $product_data['vivino_regular_price'] = floatval( str_replace( ',', '.', str_replace( ',', '.', $product_data['regular_price'] ) ) );
-            if ( $product_data['sale_price'] > 0 ) {
+            if ( isset( $product_data['sale_price'] ) && $product_data['sale_price'] > 0 ) {
                 $product_data['vivino_sale_price'] = floatval( str_replace( ',', '.', str_replace( ',', '.', $product_data['sale_price'] ) ) );
                 if ( isset( $product_data['net_sale_price'] ) ) {
                     $product_data['vivino_net_sale_price'] = floatval( str_replace( ',', '.', str_replace( ',', '.', $product_data['net_sale_price'] ) ) );
@@ -4951,7 +4962,6 @@ class WooSEA_Get_Products {
          * Write row to CSV/TXT or XML file
          */
         if ( $file_format != 'xml' && is_array( $products ) && ! empty( $products ) ) {
-            unset( $products[0] );
             $file = $this->woosea_create_csvtxt_feed( array_filter( $products ), $feed, 'false' );
         } else {
             if ( is_array( $xml_piece ) ) {
@@ -5048,19 +5058,6 @@ class WooSEA_Get_Products {
             }
         }
         return $alternative_key;
-    }
-
-    /**
-     * Make product quantity readable
-     */
-    public function clean_quantity( $id, $name ) {
-        $quantity = $this->get_attribute_value( $id, $name );
-        if ( $quantity ) {
-            if ( is_numeric( $quantity ) ) {
-                return $quantity + 0;
-            }
-        }
-        return '0';
     }
 
     /**

@@ -1,3 +1,20 @@
+= 13.3.9 (2024-11-11) =
+* Bug Fix: A few variations/products are missing in all feed formats except for XML
+* Bug Fix: Availability Date format is not ISO 8601 compliant
+* Bug Fix: Condition attribute creates a fatal error while generating a feed
+* Bug Fix: Draft variable product's variation is shown in the feed
+* Bug Fix: Feed migration does not take account of subsites
+* Bug Fix: Google Product Review: Reviewer name is empty when the user doesn't have first name and last name
+* Bug Fix: Include Availability attribute as required for the Local Products Inventory feed and adjust its status format
+* Bug Fix: Shortcodes are not stripped out for parent product short & long description
+* Bug Fix: Skroutz product title sanitization is using encoded value
+* Bug Fix: Special characters are encoded in the Meta/Facebook feed
+* Bug Fix: Stock Quantity: If the stock quantity only set on parent level, copy it to the variation level as well
+* Bug Fix: Undefined array key “sale_price” warning in logs
+* Bug Fix: White space is missing before/after the currency for the price attribute
+* Improvement: Add button to dismiss ACFW upsel in the marketing page
+* Improvement: Refactor WP Cron jobs to Action Scheduler
+
 = 13.3.8.1 (2024-10-10) =
 * Bug Fix: Rounded price attributes is causing fatal error
 

@@ -683,6 +683,10 @@ jQuery(function ($) {
     if (action == 'refresh') {
       var popup_dialog = confirm('Are you sure you want to refresh the product feed?');
       if (popup_dialog == true) {
+        $row.addClass('processing');
+        $feedStatus.addClass('woo-product-feed-pro-blink_me');
+        $feedStatus.text('processing (0%)');
+
         jQuery
           .ajax({
             method: 'POST',
@@ -694,10 +698,6 @@ jQuery(function ($) {
             },
           })
           .done(function () {
-            $row.addClass('processing');
-            $feedStatus.addClass('woo-product-feed-pro-blink_me');
-            $feedStatus.text('processing (0%)');
-
             if (!isRefreshRunning) {
               woosea_check_processing_feeds();
             }
@@ -706,8 +706,7 @@ jQuery(function ($) {
             $row.removeClass('processing');
             $feedStatus.removeClass('woo-product-feed-pro-blink_me');
             $feedStatus.text('ready');
-          })
-          .always(function () {});
+          });
       }
     }
   });
@@ -780,6 +779,47 @@ jQuery(function ($) {
           $button.prop('disabled', false);
         });
     }
+  });
+
+  $('#adt_pfp_anonymous_data').on('change', function () {
+    var nonce = $('#_wpnonce').val();
+    var value = $(this).is(':checked');
+
+    jQuery.ajax({
+      method: 'POST',
+      url: ajaxurl,
+      data: {
+        action: 'adt_pfp_anonymous_data',
+        security: nonce,
+        value: value,
+      },
+    });
+  });
+
+  $('.adt-pfp-allow-tracking-notice-action-button').on('click', function (event) {
+    event.preventDefault();
+
+    var $notice = $(this).closest('.pfp-allow-tracking-notice');
+    var nonce = $notice.find('#adt_pfp_allow_tracking_nonce').val();
+    var value = $(this).data('value');
+
+    jQuery
+      .ajax({
+        method: 'POST',
+        url: ajaxurl,
+        data: {
+          action: 'adt_pfp_allow_tracking_notice_action',
+          security: nonce,
+          value: value,
+        },
+      })
+      .always(function () {
+        $notice.fadeTo(100, 0, function () {
+          $notice.slideUp(100, function () {
+            $notice.remove();
+          });
+        });
+      });
   });
 
   /**

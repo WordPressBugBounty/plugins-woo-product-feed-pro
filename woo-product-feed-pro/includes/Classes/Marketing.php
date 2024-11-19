@@ -54,8 +54,11 @@ class Marketing extends Abstract_Class {
      * @access public
      */
     public function register_marketing_submenu() {
-        foreach ( $this->marketing_submenus as $submenu ) {
-            if ( Helper::is_plugin_active( $submenu['basename'] ) || Helper::is_submenu_registered( 'woocommerce-marketing', $submenu['slug'] ) ) {
+        foreach ( $this->marketing_submenus as $plugin_key => $submenu ) {
+            if (
+                get_option( 'pfp_' . $plugin_key . '_marketing_page_closed', 'no' ) === 'yes'
+                || ( Helper::is_plugin_active( $submenu['basename'] ) || Helper::is_submenu_registered( 'woocommerce-marketing', $submenu['slug'] ) )
+            ) {
                 continue;
             }
 
@@ -101,6 +104,8 @@ class Marketing extends Abstract_Class {
         foreach ( $this->marketing_submenus as $submenu ) {
             if ( strpos( $screen->id, $submenu['slug'] ) !== false ) {
                 wp_enqueue_style( 'pfp-admin-marketing', WOOCOMMERCESEA_PLUGIN_URL . '/css/pfp-admin-marketing.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
+                wp_enqueue_script( 'pfp-admin-marketing', WOOCOMMERCESEA_PLUGIN_URL . '/js/pfp-admin-marketing.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
+                wp_localize_script( 'pfp-admin-marketing', 'pfp_admin_marketing', array( 'nonce' => wp_create_nonce( 'pfp-admin-marketing' ) ) );
 
                 // Load Poppins font from Google Fonts.
                 wp_enqueue_style( 'pfp-admin-marketing--font-poppins', 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
@@ -183,6 +188,31 @@ class Marketing extends Abstract_Class {
         return $step;
     }
 
+    /***************************************************************************
+     * AJAX
+     * **************************************************************************
+     */
+
+    /**
+     * Close the marketing page.
+     *
+     * @since 13.3.9
+     * @access public
+     */
+    public function close_marketing_page() {
+        check_ajax_referer( 'pfp-admin-marketing', 'nonce' );
+
+        $plugin_key = sanitize_text_field( $_POST['plugin_key'] );
+
+        update_option( 'pfp_' . $plugin_key . '_marketing_page_closed', 'yes', false );
+
+        wp_send_json_success(
+            array(
+                'redirect_to' => admin_url( 'admin.php?page=woosea_manage_feed' ),
+            )
+        );
+    }
+
     /**
      * Run the class
      *
@@ -206,5 +236,8 @@ class Marketing extends Abstract_Class {
 
         // Enqueue admin styles and scripts.
         add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+
+        // Close marketing page.
+        add_action( 'wp_ajax_pfp_close_marketing_page', array( $this, 'close_marketing_page' ) );
     }
 }

@@ -7,11 +7,9 @@ $total_projects = Product_Feed_Helper::get_total_product_feed();
 /**
  * Change default footer text, asking to review our plugin.
  *
- * @param string $default Default footer text.
- *
  * @return string Footer text asking to review our plugin.
  **/
-function my_footer_text( $default ) {
+function my_footer_text() {
     $rating_link = sprintf(
         /* translators: %s: WooCommerce Product Feed PRO plugin rating link */
         esc_html__( 'If you like our %1$s plugin please leave us a %2$s rating. Thanks in advance!', 'woo-product-feed-pro' ),
@@ -22,16 +20,7 @@ function my_footer_text( $default ) {
 }
 add_filter( 'admin_footer_text', 'my_footer_text' );
 
-/**
- * Create notification object and get message and message type as WooCommerce is inactive
- * also set variable allowed on 0 to disable submit button on step 1 of configuration
- */
-$notifications_obj = new WooSEA_Get_Admin_Notifications();
-if ( ! wp_next_scheduled( 'woosea_cron_hook' ) ) {
-    $notifications_box = $notifications_obj->get_admin_notifications( '12', 'false' );
-}
-
-// create nonce
+// Create nonce.
 $nonce = wp_create_nonce( 'woosea_ajax_nonce' );
 
 ?>
@@ -58,11 +47,10 @@ $nonce = wp_create_nonce( 'woosea_ajax_nonce' );
                 $first_activation         = get_option( 'woosea_first_activation' );
                 $notification_interaction = get_option( 'woosea_review_interaction' );
                 $current_time             = time();
-                $show_after               = 604800; // Show only after one week
+                $show_after               = 604800; // Show only after one week.
                 $is_active                = $current_time - $first_activation;
-                $page                     = sanitize_text_field( basename( $_SERVER['REQUEST_URI'] ) );
 
-                if ( ( $total_projects > 0 ) && ( $is_active > $show_after ) && ( $notification_interaction != 'yes' ) ) {
+                if ( ( $total_projects > 0 ) && ( $is_active > $show_after ) && ( 'yes' !== $notification_interaction ) ) {
                     echo '<div class="notice notice-info review-notification">';
                     echo '<table><tr><td></td><td><font color="green" style="font-weight:normal";><p>Hey, I noticed you have been using our plugin, <u>Product Feed PRO for WooCommerce by AdTribes.io</u>, for over a week now and have created product feed projects with it - that\'s awesome! Could you please do our support volunteers and me a BIG favor and give it a <strong>5-star rating</strong> on WordPress? Just to help us spread the word and boost our motivation. We would greatly appreciate if you would do so :)<br/>~ Adtribes.io support team<br><ul><li><span class="ui-icon ui-icon-caret-1-e" style="display: inline-block;"></span><a href="https://wordpress.org/support/plugin/woo-product-feed-pro/reviews?rate=5#new-post" target="_blank" class="dismiss-review-notification">Ok, you deserve it</a></li><li><span class="ui-icon ui-icon-caret-1-e" style="display: inline-block;"></span><a href="#" class="dismiss-review-notification">Nope, maybe later</a></li><li><span class="ui-icon ui-icon-caret-1-e" style="display: inline-block;"></span><a href="#" class="dismiss-review-notification">I already did</a></li></ul></p></font></td></tr></table>';
                     echo '</div>';

@@ -418,6 +418,7 @@ class Product_Feed {
     public function delete() {
         $this->remove_file();
         $this->delete_legacy_options();
+        $this->unregister_action();
 
         wp_delete_post( $this->id, true );
     }
@@ -608,19 +609,75 @@ class Product_Feed {
      * Execute product feed batch event.
      *
      * @since 13.3.5.4
+     * @since 13.3.9    Swap cron with Action Scheduler.
      * @access public
+     *
+     * @param bool $no_queue Whether to run the batch event without queue.
      */
-    public function run_batch_event() {
+    public function run_batch_event( $no_queue = false ) {
         // Set the next scheduled event.
-        if ( ! wp_next_scheduled( 'woosea_create_batch_event', array( $this->id ) ) ) {
-            if ( wp_schedule_single_event( time(), 'woosea_create_batch_event', array( $this->id ) ) ) {
-                spawn_cron( time() );
-            } else {
-                // Something went wrong with scheduling the cron, try again in case it was an intermittent failure.
-                wp_schedule_single_event( time(), 'woosea_create_batch_event', array( $this->id ) );
-                spawn_cron( time() );
+        if ( ! as_has_scheduled_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH, array( 'feed_id' => $this->id ) ) ) {
+            $action_id = as_schedule_single_action( time() + 1, ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH, array( 'feed_id' => $this->id ) );
+
+            if ( $no_queue ) {
+                if ( ! empty( $action_id ) && class_exists( '\ActionScheduler_QueueRunner' ) ) {
+                    $as_runner = \ActionScheduler_QueueRunner::instance();
+                    $as_runner->process_action( $action_id, __( 'Product Feed Pro: Batch processing', 'woo-product-feed-pro' ) );
+                }
             }
         }
+    }
+
+    /**
+     * Register the product feed action.
+     *
+     * @since 13.3.9
+     * @access public
+     */
+    public function register_action() {
+        // Unschedule the Action Scheduler event if it exists.
+        $this->unregister_action();
+
+        $interval            = $this->refresh_interval ?? 'daily';
+        $interval_in_seconds = 0;
+        $timestamp           = 0;
+        switch ( $interval ) {
+            case 'twicedaily':
+                // Time is set to the next 12 hours, get the current hour and decide if it is the first or second 12 hours.
+                $timestamp           = strtotime( ( gmdate( 'H' ) < 12 ? 'today 12:00:00' : 'tomorrow 00:00:00' ) );
+                $interval_in_seconds = DAY_IN_SECONDS / 2;
+                break;
+            case 'hourly':
+                // Time is set to the next hour.
+                $timestamp           = strtotime( '+1 hour' );
+                $timestamp           = strtotime( gmdate( 'Y-m-d H:00:00', $timestamp ) );
+                $interval_in_seconds = HOUR_IN_SECONDS;
+                break;
+            case 'daily':
+            default:
+                // Time is set to the next day.
+                $timestamp           = strtotime( 'tomorrow 00:00:00' );
+                $interval_in_seconds = DAY_IN_SECONDS;
+                break;
+        }
+
+        // Schedule the Action Scheduler event.
+        as_schedule_recurring_action(
+            $timestamp,
+            $interval_in_seconds,
+            ADT_PFP_AS_GENERATE_PRODUCT_FEED,
+            array( 'feed_id' => $this->id )
+        );
+    }
+
+    /**
+     * Unregister the product feed action.
+     *
+     * @since 13.3.9
+     * @access public
+     */
+    public function unregister_action() {
+        as_unschedule_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED, array( 'feed_id' => $this->id ) );
     }
 
     /***************************************************************************

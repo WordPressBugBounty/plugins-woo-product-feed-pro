@@ -7,11 +7,9 @@ use AdTribes\PFP\Helpers\Helper;
 /**
  * Change default footer text, asking to review our plugin.
  *
- * @param string $default Default footer text.
- *
  * @return string Footer text asking to review our plugin.
  **/
-function my_footer_text( $default ) {
+function my_footer_text() {
     $rating_link = sprintf(
         /* translators: %s: WooCommerce Product Feed PRO plugin rating link */
         esc_html__( 'If you like our %1$s plugin please leave us a %2$s rating. Thanks in advance!', 'woo-product-feed-pro' ),
@@ -38,8 +36,8 @@ $nonce = wp_create_nonce( 'woosea_ajax_nonce' );
 /**
  * Update project configuration
  */
-if ( array_key_exists( 'project_hash', $_GET ) ) {
-    $feed = Product_Feed_Helper::get_product_feed( sanitize_text_field( $_GET['project_hash'] ) );
+if ( array_key_exists( 'project_hash', $_GET ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+    $feed = Product_Feed_Helper::get_product_feed( sanitize_text_field( $_GET['project_hash'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
     if ( $feed->id ) {
         $feed_mappings = $feed->mappings;
         $channel_data  = $feed->channel;
@@ -50,46 +48,36 @@ if ( array_key_exists( 'project_hash', $_GET ) ) {
         $count_mappings = count( $feed_mappings );
         $manage_project = 'yes';
     }
-} else {
-    // Sanitize values in multi-dimensional POST array
-    if ( is_array( $_POST ) ) {
-        foreach ( $_POST as $p_key => $p_value ) {
-            if ( is_array( $p_value ) ) {
-                foreach ( $p_value as $pp_key => $pp_value ) {
-                    if ( is_array( $pp_value ) ) {
-                        foreach ( $pp_value as $ppp_key => $ppp_value ) {
-                            $_POST[ $p_key ][ $pp_key ][ $ppp_key ] = sanitize_text_field( $ppp_value );
-                        }
-                    }
-                }
-            } else {
-                $_POST[ $p_key ] = sanitize_text_field( $p_value );
-            }
-        }
-    } else {
-        $_POST = array();
-    }
-    $feed         = Product_Feed_Admin::update_temp_product_feed( $_POST );
-    $channel_data = Product_Feed_Helper::get_channel_from_legacy_channel_hash( sanitize_text_field( $_POST['channel_hash'] ) );
+} elseif ( wp_verify_nonce( $_POST['_wpnonce'], 'woosea_ajax_nonce' ) ) {
+        $feed         = Product_Feed_Admin::update_temp_product_feed( $_POST ?? array() );
+        $channel_data = Product_Feed_Helper::get_channel_from_legacy_channel_hash( sanitize_text_field( $_POST['channel_hash'] ) );
 
-    $channel_hash = $feed['channel_hash'];
-    $project_hash = $feed['project_hash'];
+        $channel_hash = $feed['channel_hash'];
+        $project_hash = $feed['project_hash'];
 
-    $feed_mappings  = array();
-    $count_mappings = 0;
-
+        $feed_mappings  = array();
+        $count_mappings = 0;
 }
 
+
+/**
+ * Recursively generates a hierarchical term tree for a given category.
+ *
+ * @param int   $category The ID of the category.
+ * @param array $prev_mapped An array of previously mapped categories.
+ * @return string The generated hierarchical term tree.
+ */
 function woosea_hierarchical_term_tree( $category, $prev_mapped ) {
     $r = '';
 
     $args = array(
+        'taxonomy'      => 'product_cat',
         'parent'        => $category,
         'hide_empty'    => false,
         'no_found_rows' => true,
     );
+    $next = get_terms( $args );
 
-    $next          = get_terms( 'product_cat', $args );
     $nr_categories = count( $next );
     $yo            = 0;
 
@@ -105,7 +93,7 @@ function woosea_hierarchical_term_tree( $category, $prev_mapped ) {
             $woo_category        = preg_replace( '/&amp;/', '&', $woo_category );
             $woo_category        = preg_replace( '/"/', '&quot;', $woo_category );
 
-            // Check if mapping is in place
+            // Check if mapping is in place.
             if ( ( array_key_exists( $x, $prev_mapped ) ) || ( array_key_exists( $woo_category, $prev_mapped ) ) ) {
                 if ( array_key_exists( $x, $prev_mapped ) ) {
                     $mapped_category = $prev_mapped[ $x ];
@@ -117,21 +105,22 @@ function woosea_hierarchical_term_tree( $category, $prev_mapped ) {
                 $mapped_active_class = 'input-field-large-active';
             }
 
-            // These are main categories
-            if ( $sub_category->parent == 0 ) {
+            // These are main categories.
+            if ( 0 === $sub_category->parent ) {
                 $args = array(
+                    'taxonomy'      => 'product_cat',
                     'parent'        => $sub_category->term_id,
                     'hide_empty'    => false,
                     'no_found_rows' => true,
                 );
 
-                $subcat     = get_terms( 'product_cat', $args );
+                $subcat     = get_terms( $args );
                 $nr_subcats = count( $subcat );
 
                 $r .= '<tr class="catmapping">';
                 $r .= "<td><input type=\"hidden\" name=\"mappings[$x][rowCount]\" value=\"$x\"><input type=\"hidden\" name=\"mappings[$x][categoryId]\" value=\"$woo_category_id\"><input type=\"hidden\" name=\"mappings[$x][criteria]\" class=\"input-field-large\" id=\"$woo_category_id\" value=\"$woo_category\">$woo_category ($sub_category->count)</td>";
                 $r .= "<td><div id=\"the-basics-$x\"><input type=\"text\" name=\"mappings[$x][map_to_category]\" class=\"$mapped_active_class js-typeahead js-autosuggest autocomplete_$x\" value=\"$mapped_category\"></div></td>";
-                if ( ( $yo == $nr_categories ) && ( $nr_subcats == 0 ) ) {
+                if ( ( $yo === $nr_categories ) && ( 0 === $nr_subcats ) ) {
                     $r .= "<td><span class=\"copy_category_$x\" style=\"display: inline-block;\" title=\"Copy this category to all others\"></span></td>";
                 } elseif ( $nr_subcats > 0 ) {
                     $r .= "<td><span class=\"dashicons dashicons-arrow-down copy_category_$x\" style=\"display: inline-block;\" title=\"Copy this category to subcategories\"></span><span class=\"dashicons dashicons-arrow-down-alt copy_category_$x\" style=\"display: inline-block;\" title=\"Copy this category to all others\"></span></td>";
@@ -146,7 +135,7 @@ function woosea_hierarchical_term_tree( $category, $prev_mapped ) {
                 $r .= "<td><span class=\"copy_category_$x\" style=\"display: inline-block;\" title=\"Copy this category to all others\"></span></td>";
                 $r .= '</tr>';
             }
-            $r .= $sub_category->term_id !== 0 ? woosea_hierarchical_term_tree( $sub_category->term_id, $prev_mapped ) : null;
+            $r .= 0 !== $sub_category->term_id ? woosea_hierarchical_term_tree( $sub_category->term_id, $prev_mapped ) : null;
         }
     }
 
@@ -207,27 +196,26 @@ do_action( 'adt_before_product_feed_manage_page', 1, $project_hash, $feed );
                     <thead>
                         <tr>
                             <th><?php esc_html_e( 'Your category', 'woo-product-feed-pro' ); ?> <i>(<?php esc_html_e( 'Number of products', 'woo-product-feed-pro' ); ?>)</i></th>
-                            <th><?php echo "$channel_data[name]"; ?> <?php esc_html_e( 'category', 'woo-product-feed-pro' ); ?></th>
+                            <th><?php echo esc_html( $channel_data['name'] ); ?> <?php esc_html_e( 'category', 'woo-product-feed-pro' ); ?></th>
                             <th></th>
                         </tr>
                     </thead>
 
                     <tbody class="woo-product-feed-pro-body">
                         <?php
-                        // Get already mapped categories
+                        // Get already mapped categories.
                         $prev_mapped = array();
                         if ( ! empty( $feed_mappings ) ) {
                             foreach ( $feed_mappings as $map_key => $map_value ) {
                                 if ( strlen( $map_value['map_to_category'] ) > 0 ) {
                                     $map_value['criteria']                   = str_replace( '\\', '', $map_value['criteria'] );
                                     $prev_mapped[ $map_value['categoryId'] ] = $map_value['map_to_category'];
-                                    // $prev_mapped[$map_value['criteria']] = $map_value['map_to_category'];
                                 }
                             }
                         }
 
-                        // Display mapping form
-                        echo woosea_hierarchical_term_tree( 0, $prev_mapped );
+                        // Display mapping form.
+                        echo woosea_hierarchical_term_tree( 0, $prev_mapped ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                         ?>
                     </tbody>
 

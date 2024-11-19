@@ -62,7 +62,7 @@ class Heartbeat extends Abstract_Class {
                 // If the feed is processing and the percentage is less than 100,
                 // and there is no cron job scheduled for woosae_update_project_stats, schedule it.
                 if ( 100 > $proc_perc ) {
-                    $feed->run_batch_event();
+                    $feed->run_batch_event( true );
                 } else {
                     // If the feed is processing and the percentage more than 100, set it to 100.
                     $proc_perc    = 100;

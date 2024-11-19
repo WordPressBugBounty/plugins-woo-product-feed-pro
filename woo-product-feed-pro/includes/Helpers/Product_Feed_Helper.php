@@ -241,7 +241,7 @@ class Product_Feed_Helper {
         $user          = wp_get_current_user();
         $allowed_roles = apply_filters( 'adt_manage_product_feed_allowed_roles', array( 'administrator' ) );
 
-        if ( array_intersect( $allowed_roles, $user->roles ) ) {
+        if ( array_intersect( $allowed_roles, $user->roles ) || is_super_admin() ) {
             return true;
         }
 

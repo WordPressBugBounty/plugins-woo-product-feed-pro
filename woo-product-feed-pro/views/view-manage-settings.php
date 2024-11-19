@@ -54,10 +54,6 @@ if ( $versions['WooCommerce'] < 3 ) {
     $notifications_box = $notifications_obj->get_admin_notifications( '13', 'false' );
 }
 
-if ( ! wp_next_scheduled( 'woosea_cron_hook' ) ) {
-    $notifications_box = $notifications_obj->get_admin_notifications( '12', 'false' );
-}
-
 /**
  * Change default footer text, asking to review our plugin.
  *
@@ -492,19 +488,11 @@ if ( isset( $_GET['tab'] ) ) {
                         }
 
                         // Check if the cron is enabled
-                        if ( ! wp_next_scheduled( 'woosea_cron_hook' ) ) {
-                            $cron_enabled = 'False';
-                        } else {
-                            $cron_enabled = 'True';
-                        }
-
-                        if ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) {
-                            $cron_enabled = '<strong>False</strong>';
-                        }
+                        $cron_enabled = ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) ? 'False' : 'True';
 
                         print '<table class="woo-product-feed-pro-table">';
                         print '<tr><td><strong>System check</strong></td><td><strong>Status</strong></td></tr>';
-                        echo "<tr><td>WP-Cron enabled</td><td>$cron_enabled</td></tr>";
+                        echo "<tr><td>WP-Cron enabled</td><td><strong>$cron_enabled</strong></td></tr>";
                         echo "<tr><td>PHP-version</td><td>$php_validation ($versions[PHP])</td></tr>";
                         echo "<tr><td>Product feed directory writable</td><td>$directory_perm</td></tr>";
                         echo "<tr><td>Product feed XML directory writable</td><td>$directory_perm_xml</td></tr>";

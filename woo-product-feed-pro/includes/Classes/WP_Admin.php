@@ -338,14 +338,16 @@ class WP_Admin extends Abstract_Class {
     public function add_other_settings() {
         $settings = array(
             array(
-                'label'     => __( 'Sync Product Feed to custom post type and legacy options (Backwards compatibility)', 'woo-product-feed-pro' ),
-                'btn_label' => __( 'Sync Product Feed', 'woo-product-feed-pro' ),
-                'btn_id'    => 'adt_migrate_to_custom_post_type',
+                'title' => __( 'Sync Product Feed', 'woo-product-feed-pro' ),
+                'type'  => 'button',
+                'desc'  => __( 'Sync Product Feed to custom post type and legacy options (Backwards compatibility)', 'woo-product-feed-pro' ),
+                'id'    => 'adt_migrate_to_custom_post_type',
             ),
             array(
-                'label'     => __( 'Clear custom attributes product meta keys cache', 'woo-product-feed-pro' ),
-                'btn_label' => __( 'Clear custom attributes cache', 'woo-product-feed-pro' ),
-                'btn_id'    => 'adt_clear_custom_attributes_product_meta_keys',
+                'title' => __( 'Clear custom attributes cache', 'woo-product-feed-pro' ),
+                'type'  => 'button',
+                'desc'  => __( 'Clear custom attributes product meta keys cache', 'woo-product-feed-pro' ),
+                'id'    => 'adt_clear_custom_attributes_product_meta_keys',
             ),
         );
 

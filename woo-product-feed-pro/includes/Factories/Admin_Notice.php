@@ -35,14 +35,14 @@ class Admin_Notice extends Abstract_Class {
     protected $type;
 
     /**
-     * Holds the type of message. Either 'string' or 'html'.
+     * Holds the format type of message. Either 'string' or 'html'.
      *
      * @since 13.3.3
      * @access protected
      *
-     * @var string The message type.
+     * @var string The message format.
      */
-    protected string $message_type;
+    protected string $message_format;
 
     /**
      * Holds the missing plugins.
@@ -62,13 +62,13 @@ class Admin_Notice extends Abstract_Class {
      *
      * @param string $message                  The admin notice message.
      * @param string $type                     The admin notice type.
-     * @param string $message_type             string The message type. Either 'string' or 'html'.
+     * @param string $message_format           The message format. Either 'string' or 'html'.
      * @param array  $failed_dependencies      The failed dependencies.
      */
-    public function __construct( $message, $type = 'error', $message_type = 'string', $failed_dependencies = array() ) {
+    public function __construct( $message, $type = 'error', $message_format = 'string', $failed_dependencies = array() ) {
         $this->message             = $message;
         $this->type                = $type;
-        $this->message_type        = $message_type;
+        $this->message_format      = $message_format;
         $this->failed_dependencies = $failed_dependencies;
     }
 
@@ -199,14 +199,18 @@ class Admin_Notice extends Abstract_Class {
      * @access public
      */
     public function add_notice() {
-        $message_id   = 'woo-sea-' . md5( $this->message );
-        $message_type = $this->message_type;
-        $message      = $this->message;
+        $message_id     = 'woo-sea-' . md5( $this->message );
+        $message_format = $this->message_format;
+        $message        = $this->message;
+        $type           = $this->type;
 
-        switch ( $this->type ) {
+        switch ( $type ) {
             case 'failed_dependency':
                 $failed_dependencies = $this->_failed_dependencies();
                 include WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-failed-dependency-notice.php';
+                break;
+            case 'allow_tracking':
+                include WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-allow-tracking-notice.php';
                 break;
             default:
                 include WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-admin-notice.php';

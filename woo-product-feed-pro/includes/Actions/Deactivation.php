@@ -62,7 +62,10 @@ class Deactivation extends Abstract_Class {
      * @access public
      */
     protected function cleanup_cron() {
-        wp_clear_scheduled_hook( 'woosea_cron_hook' );
+        // Clear Action Scheduler hooks.
+        if ( function_exists( 'as_unschedule_all_actions' ) ) {
+            as_unschedule_all_actions( ADT_PFP_AS_GENERATE_PRODUCT_FEED );
+        }
     }
 
     /**

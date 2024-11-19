@@ -66,26 +66,7 @@ if ( array_key_exists( 'project_hash', $_GET ) ) {
         }
     }
 } else {
-    // Sanitize values in multi-dimensional POST array
-    if ( is_array( $_POST ) ) {
-        foreach ( $_POST as $p_key => $p_value ) {
-            if ( is_array( $p_value ) ) {
-                foreach ( $p_value as $pp_key => $pp_value ) {
-                    if ( is_array( $pp_value ) ) {
-                        foreach ( $pp_value as $ppp_key => $ppp_value ) {
-                            $_POST[ $p_key ][ $pp_key ][ $ppp_key ] = sanitize_text_field( $ppp_value );
-                        }
-                    }
-                }
-            } else {
-                $_POST[ $p_key ] = sanitize_text_field( $p_value );
-            }
-        }
-    } else {
-        $_POST = array();
-    }
-
-    $feed         = Product_Feed_Admin::update_temp_product_feed( $_POST );
+    $feed         = Product_Feed_Admin::update_temp_product_feed( $_POST ?? array() );
     $channel_data = Product_Feed_Helper::get_channel_from_legacy_channel_hash( sanitize_text_field( $_POST['channel_hash'] ) );
 
     $channel_hash = $feed['channel_hash'];

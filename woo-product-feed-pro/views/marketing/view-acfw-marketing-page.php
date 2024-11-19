@@ -5,6 +5,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <div id="pfp-acfw-marketing-page" class="pfp-page pfp-marketing-page wrap nosubsub">
+    <!-- Close Button -->
+    <a href="#" class="pfp-marketing-page-close" data-plugin_key="acfw">
+        <span class="dashicons dashicons-no-alt"></span>
+    </a>
     <div class="container">
         <div class="row">
             <div class="col text-center section-hero">

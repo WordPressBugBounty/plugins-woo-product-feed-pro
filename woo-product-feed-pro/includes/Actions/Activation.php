@@ -9,6 +9,8 @@ namespace AdTribes\PFP\Actions;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
 use AdTribes\PFP\Helpers\Helper;
+use AdTribes\PFP\Factories\Product_Feed_Query;
+use AdTribes\PFP\Factories\Product_Feed;
 
 // Updates.
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
@@ -76,16 +78,12 @@ class Activation extends Abstract_Class {
         // Update current installed plugin version.
         update_site_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION, Helper::get_plugin_version() );
 
-        // Unschedule the cron job if it exists to ensure there will be only one of this hook scheduled hourly.
+        // Unschedule the legacy cron job if it exists.
         if ( wp_next_scheduled( 'woosea_cron_hook' ) ) {
             wp_clear_scheduled_hook( 'woosea_cron_hook' );
         }
 
-        /**
-         * Function for setting a cron job for regular creation of the feed
-         * Will create a new event when an old one exists, which will be deleted first
-         */
-        wp_schedule_event( time(), 'hourly', 'woosea_cron_hook' );
+        $this->_register_product_feed_actions();
 
         /**
          * Register date of first activation of plugin
@@ -114,6 +112,33 @@ class Activation extends Abstract_Class {
         }
 
         update_option( 'adt_pfp_activation_code_triggered', 'yes' );
+    }
+
+    /**
+     * Register product feed action scheduler on activation.
+     *
+     * @since 13.3.9
+     * @access private
+     */
+    private function _register_product_feed_actions() {
+        $product_feeds_query = new Product_Feed_Query(
+            array(
+                'post_status'    => array( 'publish' ),
+                'posts_per_page' => -1,
+            ),
+            'edit'
+        );
+
+        if ( $product_feeds_query->have_posts() ) {
+            foreach ( $product_feeds_query->get_posts() as $product_feed ) {
+
+                if ( ! $product_feed instanceof Product_Feed ) {
+                    continue;
+                }
+
+                $product_feed->register_action();
+            }
+        }
     }
 
     /**

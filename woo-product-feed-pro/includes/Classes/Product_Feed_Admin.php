@@ -112,13 +112,16 @@ class Product_Feed_Admin extends Abstract_Class {
          */
         do_action( 'adt_create_product_feed_before_save', $product_feed, $project_data );
 
+        // Register the product feed action scheduler.
+        $product_feed->register_action();
+
         $product_feed->save();
 
         /**
          * Run the product feed batch processing.
          * This is the legacy code base processing logic.
          */
-        $product_feed->run_batch_event();
+        $product_feed->run_batch_event( true );
     }
 
     /**
@@ -142,6 +145,9 @@ class Product_Feed_Admin extends Abstract_Class {
 
         $product_feed = Product_Feed_Helper::get_product_feed( $post_data['project_hash'] );
         if ( $product_feed->id ) {
+            // Get the current refresh interval.
+            $refresh_interval_before = $product_feed->refresh_interval;
+
             $props_to_update = array();
             $step            = isset( $_GET['step'] ) ? sanitize_text_field( $_GET['step'] ) : 0;
             switch ( $step ) {
@@ -194,94 +200,15 @@ class Product_Feed_Admin extends Abstract_Class {
              */
             $props_to_update = apply_filters( 'adt_edit_product_feed_props', $props_to_update, $product_feed, $post_data, $step );
             $product_feed->set_props( $props_to_update );
+
+            // Re-register the product feed action scheduler if the refresh interval has changed.
+            if ( $refresh_interval_before !== $product_feed->refresh_interval ) {
+                $product_feed->register_action();
+            }
+
             $product_feed->save();
         }
     }
-
-    /**
-     * Update product feed.
-     *
-     * This method is used to update the product feed after generating the products from the legacy code base.
-     *
-     * @since 13.3.5
-     * @access public
-     *
-     * @param int $feed_id     Feed ID.
-     * @param int $batch_size  Offset step size.
-     */
-    public function update_product_feed( $feed_id, $batch_size ) {
-        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( ! Product_Feed_Helper::is_a_product_feed( $feed ) && ! $feed->id ) {
-            return false;
-        }
-
-        // User would like to see a preview of their feed, retrieve only 5 products by default.
-        $preview_count = $feed->create_preview ? apply_filters( 'adt_product_feed_preview_products', 5, $feed ) : null;
-
-        // Get total of published products to process.
-        $published_products = $preview_count ? $preview_count : Product_Feed_Helper::get_total_published_products( $feed->include_product_variations );
-
-        /**
-         * Filter the total number of products to process.
-         *
-         * @since 13.3.5
-         *
-         * @param int $published_products Total number of published products to process.
-         * @param \AdTribes\PFP\Factories\Product_Feed $feed The product feed instance.
-         */
-        $published_products = apply_filters( 'adt_product_feed_total_published_products', $published_products, $feed );
-
-        // Update the feed with the total number of products.
-        $feed->products_count           = intval( $published_products );
-        $feed->total_products_processed = min( $feed->total_products_processed + $batch_size, $feed->products_count );
-
-        /**
-         * Batch processing.
-         *
-         * If the batch size is less than the total number of published products, then we need to create a batch.
-         * The batching logic is from the legacy code base as it's has the batch size.
-         * We need to refactor this logic so it's not stupid.
-         */
-        if ( $feed->total_products_processed >= $published_products || $batch_size >= $published_products ) { // End of processing.
-            $upload_dir = wp_upload_dir();
-            $base       = $upload_dir['basedir'];
-            $path       = $base . '/woo-product-feed-pro/' . $feed->file_format;
-            $tmp_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '_tmp.' . $feed->file_format;
-            $new_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '.' . $feed->file_format;
-
-            // Move the temporary file to the final file.
-            if ( copy( $tmp_file, $new_file ) ) {
-                wp_delete_file( $tmp_file );
-            }
-
-            // Set status to ready.
-            $feed->status = 'ready';
-
-            // Set counters back to 0.
-            $feed->total_products_processed = 0;
-
-            // Set last updated date and time.
-            $feed->last_updated = gmdate( 'd M Y H:i:s' );
-        }
-
-        // Save feed changes.
-        $feed->save();
-
-        if ( 'ready' === $feed->status ) {
-            // In 2 minutes from now check the amount of products in the feed and update the history count.
-            if ( wp_schedule_single_event( time(), 'woosea_update_project_stats', array( $feed->id ) ) ) {
-                spawn_cron( time() );
-            } else {
-                // Something went wrong with scheduling the cron, try again in case it was an intermittent failure.
-                wp_schedule_single_event( time(), 'woosea_update_project_stats', array( $feed->id ) );
-                spawn_cron( time() );
-            }
-        } else {
-            // Set the next scheduled event.
-            $feed->run_batch_event();
-        }
-    }
-
 
     /***************************************************************************
      * AJAX Actions
@@ -316,14 +243,17 @@ class Product_Feed_Admin extends Abstract_Class {
         // Remove file if set to draft.
         if ( 'true' !== $is_publish ) {
             $feed->remove_file();
+            $feed->unregister_action();
         } else {
             // Remove cache.
             Product_Feed_Helper::disable_cache();
 
+            $feed->register_action();
+
             /**
              * Run the product feed batch processing.
              */
-            $feed->run_batch_event();
+            $feed->run_batch_event( true );
         }
 
         $feed->post_status = 'true' === $is_publish ? 'publish' : 'draft';
@@ -410,6 +340,8 @@ class Product_Feed_Admin extends Abstract_Class {
          */
         do_action( 'adt_clone_product_feed_before_save', $feed, $original_feed );
 
+        $feed->register_action();
+
         $feed->save();
 
         $response = array(
@@ -452,7 +384,7 @@ class Product_Feed_Admin extends Abstract_Class {
         do_action( 'adt_before_cancel_product_feed', $feed );
 
         // Remove the scheduled event.
-        wp_clear_scheduled_hook( 'woosea_create_batch_event', array( $feed->id ) );
+        as_unschedule_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH, array( 'feed_id' => $this->id ) );
 
         $feed->total_products_processed = 0;
         $feed->status                   = 'stopped';
@@ -460,16 +392,9 @@ class Product_Feed_Admin extends Abstract_Class {
         $feed->save();
 
         /**
-         * Legacy code base.
-         * In 1 minute from now check the amount of products in the feed and update the history count.
+         * Check the amount of products in the feed and update the history count.
          */
-        if ( wp_schedule_single_event( time(), 'woosea_update_project_stats', array( $feed->id ) ) ) {
-            spawn_cron( time() );
-        } else {
-            // Something went wrong with scheduling the cron, try again in case it was an intermittent failure.
-            wp_schedule_single_event( time(), 'woosea_update_project_stats', array( $feed->id ) );
-            spawn_cron( time() );
-        }
+        as_schedule_single_action( time() + 1, 'adt_pfp_as_product_feed_update_stats', array( 'feed_id' => $feed->id ) );
 
         do_action( 'adt_after_cancel_product_feed', $feed );
 
@@ -502,13 +427,14 @@ class Product_Feed_Admin extends Abstract_Class {
         $feed->status                   = 'processing';
         $feed->total_products_processed = 0;
         $feed->save();
+
         // Remove cache.
         Product_Feed_Helper::disable_cache();
 
         /**
          * Run the product feed batch processing.
          */
-        $feed->run_batch_event();
+        $feed->run_batch_event( true );
 
         wp_send_json_success( __( 'Product feed has been refreshed.', 'woo-product-feed-pro' ) );
     }
@@ -629,6 +555,9 @@ class Product_Feed_Admin extends Abstract_Class {
      * @return array
      */
     public static function update_temp_product_feed( $form_data, $clear = false ) {
+        // Sanitize the form data.
+        $form_data = Helper::array_walk_recursive_with_callback( $form_data, array( Helper::class, 'custom_product_feeds_data_sanitize_text_field' ) );
+
         $project_temp     = get_option( ADT_OPTION_TEMP_PRODUCT_FEED, array() );
         $new_project_hash = empty( $form_data['project_hash'] ) ? Product_Feed_Helper::generate_legacy_project_hash() : '';
 
@@ -843,8 +772,6 @@ class Product_Feed_Admin extends Abstract_Class {
      * @since 13.3.3
      */
     public function run() {
-        add_action( 'adt_after_product_feed_generation', array( $this, 'update_product_feed' ), 10, 2 );
-
         // AJAX actions.
         add_action( 'wp_ajax_woosea_project_status', array( $this, 'ajax_update_product_feed_status' ) );
         add_action( 'wp_ajax_woosea_project_copy', array( $this, 'ajax_clone_product_feed' ) );

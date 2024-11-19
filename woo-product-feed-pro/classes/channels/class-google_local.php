@@ -34,11 +34,11 @@ class WooSEA_google_local { // phpcs:ignore
                     'feed_name' => 'g:store_code',
                     'format'    => 'required',
                 ),
-                'Quantity'                  => array(
-                    'name'        => 'Quantity',
-                    'feed_name'   => 'g:quantity',
+                'Availability'              => array(
+                    'name'        => 'Availability',
+                    'feed_name'   => 'g:availability',
                     'format'      => 'required',
-                    'woo_suggest' => 'quantity',
+                    'woo_suggest' => 'availability',
                 ),
                 'Price'                     => array(
                     'name'        => 'Price',
@@ -58,11 +58,11 @@ class WooSEA_google_local { // phpcs:ignore
                     'format'      => 'optional',
                     'woo_suggest' => 'sale_price_effective_date',
                 ),
-                'Availability'              => array(
-                    'name'        => 'Availability',
-                    'feed_name'   => 'g:availability',
-                    'format'      => 'optional',
-                    'woo_suggest' => 'availability',
+                'Quantity'                  => array(
+                    'name'        => 'Quantity',
+                    'feed_name'   => 'g:quantity',
+                    'format'      => 'required',
+                    'woo_suggest' => 'quantity',
                 ),
                 'Weeks of supply'           => array(
                     'name'      => 'Weeks of supply',

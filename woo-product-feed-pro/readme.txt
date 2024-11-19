@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.6
-Stable tag: 13.3.8.1
+Stable tag: 13.3.9
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -386,6 +386,23 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 
 === Changelog ===
 
+= 13.3.9 (2024-11-11) =
+* Bug Fix: A few variations/products are missing in all feed formats except for XML
+* Bug Fix: Availability Date format is not ISO 8601 compliant
+* Bug Fix: Condition attribute creates a fatal error while generating a feed
+* Bug Fix: Draft variable product's variation is shown in the feed
+* Bug Fix: Feed migration does not take account of subsites
+* Bug Fix: Google Product Review: Reviewer name is empty when the user doesn't have first name and last name
+* Bug Fix: Include Availability attribute as required for the Local Products Inventory feed and adjust its status format
+* Bug Fix: Shortcodes are not stripped out for parent product short & long description
+* Bug Fix: Skroutz product title sanitization is using encoded value
+* Bug Fix: Special characters are encoded in the Meta/Facebook feed
+* Bug Fix: Stock Quantity: If the stock quantity only set on parent level, copy it to the variation level as well
+* Bug Fix: Undefined array key “sale_price” warning in logs
+* Bug Fix: White space is missing before/after the currency for the price attribute
+* Improvement: Add button to dismiss ACFW upsel in the marketing page
+* Improvement: Refactor WP Cron jobs to Action Scheduler
+
 = 13.3.8.1 (2024-10-10) =
 * Bug Fix: Rounded price attributes is causing fatal error
 
@@ -570,331 +587,5 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 = 13.0.0 (2023-10-04) =
 * Added a feature to filter out reviews from a review feed below a certain rating
 * Solved soms PHP warnings that showed when on PHP 8.1 and creating a Google Review Feed
-
-= 12.9.9 (2023-10-03) =
-* Fixed an issue where for variable products no slashes were added between color values for Google Shopping feeds
-
-= 12.9.8 (2023-10-03) =
-* The checkout link template field is being added to the Google Shopping template as a mandatory field mapping
-* Fixed a PHP notice on the manage feeds page for PHP 8.1
-
-= 12.9.7 (2023-10-02) =
-* Fixed an issue with the saving of the Google Conversion ID
-
-= 12.9.6 (2023-10-01) =
-* Fixed an issue where the Yoast SEO identifiers where not added to feeds for product variations
-* Fixed a PHP notice on the manage feeds page for PHP 8.1
-* Added an is_array check
-
-= 12.9.5 (2023-09-14) =
-* Tested for compatibility with WooCommerce 8.1
-
-= 12.9.4 (2023-09-14) =
-* Added the checkout_link_template field to the Google Shopping template
-
-= 12.9.3 (2023-09-11) =
-* Fixed some PHP notices
-
-= 12.9.2 (2023-09-10) =
-* Reversed part of the ACF fix as it caused issues for other users
-
-= 12.9.1 (2023-09-06) =
-* Fixed an issue where ACF images for simple products where not returning a proper image URL in feeds
-
-= 12.9.0 (2023-09-05) =
-* Added 5 new fields to the Google Shopping template: Pause, External Seller ID, Lifestyle image link, Certification and 3D model link
-
-= 12.8.9 (2023-08-31) =
-* Clean-up code
-* Added support for more caching plugins so feed content doesn't get cached
-
-= 12.8.8 (2023-08-30) =
-* Fixing some issues in the feed preview feature
-
-= 12.8.7 (2023-08-30) =
-* Added the product feed preview feature
-
-= 12.8.6 (2023-08-30) =
-* Stripping whitespaces in additional image links
-
-= 12.8.5 (2023-08-29) =
-* When a product sits in multiple categories the category with the highest category ID is being used for the category path attributes
-
-= 12.8.4 (2023-08-24) =
-* Fixed an autoload issue that caused problems with Redis Object Caching (thanks Mrsmurf)
-
-= 12.8.3 (2023-08-21) =
-* Fixed a bug causing issues with the feed processing status (thanks Aaron!)
-
-= 12.8.2 (2023-08-17) =
-* Fixed the product creation data calculation
-
-= 12.8.1 (2023-08-10) =
-* Tested for compatibility with Wordpress 6.3
-
-= 12.8.0 (2023-08-09) =
-* Tested for compatibility with WooCommerce 8.0
-
-= 12.7.9 (2023-08-01) =
-* Tested for compatibility with WooCommerce 7.9
-
-= 12.7.8 (2023-06-29) =
-* Completed pre-mapping for all Pricerunner templates
-* Removed some obsolete error logging
-
-= 12.7.7 (2023-06-28) =
-* Added support for multiple Pricerunner country templates
-
-= 12.7.6 (2023-06-26) =
-* Added a new field to the Google Shopping template: g:auto_pricing_min_price
-
-= 12.7.5 (2023-06-22) =
-* Removed stand-alone attribute from Fruugo feeds
-
-= 12.7.4 (2023-06-20) =
-* WooCommerce changed sale date outputs from ints to strings, adapt code to it
-
-= 12.7.3 (2023-06-20) =
-* Fixed a Fruugo XML header issue
-* Fixed a Flycart issue for prices that had a point as decimal and a point as thousand seperator
-
-= 12.7.2 (2023-06-16) =
-* Fixed an issue with the sale price effective date which was empty. WooCommerce is returning them as strings in the new WC instead of integers
-
-= 12.7.1 (2023-06-15) =
-* A small group of users reported unexpected drops in products in feeds introduced in version 12.6.8. This should be fixed now.
-
-= 12.7.0 (2023-06-14) =
-* Checked for compatibility with WooCommerce 7.8
-* Solved a price rounding issue for the Flycart discount plugin
-
-= 12.6.9 (2023-06-13) =
-* Added extensive support for up to 10 product details for Google Shopping feeds
-
-= 12.6.8 (2023-06-12) =
-* Performance tweaks
-* Add consumer notice option for Google Shopping feeds
-* Fixed Fruugo XML templates so it meets Fruugo's changed feed requirements
-* Removed Fruugo CSV option
-* Fixed an issue for Google Shopping feeds, no empty product details are allowed in feeds
-
-= 12.6.7 (2023-05-26) =
-* Sales date's that were not a timestamp caused the plugin to get stuck on processing. This has been fixex now.
-
-= 12.6.6 (2023-05-25) =
-* Product feeds are no longer being cached when user uses popular caching plugin
-
-= 12.6.5 (2023-05-25) =
-* Availability dates are only added to products that are on backorder
-* Fixed the default field mapping for Google's g:product_type field
-
-= 12.6.4 (2023-05-17) =
-* Solved missing class issue
-
-= 12.6.3 (2023-05-17) =
-* Solved an issue where parent variable products showed in Google Shopping / Meta feeds again
-* Fixed an issue for Fruugo CSV feeds
-
-= 12.6.2 (2023-05-11) =
-* Removing BOM characters for Fruugo CSV feeds
-
-= 12.6.1 (2023-05-10) =
-* Fixed issues with Fruugo VAT fields and availability values
-
-= 12.6.0 (2023-05-10) =
-* Fixed an issue for Bestprice feeds where feeds were accidentally empty
-
-= 12.5.9 (2023-05-10) =
-* Checked for compatibility with WooCommerce 7.7
-
-= 12.5.8 (2023-05-09) =
-* Fixed an issue with shipping costs calculations when multiple countries were configured
-* Fixed an issue for Skroutz feeds where quantities where summed for non-apparel products
-
-= 12.5.7 (2023-05-04) =
-* Annoying review request notification kept showing up
-
-= 12.5.6 (2023-05-02) =
-* Fixed an issue with ACF fields for product variations
-
-= 12.5.5 (2023-04-28) =
-* Fixed an issue with the shipping table rate support, for some settings it was returning a false 0 shipping costs.
-
-= 12.5.4 (2023-04-25) =
-* Changed the Twitter template so it meets up to Twitters new availability value requirements
-
-= 12.5.3 (2023-04-21) =
-* Next to the unfiltered product description attribute the normal description and short description are now truncated to 5000 characters for Google Shopping feeds
-
-= 12.5.2 (2023-04-21) =
-* Added the possibility to create filters on reviews content
-
-= 12.5.1 (2023-04-20) =
-* Solved a critical error for users that did not configure any feed yet
-
-= 12.5.0 (2023-04-18) =
-* Fixed an issue where not all products with wholesale prices are making it to feeds
-
-= 12.4.9 (2023-04-14) =
-* Checked for compatibility with WooCommerce 7.6
-
-= 12.4.8 (2023-04-11) =
-* Some AJAX accessible functions lacked security checks, those have been added now
-
-= 12.4.7 (2023-04-07) =
-* Tested for compatibility with Wordpress 6.2
-
-= 12.4.6 (2023-04-06) =
-* Changed the Shopflix main_photo_url field name to image
-
-= 12.4.5 (2023-04-05) =
-* Fixed a Cross Site Request Forgery vulnerability, not all nonce's where properly checked
-
-= 12.4.4 (2023-04-05) =
-* Added more optional fields for Shopflix.gr
-
-= 12.4.3 (2023-04-04) =
-* Added a template for the Greek Shopflix.gr marketplace
-
-= 12.4.2 (2023-03-24) =
-* Fixed an issue with the size attribute for Skroutz apparel products
-
-= 12.4.1 (2023-03-24) =
-* Fixed a Cross Site Request Forgery vulnerability, not all nonce's where properly checked
-
-= 12.4.0 (2023-03-23) =
-* Made the availability date attribute available for all availability values and not just for products that are on backorder
-* Added the feed label and product country attributes for Google Shopping feeds
-
-= 12.3.9 (2023-03-21) =
-* Solved a fatal error issue that happened with Yandex feeds when attribute values were empty
-
-= 12.3.8 (2023-03-17) =
-* Fixed an issue for the WooCommerce Table Rate Shipping plugin where table rates for some countries were not calculated correct
-
-= 12.3.7 (2023-03-17) =
-* Checked for compatibility with WooCommerce 7.5
-* Changed and &amp; to & in the Google Analytics utm parameters for WPML feeds
-* Fixed an ACF issue where not all product images were added to feeds correctly
-
-= 12.3.6 (2023-03-10) =
-* Fixed an issue with the shipping costs calculation for the WooCommerce Table Rate Shipping plugin, VAT was added to it twice
-
-= 12.3.5 (2023-03-06) =
-* Added two decimal rounding of shipping formula costs
-
-= 12.3.4 (2023-03-05) =
-* Fixed an issue with ACF image fields for product variations
-
-= 12.3.3 (2023-03-02) =
-* Fixed an apparel product grouping issue for Skroutz feeds
-
-= 12.3.2 (2023-03-01) =
-* Fixed an issue where availability filters and rules for Skroutz feeds were not working
-* Added komma's between size values for Skroutz feeds
-
-= 12.3.1 (2023-02-28) =
-* Fixed an issue where non registered users ended up as Anonymous in review fieds
-* Changed Google Local Product Inventory Feed ID column to ItemID column
-
-= 12.3.0 (2023-02-24) =
-* Fixed an issue where filters on Google category ID's did not work
-
-= 12.2.9 (2023-02-21) =
-* Fixed a PHP warning for an empty tax rate variable
-* Fixed a Skroutz feed issue where additional images were not added when multiple product colors where set
-
-= 12.2.8 (2023-02-20) =
-* Fixed an issue where multiple tax rates were active for countries and products
-
-= 12.2.7 (2023-02-19) =
-* Removed "Pa" and "Custom attributes" from product detail attribite names
-
-= 12.2.6 (2023-02-16) =
-* Checked for compatibility with WooCommerce 7.4
-* Added a Feed publication date and time attribute
-
-= 12.2.5 (2023-02-14) =
-* Respecting wholesale visibility filter. When it contains "all", allow products to be in feeds
-
-= 12.2.4 (2023-02-12) =
-* Remove shipping methods from feeds when they are for wholesale users only (WooCommerce Wholesale Prices - by Rymera Web Co)
-
-= 12.2.3 (2023-02-09) =
-* Products with wholesale prices are automatically being removed from product feeds (WooCommerce Wholesale Prices - by Rymera Web Co)
-
-= 12.2.2 (2023-02-06) =
-* Added support for Twitter product feeds
-
-= 12.2.1 (2023-02-03) =
-* Added support for the VARIABLE_PARAMS XML field for Mall.sk feeds
-
-= 12.2.0 (2023-02-02) =
-* Removing shipping details from Google and Facebook feeds when no country has been set for them
-* Added availability dates +5 / +6 / +7 and +8 weeks from current date
-
-= 12.1.9 (2023-01-27) =
-* Fixed a PHP warning on the settings page when a plugin is first activated
-
-= 12.1.8 (2023-01-15) =
-* Fixed a PHP warning with regards to the non locally saved images
-
-= 12.1.7 (2023-01-13) =
-* Added support for non locally saved images
-* Checked for compatibility with WooCommerce 7.3
-
-= 12.1.6 (2023-01-13) =
-* Made compatible with WooCommerce HPOS / High-Performance Order Storage
-* Fixed CSS issue on category mapping page
-
-= 12.1.5 (2023-01-11) =
-* Fixed an issue with the Google DRM pixel feature returning a fatal error for some users
-
-= 12.1.4 (2023-01-06) =
-* Fixed an issue with a find and replace rule for Skroutz feeds
-
-= 12.1.3 (2022-12-29) =
-* Fixed an issue for PARAM fields for Glami.gr feeds
-
-= 12.1.2 (2022-12-23) =
-* Updated promo-boxes
-
-= 12.1.1 (2022-12-20) =
-* Fixed an issue with contain rules for numeric values
-
-= 12.1.0 (2022-12-19) =
-* Added Meta to channel and feed names
-
-= 12.0.9 (2022-12-14) =
-* Checked for compatibility with WooCommerce 7.2
-
-= 12.0.8 (2022-12-13) =
-* Fixed an issue with Skroutz feeds getting stuck
-
-= 12.0.7 (2022-12-11) =
-* Fixed a shipping costs issue for Idealo feeds where the first product had no shipping costs in the feed
-
-= 12.0.6 (2022-12-11) =
-* Added some nonce checks to plugin setting changes
-
-= 12.0.5 (2022-12-07) =
-* Fixed a tax calculation issue for Portugal and Slovakia
-
-= 12.0.4 (2022-12-02) =
-* Solved an undefined variable PHP warning for the sz_attribute variable
-
-= 12.0.3 (2022-11-23) =
-* Solved a PHP Fatal error when trying to retrieve the woosea_condition string
-
-= 12.0.2 (2022-11-21) =
-* Added the sale_price_effective_date field to the Google DRM feed template
-
-= 12.0.1 (2022-11-20) =
-* Fixed an issue with the sale_price_effective_date which was empty
-
-= 12.0.0 (2022-11-15) =
-* Added a created timestamp to Skroutz XML feeds
-* Fixed an issue that resulted in a fatal error, added is array check
-* Fixed an issue that resulted in PHP warnings when browsers do not set a HTTP USER AGENT
 
 See changelog.txt for past versions.

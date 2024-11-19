@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Product Feed PRO for WooCommerce
- * Version:     13.3.8.1
+ * Version:     13.3.9
  * Plugin URI:  https://www.adtribes.io/support/?utm_source=wpadmin&utm_medium=plugin&utm_campaign=woosea_product_feed_pro
  * Description: Configure and maintain your WooCommerce product feeds for Google Shopping, Catalog managers, Remarketing, Bing, Skroutz, Yandex, Comparison shopping websites and over a 100 channels more.
  * Author:      AdTribes.io
@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants.
  */
-define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.3.8.1' );
+define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.3.9' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME', 'woocommerce-product-feed-pro' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME_SHORT', 'woo-product-feed-pro' );
 
@@ -77,13 +77,47 @@ if ( ! defined( 'WOOCOMMERCESEA_CHANNEL_CLASS_ROOT_PATH' ) ) {
 }
 
 // Define the option name for the installed version.
-define( 'WOOCOMMERCESEA_OPTION_INSTALLED_VERSION', 'woocommercesea_option_installed_version' );
+if ( ! defined( 'WOOCOMMERCESEA_OPTION_INSTALLED_VERSION' ) ) {
+    define( 'WOOCOMMERCESEA_OPTION_INSTALLED_VERSION', 'woocommercesea_option_installed_version' );
+}
 
 // Define the option name for temporary feed creation data.
-define( 'ADT_OPTION_TEMP_PRODUCT_FEED', 'adt_temp_product_feed' );
+if ( ! defined( 'ADT_OPTION_TEMP_PRODUCT_FEED' ) ) {
+    define( 'ADT_OPTION_TEMP_PRODUCT_FEED', 'adt_temp_product_feed' );
+}
 
 // Transient keys.
-define( 'ADT_TRANSIENT_CUSTOM_ATTRIBUTES', 'adt_transient_custom_attributes' );
+if ( ! defined( 'ADT_TRANSIENT_CUSTOM_ATTRIBUTES' ) ) {
+    define( 'ADT_TRANSIENT_CUSTOM_ATTRIBUTES', 'adt_transient_custom_attributes' );
+}
+
+// Define usage tracking constants.
+if ( ! defined( 'ADT_PFP_USAGE_ALLOW' ) ) {
+    define( 'ADT_PFP_USAGE_ALLOW', 'adt_pfp_anonymous_data' );
+}
+if ( ! defined( 'ADT_PFP_USAGE_CRON_ACTION' ) ) {
+    define( 'ADT_PFP_USAGE_CRON_ACTION', 'adt_pfp_usage_tracking_cron' );
+}
+if ( ! defined( 'ADT_PFP_USAGE_CRON_CONFIG' ) ) {
+    define( 'ADT_PFP_USAGE_CRON_CONFIG', 'adt_pfp_usage_tracking_config' );
+}
+if ( ! defined( 'ADT_PFP_USAGE_LAST_CHECKIN' ) ) {
+    define( 'ADT_PFP_USAGE_LAST_CHECKIN', 'adt_pfp_usage_tracking_last_checkin' );
+}
+if ( ! defined( 'ADT_PFP_SHOW_ALLOW_USAGE_NOTICE' ) ) {
+    define( 'ADT_PFP_SHOW_ALLOW_USAGE_NOTICE', 'adt_pfp_show_allow_usage_notice' );
+}
+
+// Define the Action Scheduler hook for generating product feeds.
+if ( ! defined( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED' ) ) {
+    define( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED', 'adt_pfp_as_generate_product_feed' );
+}
+if ( ! defined( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH' ) ) {
+    define( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH', 'adt_pfp_as_generate_product_feed_batch' );
+}
+if ( ! defined( 'ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS' ) ) {
+    define( 'ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS', 'adt_pfp_as_product_feed_update_stats' );
+}
 
 /***************************************************************************
  * Loads plugin text domain.
