@@ -4,8 +4,8 @@ License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
-Tested up to: 6.6
-Stable tag: 13.3.9
+Tested up to: 6.7
+Stable tag: 13.3.9.1
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -385,6 +385,9 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.3.9.1 (2024-11-19) =
+* Bug Fix: Allow usage tracking notice buttons are not working in other pages
 
 = 13.3.9 (2024-11-11) =
 * Bug Fix: A few variations/products are missing in all feed formats except for XML

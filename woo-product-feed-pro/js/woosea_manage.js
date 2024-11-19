@@ -796,32 +796,6 @@ jQuery(function ($) {
     });
   });
 
-  $('.adt-pfp-allow-tracking-notice-action-button').on('click', function (event) {
-    event.preventDefault();
-
-    var $notice = $(this).closest('.pfp-allow-tracking-notice');
-    var nonce = $notice.find('#adt_pfp_allow_tracking_nonce').val();
-    var value = $(this).data('value');
-
-    jQuery
-      .ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'adt_pfp_allow_tracking_notice_action',
-          security: nonce,
-          value: value,
-        },
-      })
-      .always(function () {
-        $notice.fadeTo(100, 0, function () {
-          $notice.slideUp(100, function () {
-            $notice.remove();
-          });
-        });
-      });
-  });
-
   /**
    * Get the processing feeds.
    *

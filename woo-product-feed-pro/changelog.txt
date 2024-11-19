@@ -1,3 +1,6 @@
+= 13.3.9.1 (2024-11-19) =
+* Bug Fix: Allow usage tracking notice buttons are not working in other pages
+
 = 13.3.9 (2024-11-11) =
 * Bug Fix: A few variations/products are missing in all feed formats except for XML
 * Bug Fix: Availability Date format is not ISO 8601 compliant

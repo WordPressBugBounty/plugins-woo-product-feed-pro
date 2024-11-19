@@ -699,6 +699,33 @@ class Usage extends Abstract_Class {
     }
 
     /**
+     * Register allow usage tracking notice scripts.
+     *
+     * @since 13.3.9
+     * @access public
+     */
+    public function register_allow_usage_tracking_notice_scripts() {
+        // Check if the current user is allowed to view the notice.
+        // And if the current page is a plugin page or a WooCommerce screen.
+        if ( Product_Feed_Helper::is_current_user_allowed()
+            && (
+                Helper::is_plugin_page() ||
+                Helper::is_wc_screen()
+            )
+        ) {
+            // Enqueue the notice scripts.
+            wp_enqueue_script( 'adt-pfp-allow-usage-tracking-notice', WOOCOMMERCESEA_PLUGIN_URL . '/js/usage-tracking-notice.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_localize_script(
+                'adt-pfp-allow-usage-tracking-notice',
+                'adt_pfp_allow_tracking_notice',
+                array(
+                    'nonce' => wp_create_nonce( 'adt_pfp_allow_tracking_nonce' ),
+                )
+            );
+        }
+    }
+
+    /**
      * Set allow notice setting to 'yes' when response clicked in notice is "allow".
      *
      * @since 13.3.9
@@ -729,7 +756,7 @@ class Usage extends Abstract_Class {
             wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
         }
 
-        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
+        if ( ! wp_verify_nonce( $_REQUEST['security'], 'adt_pfp_allow_tracking_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -791,6 +818,7 @@ class Usage extends Abstract_Class {
 
             if ( '' === $is_allowed ) {
                 add_action( 'admin_notices', array( $this, 'register_allow_usage_tracking_notice' ) );
+                add_action( 'admin_enqueue_scripts', array( $this, 'register_allow_usage_tracking_notice_scripts' ) );
             }
         }
 
