@@ -8,9 +8,9 @@ use AdTribes\PFP\Helpers\Helper;
 ?>
 <div class="adt-license-settings">
     <div class="adt-license-settings-container">
-        <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a>
+        <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a>
         <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
-        <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
+        <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
         <?php endif; ?>
         <h1 class="title">Licenses</h1>
         <p class="desc"><?php esc_html_e( 'Enter your license keys below to enjoy full access, plugin updates, and support.', 'woo-product-feed-pro' ); ?></p>
@@ -42,11 +42,11 @@ use AdTribes\PFP\Helpers\Helper;
                             <li><?php esc_html_e( 'Remarketing and advanced pixel support.', 'woo-product-feed-pro' ); ?></li>
                             <li><?php esc_html_e( 'Advanced data manipulation with extra conditions & filters.', 'woo-product-feed-pro' ); ?></li>
                         </ul>
-                        <a href="https://adtribes.io/pricing/?utm_source=pfp&utm_medium=license&utm_campaign=upgradelicensebutton" target="_blank" rel="noopener noreferrer" class="button button-pink button-hero mb-1">
-                                <?php esc_html_e( 'Get Product Feed Elite & Unlock All Features', 'woo-product-feed-pro' ); ?>
+                        <a href="<?php echo esc_url( Helper::get_utm_url( 'pricing', 'pfp', 'license', 'upgradelicensebutton' ) ); ?>" target="_blank" rel="noopener noreferrer" class="button button-pink button-hero mb-1">
+                            <?php esc_html_e( 'Get Product Feed Elite & Unlock All Features', 'woo-product-feed-pro' ); ?>
                         </a>
                         <div class="learn-more">
-                            <a href="https://adtribes.io/plugin-features/?utm_source=pfp&utm_medium=license&utm_campaign=learnmorelicenselink" target="_blank" rel="noopener noreferrer">
+                            <a href="<?php echo esc_url( Helper::get_utm_url( 'plugin-features', 'pfp', 'license', 'learnmorelicenselink' ) ); ?>" target="_blank" rel="noopener noreferrer">
                                 <?php esc_html_e( 'Learn more about Elite features', 'woo-product-feed-pro' ); ?>
                             </a>
                         </div>

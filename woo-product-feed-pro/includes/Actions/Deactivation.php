@@ -65,6 +65,7 @@ class Deactivation extends Abstract_Class {
         // Clear Action Scheduler hooks.
         if ( function_exists( 'as_unschedule_all_actions' ) ) {
             as_unschedule_all_actions( ADT_PFP_AS_GENERATE_PRODUCT_FEED );
+            as_unschedule_all_actions( ADT_PFP_AS_FETCH_GOOGLE_PRODUCT_TAXONOMY );
         }
     }
 
@@ -91,8 +92,7 @@ class Deactivation extends Abstract_Class {
 
         // check if it is a multisite network.
         if ( is_multisite() ) {
-
-            // check if the plugin has been activated on the network or on a single site.
+            // check if the plugin has been deactivated on the network or on a single site.
             if ( $this->network_wide ) {
                 // get ids of all sites.
                 $blog_ids = $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs" );
@@ -103,8 +103,7 @@ class Deactivation extends Abstract_Class {
                 }
 
                 restore_current_blog();
-            } else {
-                // activated on a single site, in a multi-site.
+            } else { // activated on a single site, in a multi-site.
                 $this->_deactivate_plugin( $wpdb->blogid );
             }
         } else {

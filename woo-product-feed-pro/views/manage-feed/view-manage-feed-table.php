@@ -4,6 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use AdTribes\PFP\Helpers\Helper;
+use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Factories\Product_Feed_Query;
 
 $product_feeds_query = new Product_Feed_Query(
@@ -52,7 +54,7 @@ foreach ( $product_feeds_query->get_posts() as $product_feed ) :
                 <span class="woo-product-feed-pro-channel">Channel: <?php echo esc_html( $product_feed->get_channel( 'name' ) ); ?></span>
             </td>
             <td><span><?php echo esc_html( $product_feed->file_format ); ?></span></td>
-            <td><span><?php echo esc_html( $product_feed->refresh_interval ); ?></span></td>
+            <td><span><?php echo esc_html( Product_Feed_Helper::get_refresh_interval_label( $product_feed->refresh_interval ) ); ?></span></td>
             <td class="woo-product-feed-pro-feed-status">
                 <?php if ( 'processing' === $product_feed->status ) : ?>
                     <span class="woo-product-feed-pro-blink_me" id="woosea_proc_<?php echo esc_attr( $product_feed->legacy_project_hash ); ?>">
@@ -110,7 +112,7 @@ foreach ( $product_feeds_query->get_posts() as $product_feed ) :
                     // translators: %s: close <a> tag.
                     esc_html__( 'You haven\'t configured a product feed yet, %1$splease create one first%3$s or read our tutorial on %2$show to set up your very first Google Shopping product feed%3$s.', 'woo-product-feed-pro' ),
                     '<a href="admin.php?page=woo-product-feed-pro">',
-                    '<a href="https://adtribes.io/setting-up-your-first-google-shopping-product-feed/?utm_source=pfp&utm_medium=manage-feed&utm_campaign=first shopping feed" target="_blank">',
+                    '<a href="' . esc_url( Helper::get_utm_url( 'setting-up-your-first-google-shopping-product-feed', 'pfp', 'manage-feed', 'first shopping feed' ) ) . '" target="_blank">',
                     '</a>',
                 );
                 ?>

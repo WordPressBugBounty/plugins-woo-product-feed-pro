@@ -230,21 +230,284 @@ class Product_Feed_Helper {
     }
 
     /**
-     * Check if the user is allowed to manage product feed.
+     * Get refresh interval label.
+     *
+     * This method is used to get the refresh interval label.
      *
      * @since 13.3.5
-     * @access private
+     * @access public
      *
-     * @return bool
+     * @param string $key The key of the refresh interval.
+     * @return string
      */
-    public static function is_current_user_allowed() {
-        $user          = wp_get_current_user();
-        $allowed_roles = apply_filters( 'adt_manage_product_feed_allowed_roles', array( 'administrator' ) );
+    public static function get_refresh_interval_label( $key ) {
+        $refresh_intervals = array(
+            'hourly'     => __( 'Hourly', 'woo-product-feed-pro' ),
+            'twicedaily' => __( 'Twice Daily', 'woo-product-feed-pro' ),
+            'daily'      => __( 'Daily', 'woo-product-feed-pro' ),
+        );
 
-        if ( array_intersect( $allowed_roles, $user->roles ) || is_super_admin() ) {
-            return true;
+        return $refresh_intervals[ $key ] ?? __( 'No Refresh', 'woo-product-feed-pro' );
+    }
+
+    /**
+     * Get hierarchical categories mapping.
+     *
+     * @since 13.4.0
+     * @access public
+     *
+     * @param object $feed The feed object.
+     * @return array
+     */
+    public static function get_hierarchical_categories_mapping( $feed = null ) {
+        $feed_mappings       = array();
+        $mapped_category_ids = array();
+
+        /**
+         * Filters the arguments for hierarchical categories mapping.
+         *
+         * @since 13.4.0
+         * @param array $args The arguments for hierarchical categories mapping.
+         * @return array
+         */
+        $parent_terms_args = apply_filters(
+            'adt_product_feed_hierarchical_categories_mapping_args',
+            array(
+                'taxonomy'   => 'product_cat',
+                'hide_empty' => false,
+                'parent'     => 0, // Get only parent terms.
+                'orderby'    => 'name',
+                'order'      => 'ASC',
+            )
+        );
+
+        /**
+         * Filters the categories for hierarchical categories mapping.
+         *
+         * @since 13.4.0
+         * @param array $parent_terms The parent terms.
+         * @param array $args         The arguments for hierarchical categories mapping.
+         * @param int   $feed_ud      The feed id.
+         * @return array
+         */
+        $parent_terms = apply_filters(
+            'adt_product_feed_hierarchical_categories_mapping',
+            get_terms( $parent_terms_args ),
+            $parent_terms_args,
+            $feed->id ?? 0
+        );
+
+        // Get already mapped categories.
+        if ( null !== $feed ) {
+            $feed_mappings = $feed->mappings ?? array();
+
+            // Get category IDs that are already mapped.
+            if ( ! empty( $feed_mappings ) ) {
+                $mapped_category_ids = array_map(
+                    function ( $mapping ) {
+                        return $mapping['map_to_category'] ?? '';
+                    },
+                    $feed_mappings
+                );
+            }
         }
 
-        return false;
+        ob_start();
+        foreach ( $parent_terms as $category ) {
+            self::print_hierarchical_categories_mapping_view( $category, $mapped_category_ids );
+        }
+        $html = ob_get_clean();
+
+        return $html;
+    }
+
+    /**
+     * Hierarchical categories mapping view.
+     *
+     * @since 13.4.0
+     * @access private
+     *
+     * @param object $category            The category object.
+     * @param array  $mapped_category_ids The mapped category IDs.
+     * @param int    $child_number        The child number, to print the dash character.
+     * @return void
+     */
+    public static function print_hierarchical_categories_mapping_view( $category, $mapped_category_ids = array(), $child_number = 0 ) {
+        // Check if this category is already mapped.
+        $mapped_category = $mapped_category_ids[ $category->term_id ] ?? '';
+
+        // Get the children of the current category.
+        $childrens = get_terms(
+            array(
+                'taxonomy'   => 'product_cat',
+                'hide_empty' => false,
+                'parent'     => $category->term_id,
+                'orderby'    => 'name',
+                'order'      => 'ASC',
+            )
+        );
+
+        // Include the view for the current category.
+        include WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'manage-feed/view-google-shopping-category-mapping.php';
+
+        // Process each child category recursively.
+        if ( ! empty( $childrens ) ) {
+            foreach ( $childrens as $children ) {
+                self::print_hierarchical_categories_mapping_view( $children, $mapped_category_ids, $child_number + 1 );
+            }
+        }
+    }
+
+    /**
+     * Get the price including tax.
+     * This method is used to get the price including tax by feed settings.
+     *
+     * @since 13.4.0
+     * @access public
+     *
+     * @param float  $price     The price of the product.
+     * @param array  $tax_rates The tax rates.
+     * @param object $feed      The feed object.
+     * @param object $product   The product object.
+     * @return float
+     */
+    public static function get_price_including_tax( $price, $tax_rates = array(), $feed = null, $product = null ) {
+        $tax_class    = $product ? $product->get_tax_class() : '';
+        $country      = $feed ? $feed->country : '';
+        $price        = (float) $price;
+        $return_price = $price;
+
+        // Get the tax rates for the given country.
+        $tax_rates = empty( $tax_rates ) ? self::find_tax_rates(
+            array(
+                'country'   => $country,
+                'state'     => '',
+                'postcode'  => '',
+                'city'      => '',
+                'tax_class' => $tax_class,
+            ),
+            $feed,
+            $product
+        ) : $tax_rates;
+
+        if ( $product->is_taxable() ) {
+            if ( ! wc_prices_include_tax() ) {
+                // Calculate the tax with WC_Tax::calc_tax.
+                $taxes = \WC_Tax::calc_tax( $price, $tax_rates, wc_prices_include_tax() );
+
+                // Get the tax amount.
+                $tax_amount = array_sum( $taxes );
+
+                // Add the tax amount to the price.
+                $return_price = $price + $tax_amount;
+            } else {
+                $unfiltered_tax_rates = $product ? $product->get_tax_class( 'unfiltered' ) : '';
+                $base_tax_rates       = \WC_Tax::get_base_tax_rates( $unfiltered_tax_rates );
+
+                if ( $tax_rates !== $base_tax_rates && apply_filters( 'woocommerce_adjust_non_base_location_prices', true ) ) {
+                    $base_taxes   = \WC_Tax::calc_tax( $price, $base_tax_rates, true );
+                    $modded_taxes = \WC_Tax::calc_tax( $price - array_sum( $base_taxes ), $tax_rates, false );
+
+                    if ( 'yes' === get_option( 'woocommerce_tax_round_at_subtotal' ) ) {
+                        $base_taxes_total   = array_sum( $base_taxes );
+                        $modded_taxes_total = array_sum( $modded_taxes );
+                    } else {
+                        $base_taxes_total   = array_sum( array_map( 'wc_round_tax_total', $base_taxes ) );
+                        $modded_taxes_total = array_sum( array_map( 'wc_round_tax_total', $modded_taxes ) );
+                    }
+
+                    $return_price = $price - $base_taxes_total + $modded_taxes_total;
+                }
+            }
+        }
+
+        return $return_price;
+    }
+
+    /**
+     * Get the price excluding tax.
+     * This method is used to get the price excluding tax by feed settings.
+     *
+     * @since 13.4.0
+     * @access public
+     *
+     * @param float  $price     The price of the product.
+     * @param array  $tax_rates The tax rates.
+     * @param object $feed      The feed object.
+     * @param object $product   The product object.
+     * @return float
+     */
+    public static function get_price_excluding_tax( $price, $tax_rates = array(), $feed = null, $product = null ) {
+        $tax_class    = $product ? $product->get_tax_class() : '';
+        $country      = $feed ? $feed->country : '';
+        $price        = (float) $price;
+        $return_price = $price;
+
+        // Get the tax rates for the given country.
+        $tax_rates = empty( $tax_rates ) ? self::find_tax_rates(
+            array(
+                'country'   => $country,
+                'state'     => '',
+                'postcode'  => '',
+                'city'      => '',
+                'tax_class' => $tax_class,
+            ),
+            $feed,
+            $product
+        ) : $tax_rates;
+
+        if ( $product->is_taxable() && wc_prices_include_tax() ) {
+            if ( apply_filters( 'woocommerce_adjust_non_base_location_prices', true ) ) {
+                $unfiltered_tax_rates = $product ? $product->get_tax_class( 'unfiltered' ) : '';
+                $tax_rates            = \WC_Tax::get_base_tax_rates( $unfiltered_tax_rates );
+            }
+            $remove_taxes = \WC_Tax::calc_tax( $price, $tax_rates, true );
+            $return_price = $price - array_sum( $remove_taxes ); // Unrounded since we're dealing with tax inclusive prices. Matches logic in cart-totals class. @see adjust_non_base_location_price.
+        }
+
+        return $return_price;
+    }
+
+    /**
+     * Find tax rates.
+     *
+     * This method is used to find the tax rates for the given arguments.
+     *
+     * @since 13.4.0
+     * @access public
+     *
+     * @param array  $args    The arguments for finding tax rates.
+     * @param object $feed    The feed object.
+     * @param object $product The product object.
+     * @return array
+     */
+    public static function find_tax_rates( $args, $feed = null, $product = null ) {
+        return \WC_Tax::find_rates(
+            /**
+             * Filters the arguments for finding tax rates.
+             *
+             * @since 13.4.0
+             *
+             * @param array  $args    The arguments for finding tax rates.
+             * @param object $feed    The feed object.
+             * @param object $product The product object.
+             * @return array
+             */
+            apply_filters(
+                'adt_product_feed_find_tax_rates_args',
+                wp_parse_args(
+                    $args,
+                    array(
+                        'country'   => '',
+                        'state'     => '',
+                        'postcode'  => '',
+                        'city'      => '',
+                        'tax_class' => '',
+                    )
+                ),
+                $feed,
+                $product
+            )
+        );
     }
 }

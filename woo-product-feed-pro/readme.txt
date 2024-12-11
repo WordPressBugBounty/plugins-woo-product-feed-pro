@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.7
-Stable tag: 13.3.9.1
+Stable tag: 13.4.0
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -385,6 +385,31 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.4.0 (2024-12-06) =
+* Bug Fix: Advanced Flat Rate Shipping formulas do not work properly
+* Bug Fix: Availability date + 6/7/8 weeks attribute values are missing
+* Bug Fix: Country Specific Tax Rates Not Applying When Store Country Have Specific Tax Rates
+* Bug Fix: Feed is empty when Wholesale Prices plugin is activated
+* Bug Fix: Find and Replace rule method does not work properly
+* Bug Fix: Follows manual batch number even after disabled
+* Bug Fix: Free Shipping not added to Field when it has Requirements
+* Bug Fix: Local Pickup shipping method does not show in the feed
+* Bug Fix: No Refresh Interval is defaulting to Once Per Day
+* Bug Fix: Redirect to new URL when visiting old manage feeds URL
+* Bug Fix: Setting Page Save Buttons Not Saving When First Opened
+* Bug Fix: Shipping attribute value is empty or is null/invalid for variations of products
+* Bug Fix: Shipping without class has no shipping values
+* Bug Fix: Sometimes Google Shopping Category shows only numbers on the Category mapping step
+* Bug Fix: The "Remove all other shipping classes when free shipping criteria are met" setting is not working
+* Bug Fix: The feed still has scheduled action after updating feed to No Refresh interval
+* Bug Fix: Unable to change PRO settings on subsites on multisite environment
+* Bug Fix: Wrong product feed shipping values when "Country" setting is not set
+* Improvement: Add filter to allow manipulating get taxonomy query for product feed filters
+* Improvement: Make all plugins on about page a 1-click install
+* Improvement: Open the Manage feeds page when clicking the Product Feed Pro menu
+* Improvement: Remove "WARNING: Your WP-Cron is disabled" notice
+* Improvement: Remove Google Product Taxonomy list in `woosea_autocomplete.js` and host the file in the site server
 
 = 13.3.9.1 (2024-11-19) =
 * Bug Fix: Allow usage tracking notice buttons are not working in other pages

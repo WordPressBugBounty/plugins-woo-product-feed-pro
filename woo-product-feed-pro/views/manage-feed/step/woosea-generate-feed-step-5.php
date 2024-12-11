@@ -2,6 +2,7 @@
 // phpcs:disable
 use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Factories\Product_Feed;
+use AdTribes\PFP\Factories\Admin_Notice;
 use AdTribes\PFP\Classes\Product_Feed_Admin;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 
@@ -22,13 +23,6 @@ function my_footer_text( $default ) {
     return $rating_link;
 }
 add_filter( 'admin_footer_text', 'my_footer_text' );
-
-$error = 'false';
-/**
- * Create notification object
- */
-$notifications_obj = new WooSEA_Get_Admin_Notifications();
-$notifications_box = $notifications_obj->get_admin_notifications( '5', $error );
 
 /**
  * Update or get project configuration
@@ -84,16 +78,23 @@ do_action( 'adt_before_product_feed_manage_page', 5, $project_hash, $feed );
         <div class="woo-product-feed-pro-form-style-2">
             <tbody class="woo-product-feed-pro-body">
                 <div class="woo-product-feed-pro-form-style-2-heading">
-                    <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a> 
+                    <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a> 
                     <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
-                    <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
+                    <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
                     <?php endif; ?>
                     <h1 class="title"><?php esc_html_e( 'Conversion & Google Analytics settings', 'woo-product-feed-pro' ); ?></h1>
                 </div>
 
-                <div class="<?php echo esc_attr( $notifications_box['message_type'] ); ?>">
-                    <p><?php echo wp_kses_post( $notifications_box['message'] ); ?></p>
-                </div>
+                <?php
+                // Display info message notice.
+                $admin_notice = new Admin_Notice(
+                    '<p>' . __('<strong>Google Analytics UTM codes:</strong><br/>Adding Google Analytics UTM codes is not mandatory, it will however enable you to get detailed insights into how your products are performing in Google Analytics reporting and allow you to tweak and tune your campaign making it more profitable. We strongly advise you to add the Google Analytics tracking. When enabled the plugin will append the Google Analytics UTM parameters to your landingpage URL\'s.', 'woo-product-feed-pro') . '</p>',
+                    'info',
+                    'html',
+                    false
+                );
+                $admin_notice->run();
+                ?>
     
                 <form id="googleanalytics" method="post">
                 <?php wp_nonce_field( 'woosea_ajax_nonce' ); ?>
@@ -129,7 +130,7 @@ do_action( 'adt_before_product_feed_manage_page', 5, $project_hash, $feed );
                             <td><input type="text" class="input-field" name="utm_content" value="<?php echo esc_attr( $utm_content ); ?>" /></td>
                         </tr>
                         <tr>
-                            <td><span><?php esc_html_e( 'Remove products that did not have sales in the last days', 'woo-product-feed-pro' ); ?>: <a href="https://adtribes.io/create-feed-performing-products/" target="_blank">What does this do?</a></span></td>
+                            <td><span><?php esc_html_e( 'Remove products that did not have sales in the last days', 'woo-product-feed-pro' ); ?>: <a href="<?php echo esc_url( Helper::get_utm_url( 'create-feed-performing-products', 'pfp', 'googleanalytics-settings', 'total product orders lookback' ) ); ?>" target="_blank">What does this do?</a></span></td>
                             <td><input type="text" class="input-field" name="total_product_orders_lookback" value="<?php echo esc_attr( $total_product_orders_lookback ); ?>" /> days</td>
                         </tr>
 

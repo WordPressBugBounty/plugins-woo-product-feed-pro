@@ -1,7 +1,6 @@
 <?php // phpcs:disable
 
-use AdTribes\PFP\Factories\Product_Feed;
-use AdTribes\PFP\Helpers\Product_Feed_Helper;
+use AdTribes\PFP\Helpers\Helper;
 
 /**
  * Get category path for Facebook pixel.
@@ -634,10 +633,7 @@ function woosea_getelite_active_notification() {
         wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
     }
 
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator', 'editor', 'author' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
+    if ( Helper::is_current_user_allowed() ) {
         $get_elite_notice = array(
             'show'      => 'no',
             'timestamp' => date( 'd-m-Y' ),
@@ -679,26 +675,42 @@ add_action( 'woocommerce_thankyou', 'woosea_inject_ajax' );
  * Get a list of categories for the drop-down.
  */
 function woosea_categories_dropdown() {
-    $rowCount          = absint( esc_attr( sanitize_text_field( $_POST['rowCount'] ) ) );
-    $user              = wp_get_current_user();
-        $allowed_roles = array( 'administrator', 'editor', 'author' );
+    $rowCount = absint( esc_attr( sanitize_text_field( $_POST['rowCount'] ) ) );
 
-        if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $orderby    = 'name';
-        $order      = 'asc';
-        $hide_empty = false;
-        $cat_args   = array(
-            'orderby'    => $orderby,
-            'order'      => $order,
-            'hide_empty' => $hide_empty,
+    if ( Helper::is_current_user_allowed() ) {
+        $feed_id = absint( esc_attr( sanitize_text_field( $_POST['feed_id'] ) ) );
+
+        /**
+         * Filter the arguments for the product categories dropdown.
+         *
+         * @since 13.3.4
+         *
+         * @param array $cat_args The arguments for the product categories dropdown.
+         * @return array The arguments for the product categories dropdown.
+         */
+        $cat_args = apply_filters( 'adt_pfp_get_categories_dropdown_args',
+            array(
+                'taxonomy'   => 'product_cat',
+                'hide_empty' => 'false',
+            ),
+            $feed_id
         );
 
+        /**
+         * Filter the product categories for the product categories dropdown.
+         * 
+         * @since 13.3.4
+         * 
+         * @param array $product_categories The product categories for the product categories dropdown.
+         * @param array $cat_args           The arguments for the product categories dropdown.
+         * @param int   $feed_id            The feed ID.
+         * @return array The product categories for the product categories dropdown.
+         */
+        $product_categories = apply_filters( 'adt_pfp_get_categories_dropdown', get_terms( $cat_args ), $cat_args, $feed_id );
+        
         $categories_dropdown = "<select name=\"rules[$rowCount][criteria]\">";
-        $product_categories  = get_terms( 'product_cat', $cat_args );
-
         foreach ( $product_categories as $key => $category ) {
             $categories_dropdown .= "<option value=\"$category->name\">$category->name ($category->slug)</option>";
-
         }
         $categories_dropdown .= '</select>';
 
@@ -738,178 +750,6 @@ function woosea_recursive_sanitize_text_field( $array ) {
     }
     return $array;
 }
-
-/**
- * Save Google Dynamic Remarketing Conversion Tracking ID.
- */
-function woosea_save_adwords_conversion_id() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $adwords_conversion_id = sanitize_text_field( $_POST['adwords_conversion_id'] );
-        $adwords_conversion_id = woosea_sanitize_xss( $adwords_conversion_id );
-        update_option( 'woosea_adwords_conversion_id', $adwords_conversion_id, false );
-    }
-}
-add_action( 'wp_ajax_woosea_save_adwords_conversion_id', 'woosea_save_adwords_conversion_id' );
-
-/**
- * Save batch size.
- */
-function woosea_save_batch_size() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $batch_size = sanitize_text_field( $_POST['batch_size'] );
-        update_option( 'woosea_batch_size', $batch_size );
-    }
-}
-add_action( 'wp_ajax_woosea_save_batch_size', 'woosea_save_batch_size' );
-
-/**
- * Save Facebook Pixel ID.
- */
-function woosea_save_facebook_pixel_id() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $facebook_pixel_id = sanitize_text_field( $_POST['facebook_pixel_id'] );
-        $facebook_pixel_id = woosea_sanitize_xss( $facebook_pixel_id );
-        update_option( 'woosea_facebook_pixel_id', $facebook_pixel_id, false );
-    }
-}
-add_action( 'wp_ajax_woosea_save_facebook_pixel_id', 'woosea_save_facebook_pixel_id' );
-
-/**
- * Save Facebook Conversion API Token.
- */
-function woosea_save_facebook_capi_token() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $facebook_capi_token = sanitize_text_field( $_POST['facebook_capi_token'] );
-        $facebook_capi_token = woosea_sanitize_xss( $facebook_capi_token );
-        update_option( 'woosea_facebook_capi_token', $facebook_capi_token, false );
-    }
-}
-add_action( 'wp_ajax_woosea_save_facebook_capi_token', 'woosea_save_facebook_capi_token' );
-
-/**
- * Mass map categories to the correct Google Shopping category taxonomy.
- */
-function woosea_add_mass_cat_mapping() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $project_hash = sanitize_text_field( $_POST['project_hash'] );
-        $catMappings  = woosea_recursive_sanitize_text_field( $_POST['catMappings'] );
-
-        // I need to sanitize the catMappings Array.
-        $mappings = array();
-        foreach ( $catMappings as $mKey => $mVal ) {
-            $mKey                      = sanitize_text_field( $mKey );
-            $mVal                      = sanitize_text_field( $mVal );
-            $piecesVal                 = explode( '||', $mVal );
-            $mappings[ $piecesVal[1] ] = array(
-                'rowCount'        => $piecesVal[1],
-                'categoryId'      => $piecesVal[1],
-                'criteria'        => $piecesVal[0],
-                'map_to_category' => $piecesVal[2],
-            );
-        }
-
-        $project = Product_Feed_Helper::get_product_feed($project_hash );
-
-        // This happens during configuration of a new feed.
-        if ( $project->id == 0 ) {
-            $project_temp = get_option( ADT_OPTION_TEMP_PRODUCT_FEED );
-                if ( array_key_exists( 'mappings', $project_temp ) ) {
-                $project_temp['mappings'] = $mappings + $project_temp['mappings'];
-            } else {
-                $project_temp['mappings'] = $mappings;
-            }
-            update_option( ADT_OPTION_TEMP_PRODUCT_FEED, $project_temp, false );
-        } else {
-            // Only update the ones that changed.
-            foreach ( $mappings as $categoryId => $catArray ) {
-                $project->set_mappings( $catArray ,$categoryId );
-            }
-            $project->save();
-
-        }
-        $data = array(
-            'status_mapping' => 'true',
-        );
-        echo json_encode( $data );
-        wp_die();
-    }
-}
-add_action( 'wp_ajax_woosea_add_mass_cat_mapping', 'woosea_add_mass_cat_mapping' );
-
-/**
- * Map categories to the correct Google Shopping category taxonomy.
- */
-function woosea_add_cat_mapping() {
-    $rowCount        = absint( esc_attr( sanitize_text_field( $_POST['rowCount'] ) ) );
-    $className       = sanitize_text_field( $_POST['className'] );
-    $map_to_category = sanitize_text_field( $_POST['map_to_category'] );
-    $project_hash    = sanitize_text_field( $_POST['project_hash'] );
-    $criteria        = sanitize_text_field( $_POST['criteria'] );
-    $status_mapping  = 'false';
-    $project         = Product_Feed_Helper::get_product_feed( $project_hash );
-
-    // This is during the configuration of a new feed.
-    if ( $project->id == 0 ) {
-        $project_temp = get_option( ADT_OPTION_TEMP_PRODUCT_FEED );
-
-        $project_temp['mappings'][ $rowCount ]['rowCount']        = $rowCount;
-        $project_temp['mappings'][ $rowCount ]['categoryId']      = $rowCount;
-        $project_temp['mappings'][ $rowCount ]['criteria']        = $criteria;
-        $project_temp['mappings'][ $rowCount ]['map_to_category'] = $map_to_category;
-
-        update_option( ADT_OPTION_TEMP_PRODUCT_FEED, $project_temp, false );
-        $status_mapping = 'true';
-        // This is updating an existing product feed.
-    } else {
-        $project->set_mappings( 
-            array(
-                'rowCount'        => $rowCount,
-                'categoryId'      => $rowCount,
-                'criteria'        => $criteria,
-                'map_to_category' => $map_to_category,
-            )
-            ,$rowCount
-        );
-        $project->save();
-        $status_mapping  = 'true';
-    }
-
-    $data = array(
-        'rowCount'        => $rowCount,
-        'className'       => $className,
-        'map_to_category' => $map_to_category,
-        'status_mapping'  => $status_mapping,
-    );
-
-    echo json_encode( $data );
-    wp_die();
-}
-add_action( 'wp_ajax_woosea_add_cat_mapping', 'woosea_add_cat_mapping' );
 
 /**
  * Retrieve variation product id based on it attributes.
@@ -979,245 +819,12 @@ add_action( 'wp_ajax_woosea_channel', 'woosea_channel' );
 function woosea_review_notification() {
     // Update review notification status.
     check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator', 'editor', 'author' );
 
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
+    if ( Helper::is_current_user_allowed() ) {
         update_option( 'woosea_review_interaction', 'yes', false );
     }
 }
 add_action( 'wp_ajax_woosea_review_notification', 'woosea_review_notification' );
-
-/**
- * This function enables the setting to use Mother main image for all product variations.
- */
-function woosea_add_mother_image() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'add_mother_image', 'no' );
-        } else {
-            update_option( 'add_mother_image', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_add_mother_image', 'woosea_add_mother_image' );
-
-/**
- * This function enables the setting to use Shipping costs for all countries.
- */
-function woosea_add_all_shipping() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'add_all_shipping', 'no' );
-        } else {
-            update_option( 'add_all_shipping', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_add_all_shipping', 'woosea_add_all_shipping' );
-
-/**
- * This function enables the setting to respect the free shipping class.
- */
-function woosea_free_shipping() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'free_shipping', 'no' );
-        } else {
-            update_option( 'free_shipping', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_free_shipping', 'woosea_free_shipping' );
-
-/**
- * This function enables the setting to remove local pickup shipping zones.
- */
-function woosea_local_pickup_shipping() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'local_pickup_shipping', 'no' );
-        } else {
-            update_option( 'local_pickup_shipping', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_local_pickup_shipping', 'woosea_local_pickup_shipping' );
-
-/**
- * This function enables the setting to remove free shipping zones.
- */
-function woosea_remove_free_shipping() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'remove_free_shipping', 'no' );
-        } else {
-            update_option( 'remove_free_shipping', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_remove_free_shipping', 'woosea_remove_free_shipping' );
-
-/**
- * This function enables the setting to use logging.
- */
-function woosea_add_woosea_logging() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'add_woosea_logging', 'no' );
-        } else {
-            update_option( 'add_woosea_logging', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_add_woosea_logging', 'woosea_add_woosea_logging' );
-
-/**
- * This function enables the setting to use only the basic attributes in drop-downs.
- */
-function woosea_add_woosea_basic() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'add_woosea_basic', 'no' );
-        } else {
-            update_option( 'add_woosea_basic', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_add_woosea_basic', 'woosea_add_woosea_basic' );
-
-/**
- * This function enables the setting to add the Faceook pixel.
- */
-function woosea_add_facebook_pixel_setting() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'add_facebook_pixel', 'no' );
-        } else {
-            update_option( 'add_facebook_pixel', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_add_facebook_pixel_setting', 'woosea_add_facebook_pixel_setting' );
-
-/**
- * This function saves the value that needs to be used in the Facebook pixel content_ids parameter.
- */
-function woosea_facebook_content_ids() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $content_ids = sanitize_text_field( $_POST['content_ids'] );
-
-        if ( $content_ids == 'variable' ) {
-            update_option( 'add_facebook_pixel_content_ids', 'variable', false );
-        } else {
-            update_option( 'add_facebook_pixel_content_ids', 'variation', false );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_facebook_content_ids', 'woosea_facebook_content_ids' );
-
-/**
- * This function enables the setting to add Google's Dynamic Remarketing.
- */
-function woosea_add_remarketing() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'add_remarketing', 'no' );
-        } else {
-            update_option( 'add_remarketing', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_add_remarketing', 'woosea_add_remarketing' );
-
-/**
- * This function enables the setting to add a new batch size.
- */
-function woosea_add_batch() {
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    $user          = wp_get_current_user();
-    $allowed_roles = array( 'administrator' );
-
-    if ( array_intersect( $allowed_roles, $user->roles ) ) {
-        $status = sanitize_text_field( $_POST['status'] );
-
-        if ( $status == 'off' ) {
-            update_option( 'add_batch', 'no' );
-        } else {
-            update_option( 'add_batch', 'yes' );
-        }
-    }
-}
-add_action( 'wp_ajax_woosea_add_batch', 'woosea_add_batch' );
 
 /**
  * Get the attribute mapping helptexts.

@@ -27,18 +27,8 @@ $nonce = wp_create_nonce( 'woosea_ajax_nonce' );
 <div class="wrap">
     <div class="woo-product-feed-pro-form-style-2">
         <tbody class="woo-product-feed-pro-body">
-            <?php require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-upgrade-to-elite-notice.php'; ?>
             <?php
-            if ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) {
-                ?>
-                <div class="notice notice-error is-dismissible">
-                    <p>
-                        <strong><?php esc_html_e( 'WARNING: Your WP-Cron is disabled', 'woo-product-feed-pro' ); ?></strong><br /></br />
-                        We detected that your WP-cron has been disabled in your wp-config.php file. Our plugin heavily depends on the WP-cron being active otherwise it cannot update and generate your product feeds. <a href="https://adtribes.io/help-my-feed-processing-is-stuck/?utm_source=pfp&utm_medium=manage-feed&utm_campaign=cron-warning&utm_content=notification" target="_blank"><strong>Please enable your WP-cron first</strong></a>.
-                    </p>
-                </div>
-            <?php
-            }
+            require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-upgrade-to-elite-notice.php';
 
             /**
              * Request our plugin users to write a review
@@ -59,9 +49,9 @@ $nonce = wp_create_nonce( 'woosea_ajax_nonce' );
             ?>
 
             <div class="woo-product-feed-pro-form-style-2-heading">
-                <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a>
+                <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?> target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a>
                 <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
-                <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
+                <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
                 <?php endif; ?>
                 <h1 class="title"><?php esc_html_e( 'Manage feeds', 'woo-product-feed-pro' ); ?></h1>
             </div>

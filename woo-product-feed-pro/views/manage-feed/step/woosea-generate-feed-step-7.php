@@ -2,6 +2,7 @@
 // phpcs:disable
 use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Factories\Product_Feed;
+use AdTribes\PFP\Factories\Admin_Notice;
 use AdTribes\PFP\Classes\Product_Feed_Admin;
 use AdTribes\PFP\Classes\Product_Feed_Attributes;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
@@ -23,12 +24,6 @@ function my_footer_text( $default ) {
     return $rating_link;
 }
 add_filter( 'admin_footer_text', 'my_footer_text' );
-
-/**
- * Create notification object
- */
-$notifications_obj = new WooSEA_Get_Admin_Notifications();
-$notifications_box = $notifications_obj->get_admin_notifications( '7', 'false' );
 
 /**
  * Create product attribute object
@@ -111,16 +106,32 @@ $attributes = $fields_obj->get_channel_attributes();
 <div class="wrap">
     <div class="woo-product-feed-pro-form-style-2">
         <div class="woo-product-feed-pro-form-style-2-heading">
-            <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a>
+            <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a>
             <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
-            <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
+            <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
             <?php endif; ?>
             <h1 class="title"><?php esc_html_e( 'Field mapping', 'woo-product-feed-pro' ); ?></h1>
         </div>
 
-        <div class="<?php echo esc_attr( $notifications_box['message_type'] ); ?>">
-            <p><?php echo wp_kses_post( $notifications_box['message'] ); ?></p>
-        </div>
+        <?php
+        // Display info message notice.
+        $admin_notice = new Admin_Notice(
+            sprintf(
+                // translators: %s = link to learn static values.
+                __(
+                    '<p>For the selected channel the attributes shown below are mandatory, please map them to your product attributes. 
+                    We\'ve already pre-filled a lot of mappings so all you have to do is check those and map the ones that are left blank or add new ones by hitting the \'Add field mapping\' button.</p>
+                    <p><strong><i><a href="%s" target="_blank">Learn how to use static values</a></i></strong></p>',
+                    'woo-product-feed-pro'
+                ),
+                esc_url( Helper::get_utm_url( '/how-to-use-static-values-and-create-fake-content-for-your-product-feed', 'pfp', 'fieldmappingnotice', 'learnstaticvalues' ) )
+            ),
+            'info',
+            'html',
+            false
+        );
+        $admin_notice->run();
+        ?>
 
         <form action="" id="fieldmapping" method="post">
             <?php wp_nonce_field( 'woosea_ajax_nonce' ); ?>

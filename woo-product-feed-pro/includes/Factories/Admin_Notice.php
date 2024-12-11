@@ -45,6 +45,16 @@ class Admin_Notice extends Abstract_Class {
     protected string $message_format;
 
     /**
+     * Holds the dismissible status of the notice.
+     *
+     * @since 13.3.4
+     * @access protected
+     *
+     * @var bool The dismissible status of the notice.
+     */
+    protected bool $is_dismissible;
+
+    /**
      * Holds the missing plugins.
      *
      * @since 13.3.7
@@ -63,12 +73,14 @@ class Admin_Notice extends Abstract_Class {
      * @param string $message                  The admin notice message.
      * @param string $type                     The admin notice type.
      * @param string $message_format           The message format. Either 'string' or 'html'.
+     * @param bool   $is_dismissible           The dismissible status of the notice.
      * @param array  $failed_dependencies      The failed dependencies.
      */
-    public function __construct( $message, $type = 'error', $message_format = 'string', $failed_dependencies = array() ) {
+    public function __construct( $message, $type = 'error', $message_format = 'string', $is_dismissible = true, $failed_dependencies = array() ) {
         $this->message             = $message;
         $this->type                = $type;
         $this->message_format      = $message_format;
+        $this->is_dismissible      = $is_dismissible;
         $this->failed_dependencies = $failed_dependencies;
     }
 
@@ -203,6 +215,7 @@ class Admin_Notice extends Abstract_Class {
         $message_format = $this->message_format;
         $message        = $this->message;
         $type           = $this->type;
+        $is_dismissible = $this->is_dismissible;
 
         switch ( $type ) {
             case 'failed_dependency':

@@ -141,7 +141,7 @@ class Helper {
             return false;
         }
 
-        $is_plugin_page = strpos( $screen->id, 'product-feed-pro' ) !== false || strpos( $screen->id, 'product-feed-elite' ) !== false;
+        $is_plugin_page = strpos( $screen->id, 'product-feed' ) !== false || strpos( $screen->id, 'product-feed-elite' ) !== false;
         return apply_filters( 'adt_is_plugin_page', $is_plugin_page );
     }
 
@@ -440,5 +440,50 @@ class Helper {
         }
 
         return $filtered;
+    }
+
+    /**
+     * Check if the user is allowed to manage product feed.
+     *
+     * @since 13.3.4
+     * @access private
+     *
+     * @return bool
+     */
+    public static function is_current_user_allowed() {
+        $user          = wp_get_current_user();
+        $allowed_roles = apply_filters( 'adt_manage_product_feed_allowed_roles', array() );
+        if ( current_user_can( 'manage_adtribes_product_feeds' ) || array_intersect( $allowed_roles, $user->roles ) ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get the URL with UTM parameters.
+     *
+     * @param string $url_path     URL path from main.
+     * @param string $utm_source   UTM source.
+     * @param string $utm_medium   UTM medium.
+     * @param string $utm_campaign UTM campaign.
+     * @param string $site_url     URL - defaults to `https://adtribes.io/`.
+     *
+     * @since 13.3.4
+     * @return string
+     */
+    public static function get_utm_url( $url_path = '', $utm_source = 'pfp', $utm_medium = 'action', $utm_campaign = 'default', $site_url = 'https://adtribes.io/' ) {
+
+        $utm_content = get_option( 'pfp_installed_by', false );
+        $url         = trailingslashit( $site_url ) . $url_path;
+
+        return add_query_arg(
+            array(
+                'utm_source'   => $utm_source,
+                'utm_medium'   => $utm_medium,
+                'utm_campaign' => $utm_campaign,
+                'utm_content'  => $utm_content,
+            ),
+            trailingslashit( $url )
+        );
     }
 }

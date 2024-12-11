@@ -8,6 +8,7 @@
 namespace AdTribes\PFP\Classes;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Traits\Singleton_Trait;
 
@@ -33,7 +34,7 @@ class Heartbeat extends Abstract_Class {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
-        if ( ! Product_Feed_Helper::is_current_user_allowed() ) {
+        if ( ! Helper::is_current_user_allowed() ) {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 

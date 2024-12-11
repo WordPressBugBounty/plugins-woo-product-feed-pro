@@ -208,7 +208,7 @@ class Marketing extends Abstract_Class {
 
         wp_send_json_success(
             array(
-                'redirect_to' => admin_url( 'admin.php?page=woosea_manage_feed' ),
+                'redirect_to' => admin_url( 'admin.php?page=woo-product-feed' ),
             )
         );
     }

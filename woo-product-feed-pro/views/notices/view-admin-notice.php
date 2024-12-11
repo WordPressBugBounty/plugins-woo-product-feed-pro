@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <div
-    class="notice notice-<?php echo esc_attr( "$type $type" ); ?> is-dismissible"
+    class="notice notice-<?php echo esc_attr( "$type $type" ); ?> <?php echo $is_dismissible ? 'is-dismissible' : ''; ?>"
     id="<?php echo esc_attr( $message_id ); ?>"
 >
     <?php if ( 'html' === $message_format ) : ?>

@@ -7,6 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use AdTribes\PFP\Helpers\Helper;
 ?>
 <div id="pfp-about-page" class="pfp-page wrap nosubsub">
+    <?php wp_nonce_field( 'adt_install_plugin', 'adt-install-plugin' ); ?>
     <div class="container">
         <div class="row">
             <div class="col xs-text-center">
@@ -47,10 +48,10 @@ use AdTribes\PFP\Helpers\Helper;
                             <div class="install-status">
                                 <p class="m-0">
                                     <strong><?php esc_html_e( 'Status:', 'woo-product-feed-pro' ); ?></strong>
-                                    <?php echo Helper::is_plugin_installed( 'advanced-coupons-for-woocommerce-free/advanced-coupons-for-woocommerce-free.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?>
+                                    <span class="install-status-value"><?php echo Helper::is_plugin_installed( 'advanced-coupons-for-woocommerce-free/advanced-coupons-for-woocommerce-free.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?></span>
                                 </p>
                                 <?php if ( ! Helper::is_plugin_installed( 'advanced-coupons-for-woocommerce-free/advanced-coupons-for-woocommerce-free.php' ) ) : ?>
-                                <a href="<?php echo esc_url( wp_nonce_url( 'update.php?action=install-plugin&plugin=advanced-coupons-for-woocommerce-free', 'install-plugin_advanced-coupons-for-woocommerce-free' ) ); ?>" class="button button-primary"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
+                                <a href="#" data-plugin-slug="advanced-coupons-for-woocommerce-free" class="button button-primary pfp-install-plugin"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -67,10 +68,10 @@ use AdTribes\PFP\Helpers\Helper;
                             <div class="install-status">
                                 <p class="m-0">
                                     <strong><?php esc_html_e( 'Status:', 'woo-product-feed-pro' ); ?></strong>
-                                    <?php echo Helper::is_plugin_installed( 'wc-vendors\class-wc-vendors.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?>
+                                    <span class="install-status-value"><?php echo Helper::is_plugin_installed( 'wc-vendors\class-wc-vendors.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?></span>
                                 </p>
                                 <?php if ( ! Helper::is_plugin_installed( 'wc-vendors\class-wc-vendors.php' ) ) : ?>
-                                <a href="<?php echo esc_url( wp_nonce_url( 'update.php?action=install-plugin&plugin=wc-vendors', 'install-plugin_wc-vendors' ) ); ?>" class="button button-primary"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
+                                <a href="#" data-plugin-slug="wc-vendors" class="button button-primary pfp-install-plugin"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -87,10 +88,10 @@ use AdTribes\PFP\Helpers\Helper;
                             <div class="install-status">
                                 <p class="m-0">
                                     <strong><?php esc_html_e( 'Status:', 'woo-product-feed-pro' ); ?></strong>
-                                    <?php echo Helper::is_plugin_installed( 'woocommerce-wholesale-prices/woocommerce-wholesale-prices.plugin.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?>
+                                    <span class="install-status-value"><?php echo Helper::is_plugin_installed( 'woocommerce-wholesale-prices/woocommerce-wholesale-prices.plugin.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?></span>
                                 </p>
                                 <?php if ( ! Helper::is_plugin_installed( 'woocommerce-wholesale-prices/woocommerce-wholesale-prices.plugin.php' ) ) : ?>
-                                <a href="<?php echo esc_url( wp_nonce_url( 'update.php?action=install-plugin&plugin=woocommerce-wholesale-prices', 'install-plugin_woocommerce-wholesale-prices' ) ); ?>" class="button button-primary"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
+                                <a href="#" data-plugin-slug="woocommerce-wholesale-prices" class="button button-primary pfp-install-plugin"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -107,10 +108,10 @@ use AdTribes\PFP\Helpers\Helper;
                             <div class="install-status">
                                 <p class="m-0">
                                     <strong><?php esc_html_e( 'Status:', 'woo-product-feed-pro' ); ?></strong>
-                                    <?php echo Helper::is_plugin_installed( 'invoice-gateway-for-woocommerce/invoice-gateway-for-woocommerce.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?>
+                                    <span class="install-status-value"><?php echo Helper::is_plugin_installed( 'invoice-gateway-for-woocommerce/invoice-gateway-for-woocommerce.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?></span>
                                 </p>
                                 <?php if ( ! Helper::is_plugin_installed( 'invoice-gateway-for-woocommerce/invoice-gateway-for-woocommerce.php' ) ) : ?>
-                                <a href="<?php echo esc_url( wp_nonce_url( 'update.php?action=install-plugin&plugin=invoice-gateway-for-woocommerce', 'install-plugin_invoice-gateway-for-woocommerce' ) ); ?>" class="button button-primary"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
+                                <a href="#" data-plugin-slug="invoice-gateway-for-woocommerce" class="button button-primary pfp-install-plugin"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -127,10 +128,10 @@ use AdTribes\PFP\Helpers\Helper;
                             <div class="install-status">
                                 <p class="m-0">
                                     <strong><?php esc_html_e( 'Status:', 'woo-product-feed-pro' ); ?></strong>
-                                    <?php echo Helper::is_plugin_installed( 'woocommerce-exporter/exporter.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?>
+                                    <span class="install-status-value"><?php echo Helper::is_plugin_installed( 'woocommerce-exporter/exporter.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?></span>
                                 </p>
                                 <?php if ( ! Helper::is_plugin_installed( 'woocommerce-exporter/exporter.php' ) ) : ?>
-                                <a href="<?php echo esc_url( wp_nonce_url( 'update.php?action=install-plugin&plugin=woocommerce-exporter', 'install-plugin_woocommerce-exporter' ) ); ?>" class="button button-primary"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
+                                <a href="#" data-plugin-slug="woocommerce-exporter" class="button button-primary pfp-install-plugin"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -147,10 +148,11 @@ use AdTribes\PFP\Helpers\Helper;
                             <div class="install-status">
                                 <p class="m-0">
                                     <strong><?php esc_html_e( 'Status:', 'woo-product-feed-pro' ); ?></strong>
-                                    <?php echo Helper::is_plugin_installed( 'woocommerce-store-toolkit/store-toolkit.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?>
+                                    <span class="install-status-value"><?php echo Helper::is_plugin_installed( 'woocommerce-store-toolkit/store-toolkit.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?></span>
                                 </p>
                                 <?php if ( ! Helper::is_plugin_installed( 'woocommerce-store-toolkit/store-toolkit.php' ) ) : ?>
-                                <a href="<?php echo esc_url( wp_nonce_url( 'update.php?action=install-plugin&plugin=woocommerce-store-toolkit', 'install-plugin_woocommerce-store-toolkit' ) ); ?>" class="button button-primary"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
+                                <!-- <a href="<?php echo esc_url( wp_nonce_url( 'update.php?action=install-plugin&plugin=woocommerce-store-toolkit', 'install-plugin_woocommerce-store-toolkit' ) ); ?>" class="button button-primary"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a> -->
+                                <a href="#" data-plugin-slug="woocommerce-store-toolkit" class="button button-primary pfp-install-plugin"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>

@@ -2,6 +2,7 @@
 // phpcs:disable
 use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Factories\Product_Feed;
+use AdTribes\PFP\Factories\Admin_Notice;
 use AdTribes\PFP\Classes\Product_Feed_Admin;
 use AdTribes\PFP\Classes\Product_Feed_Attributes;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
@@ -23,12 +24,6 @@ function my_footer_text( $default ) {
     return $rating_link;
 }
 add_filter( 'admin_footer_text', 'my_footer_text' );
-
-/**
- * Create notification object
- */
-$notifications_obj = new WooSEA_Get_Admin_Notifications();
-$notifications_box = $notifications_obj->get_admin_notifications( '4', 'false' );
 
 /**
  * Create product attribute object
@@ -88,17 +83,30 @@ do_action( 'adt_before_product_feed_manage_page', 4, $project_hash, $feed );
     <div class="wrap">
         <div class="woo-product-feed-pro-form-style-2">
             <div class="woo-product-feed-pro-form-style-2-heading">
-                <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a> 
+                <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a> 
                 <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
-                <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
+                <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
                 <?php endif; ?>
                 <h1 class="title"><?php esc_html_e( 'Feed filters and rules', 'woo-product-feed-pro' ); ?></h1>
             </div>
 
-            <div class="<?php echo esc_attr( $notifications_box['message_type'] ); ?>">
-                <p><?php echo wp_kses_post( $notifications_box['message'] ); ?></p>
-            </div>
+            <?php
+            // Display info message notice.
+            ob_start();
+            include_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-feed-filter-rule-notice.php';
+            $message = ob_get_clean();
+
+            $admin_notice = new Admin_Notice(
+                $message,
+                'info',
+                'html',
+                false
+            );
+            $admin_notice->run();
+            ?>
+
             <form id="rulesandfilters" method="post">
+            <input type="hidden" id="feed_id" name="feed_id" value="<?php echo esc_attr( $feed->id ?? 0 ); ?>">
             <?php wp_nonce_field( 'woosea_ajax_nonce' ); ?>
 
             <table class="woo-product-feed-pro-table" id="woosea-ajax-table" border="1">

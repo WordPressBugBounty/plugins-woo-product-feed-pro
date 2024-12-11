@@ -33,28 +33,6 @@ $versions = array(
 $order_rows = '';
 
 /**
- * Create notification object and get message and message type as WooCommerce is inactive
- * also set variable allowed on 0 to disable submit button on step 1 of configuration
- */
-$notifications_obj = new WooSEA_Get_Admin_Notifications();
-if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
-    $notifications_box = $notifications_obj->get_admin_notifications( '9', 'false' );
-} else {
-    $notifications_box = $notifications_obj->get_admin_notifications( '14', 'false' );
-}
-
-if ( $versions['PHP'] < 5.6 ) {
-    $notifications_box = $notifications_obj->get_admin_notifications( '11', 'false' );
-    $php_validation    = 'False';
-} else {
-    $php_validation = 'True';
-}
-
-if ( $versions['WooCommerce'] < 3 ) {
-    $notifications_box = $notifications_obj->get_admin_notifications( '13', 'false' );
-}
-
-/**
  * Change default footer text, asking to review our plugin.
  *
  * @param string $default Default footer text.
@@ -75,9 +53,6 @@ add_filter( 'admin_footer_text', 'my_footer_text' );
 // we check if the page is visited by click on the tabs or on the menu button.
 // then we get the active tab.
 $active_tab = 'woosea_manage_settings';
-
-// create nonce
-$nonce = wp_create_nonce( 'woosea_ajax_nonce' );
 
 $header_text = __( 'Plugin settings', 'woo-product-feed-pro' );
 if ( isset( $_GET['tab'] ) ) {
@@ -100,25 +75,14 @@ if ( isset( $_GET['tab'] ) ) {
 
         <tbody class="woo-product-feed-pro-body">
             <div class="woo-product-feed-pro-form-style-2-heading">
-                <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a>
+                <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a>
                 <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
-                <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
+                <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
                 <?php endif; ?>
                 <h1 class="title"><?php echo esc_html( $header_text ); ?></h1>
             </div>
 
             <?php
-            if ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) {
-            ?>
-                <div class="notice notice-error is-dismissible">
-                    <p>
-                        <strong><?php _e( 'WARNING: Your WP-Cron is disabled', 'woo-product-feed-pro' ); ?></strong><br /></br />
-                        We detected that your WP-cron has been disabled in your wp-config.php file. Our plugin heavily depends on the WP-cron being active for it to be able to update and generate your product feeds. More information on the inner workings of our plugin and instructions on how to enable your WP-Cron can be found here: <a href="https://adtribes.io/help-my-feed-processing-is-stuck/?utm_source=pfp&utm_medium=manage-feed&utm_campaign=cron-warning&utm_content=notification" target="_blank"><strong>My feed won't update or is stuck processing</strong></a>.
-                    </p>
-                </div>
-            <?php
-            }
-
             /**
              * Request our plugin users to write a review
              */
@@ -169,14 +133,7 @@ if ( isset( $_GET['tab'] ) ) {
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $add_mother_image = get_option( 'add_mother_image' );
-                                            if ( $add_mother_image == 'yes' ) {
-                                                print '<input type="checkbox" id="add_mother_image" name="add_mother_image" class="checkbox-field" checked>';
-                                            } else {
-                                                print '<input type="checkbox" id="add_mother_image" name="add_mother_image" class="checkbox-field">';
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="add_mother_image" name="add_mother_image" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'add_mother_image' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
@@ -187,14 +144,7 @@ if ( isset( $_GET['tab'] ) ) {
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $add_all_shipping = get_option( 'add_all_shipping' );
-                                            if ( $add_all_shipping == 'yes' ) {
-                                                print '<input type="checkbox" id="add_all_shipping" name="add_all_shipping" class="checkbox-field" checked>';
-                                            } else {
-                                                print '<input type="checkbox" id="add_all_shipping" name="add_all_shipping" class="checkbox-field">';
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="add_all_shipping" name="add_all_shipping" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'add_all_shipping' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
@@ -205,14 +155,7 @@ if ( isset( $_GET['tab'] ) ) {
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $free_shipping = get_option( 'free_shipping' );
-                                            if ( $free_shipping == 'yes' ) {
-                                                print '<input type="checkbox" id="free_shipping" name="free_shipping" class="checkbox-field" checked>';
-                                            } else {
-                                                print '<input type="checkbox" id="free_shipping" name="free_shipping" class="checkbox-field">';
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="free_shipping" name="free_shipping" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'free_shipping' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
@@ -223,14 +166,7 @@ if ( isset( $_GET['tab'] ) ) {
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $remove_free_shipping = get_option( 'remove_free_shipping' );
-                                            if ( $remove_free_shipping == 'yes' ) {
-                                                print '<input type="checkbox" id="remove_free_shipping" name="remove_free_shipping" class="checkbox-field" checked>';
-                                            } else {
-                                                print '<input type="checkbox" id="remove_free_shipping" name="remove_free_shipping" class="checkbox-field">';
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="remove_free_shipping" name="remove_free_shipping" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'remove_free_shipping' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
@@ -241,14 +177,7 @@ if ( isset( $_GET['tab'] ) ) {
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $local_pickup_shipping = get_option( 'local_pickup_shipping' );
-                                            if ( $local_pickup_shipping == 'yes' ) {
-                                                print '<input type="checkbox" id="local_pickup_shipping" name="local_pickup_shipping" class="checkbox-field" checked>';
-                                            } else {
-                                                print '<input type="checkbox" id="local_pickup_shipping" name="local_pickup_shipping" class="checkbox-field">';
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="local_pickup_shipping" name="local_pickup_shipping" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'local_pickup_shipping' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
@@ -259,14 +188,7 @@ if ( isset( $_GET['tab'] ) ) {
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $add_woosea_basic = get_option( 'add_woosea_basic' );
-                                            if ( $add_woosea_basic == 'yes' ) {
-                                                print '<input type="checkbox" id="add_woosea_basic" name="add_woosea_basic" class="checkbox-field" checked>';
-                                            } else {
-                                                print '<input type="checkbox" id="add_woosea_basic" name="add_woosea_basic" class="checkbox-field">';
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="add_woosea_basic" name="add_woosea_basic" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'add_woosea_basic' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
@@ -277,114 +199,88 @@ if ( isset( $_GET['tab'] ) ) {
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $add_woosea_logging = get_option( 'add_woosea_logging' );
-                                            if ( $add_woosea_logging == 'yes' ) {
-                                                print '<input type="checkbox" id="add_woosea_logging" name="add_woosea_logging" class="checkbox-field" checked>';
-                                            } else {
-                                                print '<input type="checkbox" id="add_woosea_logging" name="add_woosea_logging" class="checkbox-field">';
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="add_woosea_logging" name="add_woosea_logging" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'add_woosea_logging' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
                                 </tr>
-                                <tr id="facebook_pixel">
+                                <tr id="facebook_pixel" class="group" data-group="facebook_pixel">
                                     <td>
-                                        <span><?php _e( 'Add Facebook Pixel', 'woo-product-feed-pro' ); ?> (<a href="https://adtribes.io/facebook-pixel-feature/" target="_blank"><?php _e( 'Read more about this', 'woo-product-feed-pro' ); ?>)</a></span>
+                                        <span>
+                                            <?php _e( 'Add Facebook Pixel', 'woo-product-feed-pro' ); ?> 
+                                            <a href="<?php echo esc_url( Helper::get_utm_url( 'facebook-pixel-feature', 'pfp', 'manage-settings', 'fbpixelsetting' ) ); ?>" target="_blank">
+                                                (<?php _e( 'Read more about this', 'woo-product-feed-pro' ); ?>)
+                                            </a>
+                                        </span>
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $add_facebook_pixel = get_option( 'add_facebook_pixel' );
-                                            if ( $add_facebook_pixel == 'yes' ) {
-                                                echo "<input type=\"checkbox\" id=\"add_facebook_pixel\" name=\"add_facebook_pixel\" class=\"checkbox-field\" value=\"$nonce\" checked>";
-                                            } else {
-                                                echo "<input type=\"checkbox\" id=\"add_facebook_pixel\" name=\"add_facebook_pixel\" class=\"checkbox-field\" value=\"$nonce\">";
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="add_facebook_pixel" name="add_facebook_pixel" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'add_facebook_pixel' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
                                 </tr>
-                                <?php
-                                if ( $add_facebook_pixel == 'yes' ) {
-                                    $facebook_pixel_id = get_option( 'woosea_facebook_pixel_id' );
-                                    echo "<tr id=\"facebook_pixel_id\"><td colspan=\"2\"><span>Insert your Facebook Pixel ID</span>&nbsp;<input type=\"hidden\" name=\"nonce_facebook_pixel_id\" id=\"nonce_facebook_pixel_id\" value=\"$nonce\"><input type=\"text\" class=\"input-field-medium\" id=\"fb_pixel_id\" name=\"fb_pixel_id\" value=\"$facebook_pixel_id\">&nbsp;<input type=\"button\" id=\"save_facebook_pixel_id\" value=\"Save\"></td></tr>";
-                                }
-                                ?>
-
-                                <?php
-                                $content_ids = 'variation';
-                                $content_ids = get_option( 'add_facebook_pixel_content_ids' );
-                                ?>
-
+                                <tr id="facebook_pixel_id" class="group-child <?php echo get_option( 'add_facebook_pixel' ) !== 'yes' ? 'hidden' : ''; ?>" data-group="facebook_pixel">
+                                    <td colspan="2">
+                                        <span><?php _e( 'Insert your Facebook Pixel ID', 'woo-product-feed-pro' ); ?></span>&nbsp;
+                                        <input type="text" class="input-field-medium" id="fb_pixel_id" name="woosea_facebook_pixel_id" value="<?php echo get_option( 'woosea_facebook_pixel_id', '' ) ?>">&nbsp;
+                                        <input type="button" class="adt-pfp-save-setting-button" id="save_facebook_pixel_id" value="Save">
+                                        <p class="error-message hidden"></p>
+                                    </td>
+                                </tr>
                                 <tr id="content_ids">
                                     <td colspan="2">
                                         <span><?php _e( 'Content IDS variable products Facebook Pixel', 'woo-product-feed-pro' ); ?></span>
-                                        <select id="woosea_content_ids" name="woosea_content_ids" class="select-field">
-                                            <?php
-                                            if ( $content_ids == 'variation' ) {
-                                                echo "<option value=\"variation\" selected>Variation product ID's</option>";
-                                                print '<option value="variable">Variable product ID</option>';
-                                            } else {
-                                                echo "<option value=\"variation\" selected>Variation product ID's</option>";
-                                                print '<option value="variable" selected>Variable product ID</option>';
-                                            }
-                                            ?>
+                                        <?php $content_ids = get_option( 'add_facebook_pixel_content_ids', 'variation' ); ?>
+                                        <select id="woosea_content_ids" name="add_facebook_pixel_content_ids" class="select-field adt-pfp-general-setting">
+                                            <option value="variation" <?php echo $content_ids == 'variation' ? 'selected' : ''; ?>><?php _e( 'Variation product ID\'s', 'woo-product-feed-pro' ); ?></option>
+                                            <option value="variable" <?php echo $content_ids == 'variable' ? 'selected' : ''; ?>><?php _e( 'Variable product ID', 'woo-product-feed-pro' ); ?></option>
                                         </select>
                                     </td>
                                 </tr>
-                                <tr id="remarketing">
+                                <tr id="remarketing" class="group" data-group="remarketing">
                                     <td>
                                         <span><?php _e( 'Add Google Dynamic Remarketing Pixel:', 'woo-product-feed-pro' ); ?></span>
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $add_remarketing = get_option( 'add_remarketing' );
-                                            if ( $add_remarketing == 'yes' ) {
-                                                echo "<input type=\"checkbox\" id=\"add_remarketing\" name=\"add_remarketing\" class=\"checkbox-field\" value=\"$nonce\" checked>";
-                                            } else {
-                                                echo "<input type=\"checkbox\" id=\"add_remarketing\" name=\"add_remarketing\" class=\"checkbox-field\" value=\"$nonce\">";
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="add_remarketing" name="add_remarketing" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'add_remarketing' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
                                 </tr>
-                                <?php
-                                if ( $add_remarketing == 'yes' ) {
-                                    $adwords_conversion_id = get_option( 'woosea_adwords_conversion_id' );
-
-                                    echo "<tr id=\"adwords_conversion_id\"><td colspan=\"2\"><span>Insert your Dynamic Remarketing Conversion tracking ID:</span>&nbsp;<input type=\"hidden\" name=\"nonce_adwords_conversion_id\" id=\"nonce_adwords_conversion_id\" value=\"$nonce\"><input type=\"text\" class=\"input-field-medium\" id=\"adwords_conv_id\" name=\"adwords_conv_id\" value=\"$adwords_conversion_id\">&nbsp;<input type=\"button\" id=\"save_conversion_id\" value=\"Save\"></td></tr>";
-                                }
-                                ?>
-
-                                <tr id="batch">
+                                <tr id="adwords_conversion_id" class="group-child <?php echo get_option( 'add_remarketing' ) !== 'yes' ? 'hidden' : ''; ?>" data-group="remarketing">
+                                    <td colspan="2">
+                                        <span><?php _e( 'Insert your Dynamic Remarketing Conversion tracking ID:', 'woo-product-feed-pro' ); ?></span>&nbsp;
+                                        <input type="text" class="input-field-medium" id="adwords_conv_id" name="woosea_adwords_conversion_id" value="<?php echo get_option( 'woosea_adwords_conversion_id', '' ) ?>">&nbsp;
+                                        <input type="button" class="adt-pfp-save-setting-button" id="save_conversion_id" value="Save">
+                                        <p class="error-message hidden"></p>
+                                    </td>
+                                </tr>
+                                <tr id="batch" class="group" data-group="batch">
                                     <td>
-                                        <span><?php _e( 'Change products per batch number', 'woo-product-feed-pro' ); ?> (<a href="https://adtribes.io/batch-size-configuration-product-feed/?utm_source=pfp&utm_medium=manage-settings&utm_content=batch size" target="_blank"><?php _e( 'Read more about this', 'woo-product-feed-pro' ); ?>)</a></span>
+                                        <span>
+                                            <?php _e( 'Change products per batch number', 'woo-product-feed-pro' ); ?> 
+                                            <a href="<?php echo esc_url( Helper::get_utm_url( 'batch-size-configuration-product-feed', 'pfp', 'manage-settings', 'batchsizesetting' ) ); ?>" target="_blank">
+                                                (<?php _e( 'Read more about this', 'woo-product-feed-pro' ); ?>)
+                                            </a>
+                                        </span>
                                     </td>
                                     <td>
                                         <label class="woo-product-feed-pro-switch">
-                                            <?php
-                                            $add_batch = get_option( 'add_batch' );
-                                            if ( $add_batch == 'yes' ) {
-                                                print '<input type="checkbox" id="add_batch" name="add_batch" class="checkbox-field" checked>';
-                                            } else {
-                                                print '<input type="checkbox" id="add_batch" name="add_batch" class="checkbox-field">';
-                                            }
-                                            ?>
+                                            <input type="checkbox" id="add_batch" name="add_batch" class="checkbox-field adt-pfp-general-setting" <?php echo get_option( 'add_batch' ) == 'yes' ? 'checked' : ''; ?>>
                                             <div class="woo-product-feed-pro-slider round"></div>
                                         </label>
                                     </td>
                                 </tr>
-                                <?php
-                                if ( $add_batch == 'yes' ) {
-                                    $woosea_batch_size = get_option( 'woosea_batch_size' );
-                                    echo "<tr id=\"woosea_batch_size\"><td colspan=\"2\"><span>Insert batch size:</span>&nbsp;<input type=\"hidden\" name=\"nonce_batch\" id=\"nonce_batch\" value=\"$nonce\"><input type=\"text\" class=\"input-field-medium\" id=\"batch_size\" name=\"batch_size\" value=\"$woosea_batch_size\">&nbsp;<input type=\"button\" id=\"save_batch_size\" value=\"Save\"></td></tr>";
-                                }
-                                ?>
+                                <tr id="woosea_batch_size" class="group-child <?php echo get_option( 'add_batch' ) !== 'yes' ? 'hidden' : ''; ?>" data-group="batch">
+                                    <td colspan="2">
+                                        <span><?php _e( 'Insert batch size:', 'woo-product-feed-pro' ); ?></span>&nbsp;
+                                        <input type="text" class="input-field-medium" id="batch_size" name="woosea_batch_size" value="<?php echo get_option( 'woosea_batch_size', '' ) ?>">&nbsp;
+                                        <input type="button" class="adt-pfp-save-setting-button" id="save_batch_size" value="Save">
+                                        <p class="error-message hidden"></p>
+                                    </td>
+                                </tr>
                             </form>
                         </table>
                         <?php do_action( 'adt_after_manage_settings_table' ); ?>
@@ -493,7 +389,7 @@ if ( isset( $_GET['tab'] ) ) {
                         print '<table class="woo-product-feed-pro-table">';
                         print '<tr><td><strong>System check</strong></td><td><strong>Status</strong></td></tr>';
                         echo "<tr><td>WP-Cron enabled</td><td><strong>$cron_enabled</strong></td></tr>";
-                        echo "<tr><td>PHP-version</td><td>$php_validation ($versions[PHP])</td></tr>";
+                        echo "<tr><td>PHP-version</td><td>($versions[PHP])</td></tr>";
                         echo "<tr><td>Product feed directory writable</td><td>$directory_perm</td></tr>";
                         echo "<tr><td>Product feed XML directory writable</td><td>$directory_perm_xml</td></tr>";
                         echo "<tr><td>Product feed CSV directory writable</td><td>$directory_perm_csv</td></tr>";
@@ -504,6 +400,7 @@ if ( isset( $_GET['tab'] ) ) {
                         print '</table>';
 
                         // Display the debugging information.
+                        $notifications_obj  = new \WooSEA_Get_Admin_Notifications();
                         $debug_info_content = $notifications_obj->woosea_debug_informations( $versions, $product_numbers, $order_rows );
                         $debug_info_title   = __( 'System Report', 'woo-product-feed-pro' );
 

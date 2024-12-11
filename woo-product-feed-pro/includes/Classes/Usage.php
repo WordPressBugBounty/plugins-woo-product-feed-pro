@@ -643,7 +643,7 @@ class Usage extends Abstract_Class {
                 /* Translators: %1$s: Line break, %2$s: Link to usage tracking documentation, %3$s: Closing anchor tag. */
                 __( 'By allowing us to track usage data we can better help you because we know with which WordPress configurations, themes and plugins we should test.%1$sComplete documentation on usage tracking is available %2$shere%3$s.', 'woo-product-feed-pro' ),
                 '<br/>',
-                '<a href="https://adtribes.io/knowledge-base/usage-tracking//?utm_source=pfp&utm_medium=kb&utm_campaign=allowusagesetting" target="_blank">',
+                '<a href="' . Helper::get_utm_url( 'knowledge-base/usage-tracking', 'pfp', 'kb', 'allowusagesetting' ) . '" target="_blank">',
                 '</a>'
             ),
             'id'         => ADT_PFP_USAGE_ALLOW,
@@ -672,7 +672,7 @@ class Usage extends Abstract_Class {
 
         // Check if the current user is allowed to view the notice.
         // And if the current page is a plugin page or a WooCommerce screen.
-        if ( Product_Feed_Helper::is_current_user_allowed()
+        if ( Helper::is_current_user_allowed()
             && (
                 Helper::is_plugin_page() ||
                 Helper::is_wc_screen()
@@ -689,7 +689,7 @@ class Usage extends Abstract_Class {
                     ),
                     '<p>',
                     '</p>',
-                    '<a href="ttps://adtribes.io/knowledge-base/usage-tracking//?utm_source=pfp&utm_medium=kb&utm_campaign=allowusagenotice" target="_blank">',
+                    '<a href="' . Helper::get_utm_url( 'knowledge-base/usage-tracking', 'pfp', 'kb', 'allowusagenotice' ) . '" target="_blank">',
                     '</a>',
                 ),
                 'allow_tracking',
@@ -707,7 +707,7 @@ class Usage extends Abstract_Class {
     public function register_allow_usage_tracking_notice_scripts() {
         // Check if the current user is allowed to view the notice.
         // And if the current page is a plugin page or a WooCommerce screen.
-        if ( Product_Feed_Helper::is_current_user_allowed()
+        if ( Helper::is_current_user_allowed()
             && (
                 Helper::is_plugin_page() ||
                 Helper::is_wc_screen()
@@ -752,11 +752,11 @@ class Usage extends Abstract_Class {
      * @access public
      */
     public function ajax_adt_pfp_anonymous_data() {
-        if ( ! Product_Feed_Helper::is_current_user_allowed() ) {
+        if ( ! Helper::is_current_user_allowed() ) {
             wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
         }
 
-        if ( ! wp_verify_nonce( $_REQUEST['security'], 'adt_pfp_allow_tracking_nonce' ) ) {
+        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -782,7 +782,7 @@ class Usage extends Abstract_Class {
      * @access public
      */
     public function ajax_adt_pfp_allow_tracking_notice_action() {
-        if ( ! Product_Feed_Helper::is_current_user_allowed() ) {
+        if ( ! Helper::is_current_user_allowed() ) {
             wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
         }
 

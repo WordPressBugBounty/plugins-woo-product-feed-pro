@@ -1,6 +1,8 @@
 <?php
 use AdTribes\PFP\Factories\Product_Feed;
+use AdTribes\PFP\Factories\Admin_Notice;
 use AdTribes\PFP\Classes\Product_Feed_Admin;
+use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Helpers\Helper;
 
@@ -23,15 +25,13 @@ add_filter( 'admin_footer_text', 'my_footer_text' );
 delete_option( 'woosea_cat_mapping' );
 
 /**
- * Create notification object
- */
-$notifications_obj = new WooSEA_Get_Admin_Notifications();
-$notifications_box = $notifications_obj->get_admin_notifications( '1', 'false' );
-
-/**
  * Update or get project configuration
  */
 $nonce = wp_create_nonce( 'woosea_ajax_nonce' );
+
+$google_product_taxonomy_fetcher = Google_Product_Taxonomy_Fetcher::instance();
+$is_fetching                     = $google_product_taxonomy_fetcher->is_fetching();
+$is_file_exists                  = $google_product_taxonomy_fetcher->is_file_exists();
 
 /**
  * Update project configuration
@@ -49,120 +49,14 @@ if ( array_key_exists( 'project_hash', $_GET ) ) { // phpcs:ignore WordPress.Sec
         $manage_project = 'yes';
     }
 } elseif ( wp_verify_nonce( $_POST['_wpnonce'], 'woosea_ajax_nonce' ) ) {
-        $feed         = Product_Feed_Admin::update_temp_product_feed( $_POST ?? array() );
-        $channel_data = Product_Feed_Helper::get_channel_from_legacy_channel_hash( sanitize_text_field( $_POST['channel_hash'] ) );
+    $feed         = Product_Feed_Admin::update_temp_product_feed( $_POST ?? array() );
+    $channel_data = Product_Feed_Helper::get_channel_from_legacy_channel_hash( sanitize_text_field( $_POST['channel_hash'] ) );
 
-        $channel_hash = $feed['channel_hash'];
-        $project_hash = $feed['project_hash'];
+    $channel_hash = $feed['channel_hash'];
+    $project_hash = $feed['project_hash'];
 
-        $feed_mappings  = array();
-        $count_mappings = 0;
-}
-
-
-/**
- * Recursively generates a hierarchical term tree for a given category.
- *
- * @param int   $category The ID of the category.
- * @param array $prev_mapped An array of previously mapped categories.
- * @return string The generated hierarchical term tree.
- */
-function woosea_hierarchical_term_tree( $category, $prev_mapped ) {
-    $r = '';
-
-    $args = array(
-        'taxonomy'      => 'product_cat',
-        'parent'        => $category,
-        'hide_empty'    => false,
-        'no_found_rows' => true,
-    );
-    $next = get_terms( $args );
-
-    $nr_categories = count( $next );
-    $yo            = 0;
-
-    if ( $next ) {
-        foreach ( $next as $sub_category ) {
-            ++$yo;
-            $x               = $sub_category->term_id;
-            $woo_category    = $sub_category->name;
-            $woo_category_id = $sub_category->term_id;
-
-            $mapped_category     = '';
-            $mapped_active_class = 'input-field-large';
-            $woo_category        = preg_replace( '/&amp;/', '&', $woo_category );
-            $woo_category        = preg_replace( '/"/', '&quot;', $woo_category );
-
-            // Check if mapping is in place.
-            if ( ( array_key_exists( $x, $prev_mapped ) ) || ( array_key_exists( $woo_category, $prev_mapped ) ) ) {
-                if ( array_key_exists( $x, $prev_mapped ) ) {
-                    $mapped_category = $prev_mapped[ $x ];
-                } elseif ( array_key_exists( $woo_category, $prev_mapped ) ) {
-                    $mapped_category = $prev_mapped[ $x ];
-                } else {
-                    $mapped_category = $woo_category;
-                }
-                $mapped_active_class = 'input-field-large-active';
-            }
-
-            // These are main categories.
-            if ( 0 === $sub_category->parent ) {
-                $args = array(
-                    'taxonomy'      => 'product_cat',
-                    'parent'        => $sub_category->term_id,
-                    'hide_empty'    => false,
-                    'no_found_rows' => true,
-                );
-
-                $subcat     = get_terms( $args );
-                $nr_subcats = count( $subcat );
-
-                $r .= '<tr class="catmapping">';
-                $r .= "<td><input type=\"hidden\" name=\"mappings[$x][rowCount]\" value=\"$x\"><input type=\"hidden\" name=\"mappings[$x][categoryId]\" value=\"$woo_category_id\"><input type=\"hidden\" name=\"mappings[$x][criteria]\" class=\"input-field-large\" id=\"$woo_category_id\" value=\"$woo_category\">$woo_category ($sub_category->count)</td>";
-                $r .= "<td><div id=\"the-basics-$x\"><input type=\"text\" name=\"mappings[$x][map_to_category]\" class=\"$mapped_active_class js-typeahead js-autosuggest autocomplete_$x\" value=\"$mapped_category\"></div></td>";
-                if ( ( $yo === $nr_categories ) && ( 0 === $nr_subcats ) ) {
-                    $r .= "<td><span class=\"copy_category_$x\" style=\"display: inline-block;\" title=\"Copy this category to all others\"></span></td>";
-                } elseif ( $nr_subcats > 0 ) {
-                    $r .= "<td><span class=\"dashicons dashicons-arrow-down copy_category_$x\" style=\"display: inline-block;\" title=\"Copy this category to subcategories\"></span><span class=\"dashicons dashicons-arrow-down-alt copy_category_$x\" style=\"display: inline-block;\" title=\"Copy this category to all others\"></span></td>";
-                } else {
-                    $r .= "<td><span class=\"dashicons dashicons-arrow-down-alt copy_category_$x\" style=\"display: inline-block;\" title=\"Copy this category to all others\"></span></td>";
-                }
-                $r .= '</tr>';
-            } else {
-                $r .= '<tr class="catmapping">';
-                $r .= "<td><input type=\"hidden\" name=\"mappings[$x][rowCount]\" value=\"$x\"><input type=\"hidden\" name=\"mappings[$x][categoryId]\" value=\"$woo_category_id\"><input type=\"hidden\" name=\"mappings[$x][criteria]\" class=\"input-field-large\" id=\"$woo_category_id\" value=\"$woo_category\">-- $woo_category ($sub_category->count)</td>";
-                $r .= "<td><div id=\"the-basics-$x\"><input type=\"text\" name=\"mappings[$x][map_to_category]\" class=\"$mapped_active_class js-typeahead js-autosuggest autocomplete_$x mother_$sub_category->parent\" value=\"$mapped_category\"></div></td>";
-                $r .= "<td><span class=\"copy_category_$x\" style=\"display: inline-block;\" title=\"Copy this category to all others\"></span></td>";
-                $r .= '</tr>';
-            }
-            $r .= 0 !== $sub_category->term_id ? woosea_hierarchical_term_tree( $sub_category->term_id, $prev_mapped ) : null;
-        }
-    }
-
-    $allowed_tags = array(
-        'tr'    => array(
-            'class' => array(),
-        ),
-        'td'    => array(),
-        'input' => array(
-            'type'  => array(),
-            'name'  => array(),
-            'value' => array(),
-            'class' => array(),
-            'id'    => array(),
-        ),
-        'span'  => array(
-            'class' => array(),
-            'style' => array(),
-            'title' => array(),
-        ),
-        'div'   => array(
-            'id' => array(),
-        ),
-        '>'     => array(),
-        '&'     => array(),
-    );
-    return wp_kses_normalize_entities( $r, $allowed_tags );
+    $feed_mappings  = array();
+    $count_mappings = 0;
 }
 
 /**
@@ -178,75 +72,92 @@ do_action( 'adt_before_product_feed_manage_page', 1, $project_hash, $feed );
 <div class="wrap">
     <div class="woo-product-feed-pro-form-style-2">
         <div class="woo-product-feed-pro-form-style-2-heading">
-            <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a> 
+            <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a> 
             <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
-            <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
+            <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
             <?php endif; ?>
             <h1 class="title"><?php esc_html_e( 'Category mapping', 'woo-product-feed-pro' ); ?></h1>
         </div>
 
-        <div class="<?php echo esc_attr( $notifications_box['message_type'] ); ?>">
-            <p><?php echo wp_kses_post( $notifications_box['message'] ); ?></p>
-        </div>
+        <?php
+        // Display info message notice.
+        $admin_notice = new Admin_Notice(
+            sprintf(
+                esc_html__( 'Map your products or categories to the categories of your selected channel. For some channels adding their categorisation in the product feed is mandatory. Even when category mappings are not mandatory it is likely your products will get better visibility and higher conversions when mappings have been added.', 'woo-product-feed-pro' )
+            ),
+            'info',
+            'string',
+            false
+        );
+        $admin_notice->run();
+
+        // Display info google product taxonomy fetching message.
+        if ( $is_fetching ) {
+            // Display fetching message.
+            $admin_notice = new Admin_Notice(
+                sprintf(
+                    esc_html__(
+                        'Fetching Google Product Taxonomy: Please wait until the process is finished. Refresh this page to check the status.',
+                        'woo-product-feed-pro'
+                    )
+                )
+            );
+            $admin_notice->run();
+        } elseif ( ! $is_file_exists ) {
+            // Display fetching message.
+            $admin_notice = new Admin_Notice(
+                sprintf(
+                    esc_html__(
+                        'Google Product Taxonomy is failed to fetch. Reattempt to fetch Google Product Taxonomy by deactivating and reactivating the plugin.',
+                        'woo-product-feed-pro'
+                    )
+                )
+            );
+            $admin_notice->run();
+        }
+        ?>
 
         <div class="woo-product-feed-pro-table-wrapper">
             <div class="woo-product-feed-pro-table-left">
+                <form action="" method="post" id="adt-pfp-category-mapping-form">
+                    <?php wp_nonce_field( 'woosea_ajax_nonce' ); ?>
+                    <table id="woosea-ajax-mapping-table" class="woo-product-feed-pro-table" border="1">
+                        <thead>
+                            <tr>
+                                <th><?php esc_html_e( 'Your category', 'woo-product-feed-pro' ); ?> <i>(<?php esc_html_e( 'Number of products', 'woo-product-feed-pro' ); ?>)</i></th>
+                                <th><?php echo esc_html( $channel_data['name'] ); ?> <?php esc_html_e( 'category', 'woo-product-feed-pro' ); ?></th>
+                                <th></th>
+                            </tr>
+                        </thead>
 
-                <table id="woosea-ajax-mapping-table" class="woo-product-feed-pro-table" border="1">
-                    <thead>
-                        <tr>
-                            <th><?php esc_html_e( 'Your category', 'woo-product-feed-pro' ); ?> <i>(<?php esc_html_e( 'Number of products', 'woo-product-feed-pro' ); ?>)</i></th>
-                            <th><?php echo esc_html( $channel_data['name'] ); ?> <?php esc_html_e( 'category', 'woo-product-feed-pro' ); ?></th>
-                            <th></th>
-                        </tr>
-                    </thead>
-
-                    <tbody class="woo-product-feed-pro-body">
-                        <?php
-                        // Get already mapped categories.
-                        $prev_mapped = array();
-                        if ( ! empty( $feed_mappings ) ) {
-                            foreach ( $feed_mappings as $map_key => $map_value ) {
-                                if ( strlen( $map_value['map_to_category'] ) > 0 ) {
-                                    $map_value['criteria']                   = str_replace( '\\', '', $map_value['criteria'] );
-                                    $prev_mapped[ $map_value['categoryId'] ] = $map_value['map_to_category'];
-                                }
-                            }
-                        }
-
-                        // Display mapping form.
-                        echo woosea_hierarchical_term_tree( 0, $prev_mapped ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                        ?>
-                    </tbody>
-
-                    <form action="" method="post">
-                        <?php wp_nonce_field( 'woosea_ajax_nonce' ); ?>
-
-                        <tr>
-                            <td colspan="3">
-                                <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
-                                <?php
-                                if ( isset( $manage_project ) ) {
-                                ?>
-                                    <input type="hidden" name="project_update" id="project_update" value="yes" />
-                                    <input type="hidden" id="project_hash" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                                    <input type="hidden" name="step" value="100">
-                                    <input type="submit" value="Save mappings" />
-                                <?php
-                                } else {
-                                ?>
-                                    <input type="hidden" id="project_hash" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                                    <input type="hidden" name="step" value="4">
-                                    <input type="submit" value="Save mappings" />
-                                <?php
-                                }
-                                ?>
-                            </td>
-                        </tr>
-
-                    </form>
-
-                </table>
+                        <tbody class="woo-product-feed-pro-body">
+                           
+                            <!-- Display mapping form. -->
+                            <?php echo Product_Feed_Helper::get_hierarchical_categories_mapping( $feed ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                            <tr>
+                                <td colspan="3">
+                                    <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
+                                    <?php
+                                    if ( isset( $manage_project ) ) {
+                                    ?>
+                                        <input type="hidden" name="project_update" id="project_update" value="yes" />
+                                        <input type="hidden" id="project_hash" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                                        <input type="hidden" name="step" value="100">
+                                        <input type="submit" value="Save mappings" />
+                                    <?php
+                                    } else {
+                                    ?>
+                                        <input type="hidden" id="project_hash" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                                        <input type="hidden" name="step" value="4">
+                                        <input type="submit" value="Save mappings" />
+                                    <?php
+                                    }
+                                    ?>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </form>
             </div>
             <?php require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'view-sidebar.php'; ?>
         </div>

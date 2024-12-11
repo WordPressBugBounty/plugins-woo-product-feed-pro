@@ -5,7 +5,7 @@ jQuery(function ($) {
    * Add class to the menu item and the link.
    * Modify the link and target of the link to open in a new tab.
    */
-  const upgradeMenuLink = $('#toplevel_page_woo-product-feed-pro .wp-submenu li a[href="pfp-upgrade-to-elite-page"]');
+  const upgradeMenuLink = $('#toplevel_page_woo-product-feed .wp-submenu li a[href="pfp-upgrade-to-elite-page"]');
   const upgradeMenu = upgradeMenuLink.closest('li');
 
   if (upgradeMenuLink.length && upgradeMenu.length) {

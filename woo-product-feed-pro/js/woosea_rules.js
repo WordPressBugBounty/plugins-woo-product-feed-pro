@@ -80,6 +80,7 @@ jQuery(document).ready(function ($) {
         // Check if user selected a data manipulation condition
         jQuery('#rules_' + rowCount).on('change', function () {
           if ($(this).val() == 'categories') {
+            var feed_id = $(this).closest('form#rulesandfilters').find('#feed_id').val();
             var checkNumeric = $.isNumeric(rowCount);
             if (checkNumeric) {
               jQuery
@@ -88,6 +89,7 @@ jQuery(document).ready(function ($) {
                   url: ajaxurl,
                   data: {
                     action: 'woosea_categories_dropdown',
+                    feed_id: feed_id,
                     rowCount: rowCount,
                   },
                 })

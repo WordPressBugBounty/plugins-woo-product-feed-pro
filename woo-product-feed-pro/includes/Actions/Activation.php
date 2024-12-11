@@ -11,6 +11,7 @@ use AdTribes\PFP\Abstracts\Abstract_Class;
 use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Factories\Product_Feed_Query;
 use AdTribes\PFP\Factories\Product_Feed;
+use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
 
 // Updates.
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
@@ -85,6 +86,12 @@ class Activation extends Abstract_Class {
 
         $this->_register_product_feed_actions();
 
+        // Google Product Taxonomy Fetcher.
+        $this->_register_google_product_taxonomy_fetcher_actions();
+        $this->_fetch_google_product_taxonomy();
+
+        $this->_register_custom_capabilities();
+
         /**
          * Register date of first activation of plugin
          * We need this date in order to only show the
@@ -142,6 +149,57 @@ class Activation extends Abstract_Class {
     }
 
     /**
+     * Register Google Product Taxonomy Fetcher action scheduler on activation.
+     *
+     * @since 13.3.9
+     * @access private
+     */
+    private function _register_google_product_taxonomy_fetcher_actions() {
+        $google_product_taxonomy_fetcher = Google_Product_Taxonomy_Fetcher::instance();
+        $google_product_taxonomy_fetcher->register_action();
+    }
+
+    /**
+     * Fetch Google Product Taxonomy.
+     *
+     * @since 13.3.9
+     * @access private
+     */
+    private function _fetch_google_product_taxonomy() {
+        $google_product_taxonomy_fetcher = Google_Product_Taxonomy_Fetcher::instance();
+
+        // Check if file exists.
+        if ( $google_product_taxonomy_fetcher->is_file_exists() ) {
+            return;
+        }
+
+        $google_product_taxonomy_fetcher->as_fetch_google_product_taxonomy();
+    }
+
+    /**
+     * Register custom capabilities.
+     *
+     * @since 13.4.0
+     * @access private
+     */
+    private function _register_custom_capabilities() {
+        // Get the administrator role.
+        $role = get_role( 'administrator' );
+        if ( $role ) {
+            // Add custom capability to the administrator role.
+            $role->add_cap( 'manage_adtribes_product_feeds' );
+        }
+
+        if ( is_multisite() ) {
+            $super_admins = get_super_admins();
+            foreach ( $super_admins as $super_admin ) {
+                $user = new \WP_User( $super_admin );
+                $user->add_cap( 'manage_adtribes_product_feeds' );
+            }
+        }
+    }
+
+    /**
      * Run plugin activation actions.
      *
      * @since 13.3.3
@@ -160,10 +218,9 @@ class Activation extends Abstract_Class {
                     $this->_activate_plugin( $blog_id );
                 }
                 restore_current_blog();
-            } else {
+            } else { // activated on a single site, in a multi-site.
                 $this->_activate_plugin( $wpdb->blogid );
             }
-            // activated on a single site, in a multi-site.
         } else {
             // activated on a single site.
             $this->_activate_plugin( $wpdb->blogid );

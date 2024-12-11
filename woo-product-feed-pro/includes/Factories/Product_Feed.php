@@ -81,7 +81,7 @@ class Product_Feed {
         'file_format'                            => 'xml',
         'file_url'                               => '',
         'delimiter'                              => '',
-        'refresh_interval'                       => 'daily',
+        'refresh_interval'                       => '',
         'refresh_only_when_product_changed'      => false,
         'create_preview'                         => false,
         'include_product_variations'             => false,

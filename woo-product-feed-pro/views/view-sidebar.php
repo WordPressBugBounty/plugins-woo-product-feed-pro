@@ -31,7 +31,7 @@ use AdTribes\PFP\Helpers\Helper;
                     <li><strong>7.</strong> <?php esc_html_e( 'Premium support – let us help you get your feeds live faster', 'woo-product-feed-pro' ); ?></li>
                 </ul>
                 <strong>
-                    <a class="woo-product-feed-pro-sidebar-upgrade-button" href="https://adtribes.io/pricing/?utm_source=pfp&utm_medium=sidebar&utm_campaign=sidebarupgradebutton" target="_blank"><?php esc_html_e( 'Get Product Feed Elite', 'woo-product-feed-pro' ); ?> &rarr;</a>
+                    <a class="woo-product-feed-pro-sidebar-upgrade-button" href="<?php echo esc_url( Helper::get_utm_url( 'pricing', 'pfp', 'sidebar', 'sidebarupgradebutton' ) ); ?>" target="_blank"><?php esc_html_e( 'Get Product Feed Elite', 'woo-product-feed-pro' ); ?> &rarr;</a>
                 </strong>
             </td>
         </tr>
@@ -45,8 +45,8 @@ use AdTribes\PFP\Helpers\Helper;
         <tr>
             <td>
                 <ul class="woo-product-feed-pro-resources">
-                    <li><strong><a href="https://adtribes.io/blog/?utm_source=pfp&utm_medium=sidebar&utm_campaign=tutorials" target="_blank"><?php esc_html_e( 'Feed Marketing Blog', 'woo-product-feed-pro' ); ?></a></strong></li>
-                    <li><strong><a href="https://adtribes.io/support/?utm_source=pfp&utm_medium=sidebar&utm_campaign=faq" target="_blank"><?php esc_html_e( 'Support', 'woo-product-feed-pro' ); ?></a></strong></li>
+                    <li><strong><a href="<?php echo esc_url( Helper::get_utm_url( 'blog', 'pfp', 'sidebar', 'tutorials' ) ); ?>" target="_blank"><?php esc_html_e( 'Feed Marketing Blog', 'woo-product-feed-pro' ); ?></a></strong></li>
+                    <li><strong><a href="<?php echo esc_url( Helper::get_utm_url( 'support', 'pfp', 'sidebar', 'faq' ) ); ?>" target="_blank"><?php esc_html_e( 'Support', 'woo-product-feed-pro' ); ?></a></strong></li>
                     <li><strong><a href="https://www.youtube.com/channel/UCXp1NsK-G_w0XzkfHW-NZCw" target="_blank"><?php esc_html_e( 'YouTube Channel', 'woo-product-feed-pro' ); ?></a></strong></li>
                 </ul>
             </td>
@@ -60,13 +60,13 @@ use AdTribes\PFP\Helpers\Helper;
         <tr>
             <td>
                 <ul class="woo-product-feed-pro-helpful-articles-list">
-                    <li><strong>- <a href="https://adtribes.io/knowledge-base/setting-up-your-first-google-shopping-product-feed/?utm_source=pfp&utm_medium=sidebar&utm_campaign=first shopping feed" target="_blank"><?php esc_html_e( 'Create a Google Shopping feed', 'woo-product-feed-pro' ); ?></a></strong></li>
-                    <li><strong>- <a href="https://adtribes.io/knowledge-base/add-gtin-mpn-upc-ean-product-condition-optimised-title-and-brand-attributes/?utm_source=pfp&utm_medium=sidebar&utm_campaign=adding fields" target="_blank"><?php esc_html_e( 'Adding GTIN, Brand, MPN and more', 'woo-product-feed-pro' ); ?></a></strong></li>
-                    <li><strong>- <a href="https://adtribes.io/knowledge-base/help-my-feed-processing-is-stuck/?utm_source=pfp&utm_medium=manage-feed&utm_campaign=feed stuck" target="_blank"><?php esc_html_e( 'Help, my feed is stuck!', 'woo-product-feed-pro' ); ?></a></strong></li>
-                    <li><strong>- <a href="https://adtribes.io/knowledge-base/feature-product-data-manipulation/?utm_source=pfp&utm_medium=manage-feed&utm_campaign=product_data_manipulation" target="_blank"><?php esc_html_e( 'Product data manipulation', 'woo-product-feed-pro' ); ?></a></strong></li>
-                    <li><strong>- <a href="https://adtribes.io/knowledge-base/how-to-create-filters-for-your-product-feed/?utm_source=pfp&utm_medium=sidebar&utm_campaign=how to create filters" target="_blank"><?php esc_html_e( 'How to create filters for your product feed', 'woo-product-feed-pro' ); ?></a></strong></li>
-                    <li><strong>- <a href="https://adtribes.io/knowledge-base/how-to-create-rules/?utm_source=pfp&utm_medium=sidebar&utm_campaign=how to create rules" target="_blank"><?php esc_html_e( 'How to set rules for your product feed', 'woo-product-feed-pro' ); ?></a></strong></li>
-                    <li><strong>- <a href="https://adtribes.io/knowledge-base/woocommerce-structured-data-bug/?utm_source=pfp&utm_medium=sidebar&utm_campaign=structured data bug" target="_blank"><?php esc_html_e( 'WooCommerce structured data markup bug', 'woo-product-feed-pro' ); ?></a></strong></li>
+                    <li><strong>- <a href="<?php echo esc_url( Helper::get_utm_url( 'knowledge-base/setting-up-your-first-google-shopping-product-feed', 'pfp', 'sidebar', 'first shopping feed' ) ); ?>" target="_blank"><?php esc_html_e( 'Create a Google Shopping feed', 'woo-product-feed-pro' ); ?></a></strong></li>
+                    <li><strong>- <a href="<?php echo esc_url( Helper::get_utm_url( 'knowledge-base/add-gtin-mpn-upc-ean-product-condition-optimised-title-and-brand-attributes', 'pfp', 'sidebar', 'adding fields' ) ); ?>" target="_blank"><?php esc_html_e( 'Adding GTIN, Brand, MPN and more', 'woo-product-feed-pro' ); ?></a></strong></li>
+                    <li><strong>- <a href="<?php echo esc_url( Helper::get_utm_url( 'knowledge-base/help-my-feed-processing-is-stuck/', 'pfp', 'sidebar', 'feed stuck' ) ); ?>" target="_blank"><?php esc_html_e( 'Help, my feed is stuck!', 'woo-product-feed-pro' ); ?></a></strong></li>
+                    <li><strong>- <a href="<?php echo esc_url( Helper::get_utm_url( 'knowledge-base/feature-product-data-manipulation', 'pfp', 'sidebar', 'product_data_manipulation' ) ); ?>" target="_blank"><?php esc_html_e( 'Product data manipulation', 'woo-product-feed-pro' ); ?></a></strong></li>
+                    <li><strong>- <a href="<?php echo esc_url( Helper::get_utm_url( 'knowledge-base/how-to-create-filters-for-your-product-feed', 'pfp', 'sidebar', 'how to create filters' ) ); ?>" target="_blank"><?php esc_html_e( 'How to create filters for your product feed', 'woo-product-feed-pro' ); ?></a></strong></li>
+                    <li><strong>- <a href="<?php echo esc_url( Helper::get_utm_url( 'knowledge-base/how-to-create-rules', 'pfp', 'sidebar', 'how to create rules' ) ); ?>" target="_blank"><?php esc_html_e( 'How to set rules for your product feed', 'woo-product-feed-pro' ); ?></a></strong></li>
+                    <li><strong>- <a href="<?php echo esc_url( Helper::get_utm_url( 'knowledge-base/woocommerce-structured-data-bug', 'pfp', 'sidebar', 'structured data bug' ) ); ?>" target="_blank"><?php esc_html_e( 'WooCommerce structured data markup bug', 'woo-product-feed-pro' ); ?></a></strong></li>
                 </ul>
             </td>
         </tr>

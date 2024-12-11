@@ -218,6 +218,7 @@ class App {
                 ),
                 'failed_dependency',
                 'html',
+                true,
                 $this->_failed_dependencies
             );
         }

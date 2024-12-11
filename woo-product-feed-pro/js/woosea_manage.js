@@ -78,496 +78,114 @@ jQuery(function ($) {
     });
 
   // Check if user would like to use mother image for variations
-  $('#add_mother_image').on('change', function () {
-    // on change of state
+  $('.adt-pfp-general-setting').on('change', function () {
+    // Get name of setting.
     var nonce = $('#_wpnonce').val();
+    var setting = $(this).attr('name');
+    var $row = $(this).closest('tr');
 
-    if (this.checked) {
-      // Checkbox is on
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_add_mother_image',
-          security: nonce,
-          status: 'on',
-        },
-      });
+    // Get type of setting
+    var type = $(this).attr('type') || 'text';
+
+    switch (type) {
+      case 'checkbox':
+        var value = $(this).is(':checked');
+        break;
+      case 'text':
+      default:
+        var value = $(this).val();
+        break;
+    }
+
+    if ($row.hasClass('group') && type === 'checkbox') {
+      var group = $row.data('group');
+      adt_show_or_hide_addtitional_setting_row(group, value);
+    }
+
+    // Send AJAX request to update the setting.
+    jQuery.ajax({
+      method: 'POST',
+      url: ajaxurl,
+      data: {
+        action: 'adt_pfp_update_settings',
+        security: nonce,
+        setting: setting,
+        type: type,
+        value: value,
+      },
+    });
+  });
+
+  /**
+   * Show or hide additional setting row based on the value of the parent setting.
+   *
+   * @param {string} group
+   * @param {boolean} value
+   *
+   * @return {void}
+   */
+  function adt_show_or_hide_addtitional_setting_row(group, value) {
+    $child_group = $('.woo-product-feed-pro-table--manage-settings').find('tr.group-child[data-group="' + group + '"]');
+
+    if (value) {
+      $child_group.removeClass('hidden');
     } else {
-      // Checkbox is off
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_add_mother_image',
-          security: nonce,
-          status: 'off',
-        },
-      });
+      $child_group.addClass('hidden');
     }
-  });
-
-  // Check if user would like to add all country shipping costs
-  $('#add_all_shipping').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-    if (this.checked) {
-      // Checkbox is on
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_add_all_shipping',
-          security: nonce,
-          status: 'on',
-        },
-      });
-    } else {
-      // Checkbox is off
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_add_all_shipping',
-          security: nonce,
-          status: 'off',
-        },
-      });
-    }
-  });
-
-  // Check if user would like the plugin to respect free shipping class
-  $('#free_shipping').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-    if (this.checked) {
-      // Checkbox is on
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_free_shipping',
-          security: nonce,
-          status: 'on',
-        },
-      });
-    } else {
-      // Checkbox is off
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_free_shipping',
-          security: nonce,
-          status: 'off',
-        },
-      });
-    }
-  });
-
-  // Check if user would like the plugin to respect free shipping class
-  $('#local_pickup_shipping').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-    if (this.checked) {
-      // Checkbox is on
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_local_pickup_shipping',
-          security: nonce,
-          status: 'on',
-        },
-      });
-    } else {
-      // Checkbox is off
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_local_pickup_shipping',
-          security: nonce,
-          status: 'off',
-        },
-      });
-    }
-  });
-
-  // Check if user would like the plugin to remove the free shipping class
-  $('#remove_free_shipping').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-    if (this.checked) {
-      // Checkbox is on
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_remove_free_shipping',
-          security: nonce,
-          status: 'on',
-        },
-      });
-    } else {
-      // Checkbox is off
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_remove_free_shipping',
-          security: nonce,
-          status: 'off',
-        },
-      });
-    }
-  });
-
-  // Check if user would like to enable debug logging
-  $('#add_woosea_logging').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-    if (this.checked) {
-      // Checkbox is on
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_add_woosea_logging',
-          security: nonce,
-          status: 'on',
-        },
-      });
-    } else {
-      // Checkbox is off
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_add_woosea_logging',
-          security: nonce,
-          status: 'off',
-        },
-      });
-    }
-  });
-
-  // Check if user would like to enable only basis attributes in drop-downs
-  $('#add_woosea_basic').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-    if (this.checked) {
-      // Checkbox is on
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_add_woosea_basic',
-          security: nonce,
-          status: 'on',
-        },
-      });
-    } else {
-      // Checkbox is off
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_add_woosea_basic',
-          security: nonce,
-          status: 'off',
-        },
-      });
-    }
-  });
-
-  // Check if user would like to add a Facebook Pixel to their website
-  $('#woosea_content_ids').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-
-    var content_ids = $('#woosea_content_ids').val();
-    if (content_ids) {
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_facebook_content_ids',
-          security: nonce,
-          content_ids: content_ids,
-        },
-      });
-    }
-  });
-
-  // Check if user would like to add a Facebook Pixel to their website
-  $('#add_facebook_pixel').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-    if (this.checked) {
-      // Checkbox is on
-      jQuery
-        .ajax({
-          method: 'POST',
-          url: ajaxurl,
-          data: {
-            action: 'woosea_add_facebook_pixel_setting',
-            security: nonce,
-            status: 'on',
-          },
-        })
-        .done(function (data) {
-          $('#facebook_pixel').after(
-            '<tr id="facebook_pixel_id"><td colspan="2"><span>Insert Facebook pixel ID:</span>&nbsp;<input type="hidden" name="nonce_facebook_pixel_id" id="nonce_facebook_pixel_id" value="' +
-              nonce +
-              '"><input type="text" class="input-field-medium" id="fb_pixel_id" name="fb_pixel_id">&nbsp;<input type="button" id="save_facebook_pixel_id" value="Save"></td></tr>'
-          );
-        })
-        .fail(function (data) {
-          console.log('Failed AJAX Call :( /// Return Data: ' + data);
-        });
-    } else {
-      // Checkbox is off
-      jQuery
-        .ajax({
-          method: 'POST',
-          url: ajaxurl,
-          data: {
-            action: 'woosea_add_facebook_pixel_setting',
-            security: nonce,
-            status: 'off',
-          },
-        })
-        .done(function (data) {
-          $('#facebook_pixel_id').remove();
-        })
-        .fail(function (data) {
-          console.log('Failed AJAX Call :( /// Return Data: ' + data);
-        });
-    }
-  });
-
-  // Check if user would like to change the batch size
-  $('#add_batch').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-    if (this.checked) {
-      var popup_dialog = confirm(
-        'Are you sure you want to change the batch size?\n\nChanging the batch size could seriously effect the performance of your website. We advise against changing the batch size if you are unsure about its effects!\n\nPlease reach out to support@adtribes.io when you would like to receive some help with this feature.'
-      );
-      if (popup_dialog == true) {
-        // Checkbox is on
-        jQuery
-          .ajax({
-            method: 'POST',
-            url: ajaxurl,
-            data: {
-              action: 'woosea_add_batch',
-              security: nonce,
-              status: 'on',
-            },
-          })
-          .done(function (data) {
-            $('#batch').after(
-              '<tr id="woosea_batch_size"><td colspan="2"><span>Insert batch size:</span>&nbsp;<input type="hidden" name="nonce_batch" id="nonce_batch" value="' +
-                nonce +
-                '"><input type="text" class="input-field-medium" id="batch_size" name="batch_size">&nbsp;<input type="submit" id="save_batch_size" value="Save"></td></tr>'
-            );
-          })
-          .fail(function (data) {
-            console.log('Failed AJAX Call :( /// Return Data: ' + data);
-          });
-      }
-    } else {
-      // Checkbox is off
-      jQuery
-        .ajax({
-          method: 'POST',
-          url: ajaxurl,
-          data: {
-            action: 'woosea_add_batch',
-            security: nonce,
-            status: 'off',
-          },
-        })
-        .done(function (data) {
-          $('#woosea_batch_size').remove();
-        })
-        .fail(function (data) {
-          console.log('Failed AJAX Call :( /// Return Data: ' + data);
-        });
-    }
-  });
+  }
 
   // Save Batch Size
-  jQuery('#save_batch_size').on('click', function () {
+  jQuery('.adt-pfp-save-setting-button').on('click', function (e) {
+    e.preventDefault();
+
+    var $col = $(this).closest('td');
+    var $input = $col.find('input[type="text"]');
+    var $error = $col.find('.error-message');
+    var id = $col.find('input[type="text"]').attr('id');
+    var setting = $input.attr('name');
+    var value = $input.val();
     var nonce = $('#_wpnonce').val();
-    var batch_size = $('#batch_size').val();
-    var re = /^[0-9]*$/;
+    var regex = '';
+    var error_message = '';
 
-    var woosea_valid_batch_size = re.test(batch_size);
-    // Check for allowed characters
-    if (!woosea_valid_batch_size) {
-      $('.notice').replaceWith(
-        "<div class='notice notice-error woosea-notice-conversion is-dismissible'><p>Sorry, only numbers are allowed for your batch size number.</p></div>"
-      );
-      // Disable submit button too
-      $('#save_batch_size').attr('disabled', true);
-    } else {
-      $('.woosea-notice-conversion').remove();
-      $('#save_batch_size').attr('disabled', false);
-
-      // Now we need to save the conversion ID so we can use it in the dynamic remarketing JS
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_save_batch_size',
-          security: nonce,
-          batch_size: batch_size,
-        },
-      });
+    switch (id) {
+      case 'batch_size':
+      case 'fb_pixel_id':
+        regex = /^[0-9]*$/;
+        error_message = 'Only numbers are allowed. Please enter a valid format.';
+        break;
+      case 'adwords_conv_id':
+        regex = /^[0-9,-]*$/;
+        error_message = 'Only numbers, comma (,) and hyphen (-) are allowed. Please enter a valid format.';
+        break;
+      default:
+        regex = /^[0-9A-Za-z]*$/;
+        error_message = 'Only numbers and letters are allowed. Please enter a valid format.';
+        break;
     }
-  });
-
-  // Check if user would like to enable Dynamic Remarketing
-  $('#add_remarketing').on('change', function () {
-    // on change of state
-    var nonce = $('#_wpnonce').val();
-    if (this.checked) {
-      // Checkbox is on
-      jQuery
-        .ajax({
-          method: 'POST',
-          url: ajaxurl,
-          data: {
-            action: 'woosea_add_remarketing',
-            security: nonce,
-            status: 'on',
-          },
-        })
-        .done(function (data) {
-          $('#remarketing').after(
-            '<tr id="adwords_conversion_id"><td colspan="2"><span>Insert your Dynamic Remarketing Conversion tracking ID:</span>&nbsp;<input type="hidden" name="nonce_adwords_conversion_id" id="nonce_adwords_conversion_id" value="' +
-              nonce +
-              '"><input type="text" class="input-field-medium" id="adwords_conv_id" name="adwords_conv_id">&nbsp;<input type="submit" id="save_conversion_id" value="Save"></td></tr>'
-          );
-        })
-        .fail(function (data) {
-          console.log('Failed AJAX Call :( /// Return Data: ' + data);
-        });
-    } else {
-      // Checkbox is off
-      jQuery
-        .ajax({
-          method: 'POST',
-          url: ajaxurl,
-          data: {
-            action: 'woosea_add_remarketing',
-            security: nonce,
-            status: 'off',
-          },
-        })
-        .done(function (data) {
-          $('#adwords_conversion_id').remove();
-        })
-        .fail(function (data) {
-          console.log('Failed AJAX Call :( /// Return Data: ' + data);
-        });
-    }
-  });
-
-  // Save Google Dynamic Remarketing pixel ID
-  jQuery('#save_conversion_id').on('click', function () {
-    var nonce = $('#_wpnonce').val();
-    var adwords_conversion_id = $('#adwords_conv_id').val();
-    var re = /^[0-9,-]*$/;
-    var woosea_valid_conversion_id = re.test(adwords_conversion_id);
 
     // Check for allowed characters
-    if (!woosea_valid_conversion_id) {
-      $('.notice').replaceWith(
-        "<div class='notice notice-error woosea-notice-conversion is-dismissible'><p>Sorry, only numbers are allowed for your Dynamic Remarketing Conversion tracking ID.</p></div>"
-      );
-      // Disable submit button too
-      $('#save_conversion_id').attr('disabled', true);
-    } else {
-      $('.woosea-notice-conversion').remove();
-      $('#save_conversion_id').attr('disabled', false);
-
-      // Now we need to save the conversion ID so we can use it in the dynamic remarketing JS
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_save_adwords_conversion_id',
-          security: nonce,
-          adwords_conversion_id: adwords_conversion_id,
-        },
-      });
+    if (!regex.test(value)) {
+      $error.text(error_message);
+      $error.show();
+      return;
     }
-  });
 
-  // Save Facebook Pixel ID
-  jQuery('#save_facebook_pixel_id').on('click', function () {
-    var nonce = $('#_wpnonce').val();
-    var facebook_pixel_id = $('#fb_pixel_id').val();
-    var re = /^[0-9]*$/;
-    var woosea_valid_facebook_pixel_id = re.test(facebook_pixel_id);
+    $error.text('');
+    $error.hide();
 
-    // Check for allowed characters
-    if (!woosea_valid_facebook_pixel_id) {
-      $('.notice').replaceWith(
-        "<div class='notice notice-error woosea-notice-conversion is-dismissible'><p>Sorry, only numbers are allowed for your Facebook Pixel ID.</p></div>"
-      );
-      // Disable submit button too
-      $('#save_facebook_pixel_id').attr('disabled', true);
-    } else {
-      $('.woosea-notice-conversion').remove();
-      $('#save_facebook_pixel_id').attr('disabled', false);
-
-      // Now we need to save the Facebook pixel ID so we can use it in the facebook pixel JS
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_save_facebook_pixel_id',
-          security: nonce,
-          facebook_pixel_id: facebook_pixel_id,
-        },
-      });
-    }
-  });
-
-  // Save Facebook Conversion API token
-  jQuery('#save_facebook_capi_token').on('click', function () {
-    var nonce = $('#_wpnonce').val();
-    var facebook_capi_token = $('#fb_capi_token').val();
-    var re = /^[0-9A-Za-z]*$/;
-    var woosea_valid_facebook_capi_token = re.test(facebook_capi_token);
-
-    // Check for allowed characters
-    if (!woosea_valid_facebook_capi_token) {
-      $('.notice').replaceWith(
-        "<div class='notice notice-error woosea-notice-conversion is-dismissible'><p>Sorry, this is not a valid Facebook Conversion API Token.</p></div>"
-      );
-      // Disable submit button too
-      $('#save_facebook_capi_token').attr('disabled', true);
-    } else {
-      $('.woosea-notice-conversion').remove();
-      $('#save_facebook_capi_token').attr('disabled', false);
-
-      // Now we need to save the Facebook Conversion API Token
-      jQuery.ajax({
-        method: 'POST',
-        url: ajaxurl,
-        data: {
-          action: 'woosea_save_facebook_capi_token',
-          security: nonce,
-          facebook_capi_token: facebook_capi_token,
-        },
-      });
-    }
+    // Now we need to save the conversion ID so we can use it in the dynamic remarketing JS
+    jQuery.ajax({
+      method: 'POST',
+      url: ajaxurl,
+      data: {
+        action: 'adt_pfp_update_settings',
+        security: nonce,
+        setting: setting,
+        type: 'text',
+        value: value,
+      },
+    });
   });
 
   $('.actions').on('click', 'span', function () {

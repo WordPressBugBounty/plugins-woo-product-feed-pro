@@ -36,9 +36,6 @@ $versions = array(
 
 $nonce = wp_create_nonce( 'woosea_ajax_nonce' );
 
-$notifications_obj = new WooSEA_Get_Admin_Notifications();
-$notifications_box = $notifications_obj->get_admin_notifications( '0', 'false' );
-
 $default_location = wc_get_base_location();
 $country          = apply_filters( 'woocommerce_countries_base_country', $default_location['country'] );
 $country          = Product_Feed_Helper::get_legacy_country_from_code( $country );
@@ -77,9 +74,9 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
     <div class="woo-product-feed-pro-form-style-2">
         <?php require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-upgrade-to-elite-notice.php'; ?>
         <div class="woo-product-feed-pro-form-style-2-heading">
-            <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a> 
+            <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank"><img class="logo" src="<?php echo esc_attr( WOOCOMMERCESEA_PLUGIN_URL . '/images/adt-logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>"></a> 
             <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
-            <a href="https://adtribes.io/?utm_source=pfp&utm_medium=logo&utm_campaign=adminpagelogo" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
+            <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
             <?php endif; ?>
             <h1 class="title"><?php esc_html_e( 'General feed settings', 'woo-product-feed-pro' ); ?></h1>
         </div>
@@ -286,16 +283,18 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                                 <td>
                                     <select name="cron" class="select-field">
                                         <?php
-                                        $refresh_arr = array( 'daily', 'twicedaily', 'hourly', 'no refresh' );
-                                        foreach ( $refresh_arr as $refresh ) {
-                                            $refresh_upper = ucfirst( $refresh );
-                                            if ( $feed && ( $refresh == $feed->refresh_interval ) ) {
-                                                echo "<option value=\"$refresh\" selected>$refresh_upper</option>";
-                                            } else {
-                                                echo "<option value=\"$refresh\">$refresh_upper</option>";
-                                            }
-                                        }
+                                        $refresh_arr = array(  
+                                            '',
+                                            'daily',
+                                            'twicedaily',
+                                            'hourly',
+                                        );
+                                        foreach ( $refresh_arr as $refresh_key ) :
                                         ?>
+                                            <option value="<?php echo esc_attr( $refresh_key ); ?>" <?php echo ( $feed && ( $refresh_key == $feed->refresh_interval ) ) ? 'selected' : ''; ?>>
+                                                <?php echo esc_html( Product_Feed_Helper::get_refresh_interval_label( $refresh_key ) ); ?>
+                                            </option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </td>
                             </tr>
@@ -303,26 +302,20 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                             <tr>
                                 <td><span><?php esc_html_e( 'Refresh only when products changed', 'woo-product-feed-pro' ); ?>:</span></td>
                                 <td>
-                                    <?php
-                                    if ( $feed && $feed->refresh_only_when_product_changed ) {
-                                        print '<input name="products_changed" type="checkbox" class="checkbox-field" checked> <a href="https://adtribes.io/update-product-feed-products-changed-new-ones-added/" target="_blank">Read our tutorial about this feature</a>';
-                                    } else {
-                                        print '<input name="products_changed" type="checkbox" class="checkbox-field"> <a href="https://adtribes.io/update-product-feed-products-changed-new-ones-added/" target="_blank">Read our tutorial about this feature</a>';
-                                    }
-                                    ?>
+                                    <input name="products_changed" type="checkbox" class="checkbox-field" <?php echo $feed && $feed->refresh_only_when_product_changed ? 'checked' : ''; ?>>
+                                    <a href="<?php echo esc_url( Helper::get_utm_url( 'update-product-feed-products-changed-new-ones-added', 'pfp', 'general-settings', 'refresh only when products changed' ) ); ?>" target="_blank">
+                                        Read our tutorial about this feature
+                                    </a>
                                 </td>
                             </tr>
 
                             <tr>
                                 <td><span><?php esc_html_e( 'Create a preview of the feed', 'woo-product-feed-pro' ); ?>:</span></td>
                                 <td>
-                                    <?php
-                                    if ( $feed && $feed->create_preview ) {
-                                        print '<input name="preview_feed" type="checkbox" class="checkbox-field" checked> <a href="https://adtribes.io/create-product-feed-preview/" target="_blank">Read our tutorial about this feature</a>';
-                                    } else {
-                                        print '<input name="preview_feed" type="checkbox" class="checkbox-field"> <a href="https://adtribes.io/create-product-feed-preview/" target="_blank">Read our tutorial about this feature</a>';
-                                    }
-                                    ?>
+                                    <input name="preview_feed" type="checkbox" class="checkbox-field" <?php echo $feed && $feed->create_preview ? 'checked' : ''; ?>>
+                                    <a href="<?php echo esc_url( Helper::get_utm_url( 'create-product-feed-preview', 'pfp', 'general-settings', 'create a preview of the feed' ) ); ?>" target="_blank">
+                                        Read our tutorial about this feature
+                                    </a>
                                 </td>
                             </tr>
 

@@ -3,6 +3,9 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+use AdTribes\PFP\Helpers\Helper;
+
 ?>
 <div id="pfp-about-page" class="pfp-page wrap nosubsub">
     <div class="container">
@@ -26,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                         </div>
                         <div class="card-body xs-text-center">
                             <p class="mt-0"><?php esc_html_e( 'Access our self-service help documentation via the Knowledge Base. You\'ll find answers and solutions for a wide range of well know situations . You\'ll also find a Getting Started guide here for the plugin.', 'woo-product-feed-pro' ); ?></p>
-                            <a target="_blank" href="<?php echo esc_url( 'https://adtribes.io/support/?utm_source=pfp&utm_medium=helppage&utm_campaign=helppageopenkbbutton' ); ?>" class="button button-primary button-large"><?php esc_html_e( 'Open Knowledge Base', 'woo-product-feed-pro' ); ?></a>
+                            <a target="_blank" href="<?php echo esc_url( Helper::get_utm_url( 'support', 'pfp', 'helppage', 'helppageopenkbbutton' ) ); ?>" class="button button-primary button-large"><?php esc_html_e( 'Open Knowledge Base', 'woo-product-feed-pro' ); ?></a>
                         </div>
                     </li> 
                     <li class="card">
@@ -43,7 +46,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
         <div class="row">
             <div class="col xs-text-center">
-                <iframe src="https://adtribes.io/in-app-optin/?utm_source=pfp&utm_medium=helppage&utm_campaign=helppageinappoptin" width="100%" height="500" frameborder="0"></iframe>
+                <iframe src="<?php echo esc_url( Helper::get_utm_url( 'in-app-optin', 'pfp', 'helppage', 'helppageinappoptin' ) ); ?>" width="100%" height="500" frameborder="0"></iframe>
             </div>
         </div>
     </div>
