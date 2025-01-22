@@ -11,7 +11,7 @@ jQuery(function ($) {
     // Run the check percentage function on load.
     // Only run this function on the manage feed page.
     if (pageName === 'manage_feed') {
-      woosea_check_processing_feeds(true);
+      woosea_check_processing_feeds(true, true);
     }
   });
 
@@ -315,9 +315,19 @@ jQuery(function ($) {
               id: feed_id,
             },
           })
-          .done(function () {
-            if (!isRefreshRunning) {
-              woosea_check_processing_feeds();
+          .done(function (response) {
+            if (response.success) {
+              const feed_id = response.data.feed_id || null;
+              const offset = response.data.offset || 0;
+              const batch_size = response.data.batch_size || 0;
+
+              if (feed_id) {
+                woosea_generate_product_feed(feed_id, offset, batch_size);
+              }
+
+              if (!isRefreshRunning) {
+                woosea_check_processing_feeds();
+              }
             }
           })
           .fail(function () {
@@ -414,6 +424,27 @@ jQuery(function ($) {
     });
   });
 
+  function woosea_generate_product_feed(feed_id, offset, batch_size) {
+    var nonce = $('#_wpnonce').val();
+    jQuery
+      .ajax({
+        method: 'POST',
+        url: ajaxurl,
+        data: {
+          action: 'adt_pfp_generate_product_feed',
+          security: nonce,
+          feed_id: feed_id,
+          offset: offset,
+          batch_size: batch_size,
+        },
+      })
+      .done(function (response) {
+        if (response.success && response.data.status === 'processing') {
+          woosea_generate_product_feed(response.data.feed_id, response.data.offset, response.data.batch_size);
+        }
+      });
+  }
+
   /**
    * Get the processing feeds.
    *
@@ -431,18 +462,19 @@ jQuery(function ($) {
    * Check the processing feeds.
    * This function will be called every second to check the processing feeds.
    * If there are no processing feeds, the refresh interval will be stopped.
+   *
+   * @param {boolean} force - Whether to force the check.
+   * @param {boolean} on_load - Whether the check is on load.
    */
-  function woosea_check_processing_feeds(force = false) {
+  function woosea_check_processing_feeds(force = false, on_load = false) {
     var nonce = $('#_wpnonce').val();
     const hashes = woosea_get_processing_feeds();
 
-    // Stop if no processing feeds or canceled
     if ((!isRefreshRunning || !force) && hashes.length < 1) {
       isRefreshRunning = false;
       return;
     }
 
-    // Ensure the flag is set
     isRefreshRunning = true;
 
     refreshXHR = jQuery
@@ -465,6 +497,10 @@ jQuery(function ($) {
               $row.addClass('processing');
               $status.addClass('woo-product-feed-pro-blink_me');
               $status.text('processing (' + feed.proc_perc + '%)');
+
+              if (on_load && feed.executed_from === 'ajax') {
+                woosea_generate_product_feed(feed.feed_id, feed.offset, feed.batch_size);
+              }
             } else {
               $status.removeClass('woo-product-feed-pro-blink_me');
               $row.removeClass('processing');
@@ -478,10 +514,8 @@ jQuery(function ($) {
           });
         }
 
-        // Continue if not canceled, user might cancel a feed while the check is running
-        // Recursive call to keep checking
         if (isRefreshRunning) {
-          woosea_check_processing_feeds();
+          setTimeout(woosea_check_processing_feeds, 1000); // Check every second.
         }
       });
   }

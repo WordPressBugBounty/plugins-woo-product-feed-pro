@@ -14,7 +14,7 @@ use AdTribes\PFP\Helpers\Formatting;
 /**
  * Shipping_Data class.
  *
- * @since 13.3.4
+ * @since 13.4.0
  */
 class Shipping_Data extends Abstract_Class {
 
@@ -25,7 +25,7 @@ class Shipping_Data extends Abstract_Class {
      *
      * This method is used to exclude parent variations that is not published from the product feed with the custom query.
      *
-     * @since 13.3.4
+     * @since 13.4.0
      * @access public
      *
      * @param WC_Product $product The product object.
@@ -78,7 +78,7 @@ class Shipping_Data extends Abstract_Class {
         /**
          * Filter the shipping data.
          *
-         * @since 13.3.4
+         * @since 13.4.0
          *
          * @param array  $shipping The shipping data.
          * @param object $product  The product object.
@@ -91,7 +91,7 @@ class Shipping_Data extends Abstract_Class {
     /**
      * Get the shipping zones data.
      *
-     * @since 13.3.4
+     * @since 13.4.0
      * @access private
      *
      * @param array  $shipping_zone    The shipping zone data.
@@ -196,7 +196,7 @@ class Shipping_Data extends Abstract_Class {
     /**
      * Get the shipping method data.
      *
-     * @since 13.3.4
+     * @since 13.4.0
      * @access private
      *
      * @param object $method            The shipping method object.
@@ -231,18 +231,6 @@ class Shipping_Data extends Abstract_Class {
                 'price'       => '',
             );
 
-            /**
-             * Filter the shipping cost.
-             * This filter is used to modify the shipping cost before it is added to the feed.
-             *
-             * @since 13.3.4
-             * @param float|bool $shipping_cost   The shipping cost.
-             * @param object     $feed            The feed object.
-             * @param object     $shipping_method The shipping method object.
-             * @return float|bool
-             */
-            $shipping_cost = apply_filters( 'adt_product_feed_convert_shipping_cost', (float) $rate->get_cost(), $rate, $feed );
-
             $shipping['country'] = $zone['country'];
 
             // Add the region if it's not empty.
@@ -258,10 +246,38 @@ class Shipping_Data extends Abstract_Class {
             $shipping['service']  = $shipping_zone['zone_name'] . ' ' . $rate->get_label();
             $shipping['service'] .= ! empty( $zone['country'] ) ? ' ' . $zone['country'] : '';
 
+            // Get the shipping cost.
+            $shipping_cost = (float) $rate->get_cost();
+
+            /**
+             * Filter the shipping tax should be applied.
+             *
+             * @since 13.4.1
+             * @param bool   $apply_shipping_tax Whether the shipping tax should be applied. Default true.
+             * @param object $rate              The shipping rate object.
+             * @param object $feed              The feed object.
+             * @return bool
+             */
+            if ( apply_filters( 'adt_apply_shipping_tax', true, $rate, $feed ) ) {
+                $shipping_cost = $shipping_cost + $rate->get_shipping_tax();
+            }
+
+            /**
+             * Filter the shipping cost.
+             * This filter is used to modify the shipping cost before it is added to the feed.
+             *
+             * @since 13.4.0
+             * @param float|bool $shipping_cost   The shipping cost.
+             * @param object     $feed            The feed object.
+             * @param object     $shipping_method The shipping method object.
+             * @return float|bool
+             */
+            $shipping_cost = apply_filters( 'adt_product_feed_convert_shipping_cost', $shipping_cost, $rate, $feed );
+
             /**
              * Filter the localized price.
              *
-             * @since 13.3.4
+             * @since 13.4.0
              *
              * @param array      $args          Arguments to localize the price. Default empty array.
              * @param float|bool $shipping_cost The shipping cost.
@@ -269,7 +285,7 @@ class Shipping_Data extends Abstract_Class {
              * @param object     $shipping_method The shipping method object.
              * @return string
              */
-            $shipping_cost = Formatting::localize_price( $rate->get_cost(), apply_filters( 'adt_product_feed_shipping_cost_localize_price_args', array(), $shipping_cost, $rate, $feed ) );
+            $shipping_cost = Formatting::localize_price( $shipping_cost, apply_filters( 'adt_product_feed_shipping_cost_localize_price_args', array(), $shipping_cost, $rate, $feed ), true, $feed );
 
             // Heureka: remove the currency from the price.
             $shipping['price'] = $feed->ship_suffix || 'heureka' === $feed_channel['fields']
@@ -301,7 +317,7 @@ class Shipping_Data extends Abstract_Class {
      * This is useful for feeds that only want to include free shipping methods.
      * So, that we can skip the other shipping methods if the free shipping method is met.
      *
-     * @since 13.3.4
+     * @since 13.4.0
      * @access private
      *
      * @param array $methods The shipping methods.
@@ -328,7 +344,7 @@ class Shipping_Data extends Abstract_Class {
     /**
      * Sort the free shipping method to the top.
      *
-     * @since 13.3.4
+     * @since 13.4.0
      * @access private
      *
      * @param array $methods The shipping methods.
@@ -353,7 +369,7 @@ class Shipping_Data extends Abstract_Class {
      * The reason why we don't use the is_available method for free shipping, is because it expects a the cart session to be set.
      * So, we have to check if the free shipping requirements are met manually.
      *
-     * @since 13.3.4
+     * @since 13.4.0
      * @access private
      *
      * @param object $method  The shipping method object.
@@ -382,7 +398,7 @@ class Shipping_Data extends Abstract_Class {
      * Run the class
      *
      * @codeCoverageIgnore
-     * @since 13.3.4
+     * @since 13.4.0
      */
     public function run() {}
 }

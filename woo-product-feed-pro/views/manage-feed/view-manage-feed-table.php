@@ -111,7 +111,7 @@ foreach ( $product_feeds_query->get_posts() as $product_feed ) :
                 printf(
                     // translators: %s: close <a> tag.
                     esc_html__( 'You haven\'t configured a product feed yet, %1$splease create one first%3$s or read our tutorial on %2$show to set up your very first Google Shopping product feed%3$s.', 'woo-product-feed-pro' ),
-                    '<a href="admin.php?page=woo-product-feed-pro">',
+                    '<a href="admin.php?page=pfp-edit-feed">',
                     '<a href="' . esc_url( Helper::get_utm_url( 'setting-up-your-first-google-shopping-product-feed', 'pfp', 'manage-feed', 'first shopping feed' ) ) . '" target="_blank">',
                     '</a>',
                 );

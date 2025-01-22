@@ -1,3 +1,17 @@
+= 13.4.1 (2025-01-16) =
+* Bug Fix: Case insensitive option is not working for filter
+* Bug Fix: Comma separator in pricing is breaking multiply/divide/plus/minus rules
+* Bug Fix: Creating a feed adds an irrelevant action-scheduler event
+* Bug Fix: Feed Pricing Separator Following WooCommerce Settings
+* Bug Fix: Feed processing doesn't progress until someone visits the Manage Feeds page
+* Bug Fix: Google Local Products Inventory Empty When Using CSV, TXT or TSV
+* Bug Fix: Incorrect create feed URL on the fresh Manage Feeds screen
+* Bug Fix: Remove single quote from pricing as a thousand separator
+* Bug Fix: Tax does not apply to the shipping cost
+* Bug Fix: Update the Sale price effective date format
+* Bug Fix: Values Not Being Sanitized In Feed
+* Feature: Recommend FunnelKit Stripe via temporary admin bar menu
+
 = 13.4.0 (2024-12-06) =
 * Bug Fix: Advanced Flat Rate Shipping formulas do not work properly
 * Bug Fix: Availability date + 6/7/8 weeks attribute values are missing

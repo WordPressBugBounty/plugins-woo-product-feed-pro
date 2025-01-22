@@ -29,7 +29,7 @@ class Heartbeat extends Abstract_Class {
      *
      * @return void
      */
-    public function get_product_feed_processing_status() {
+    public function ajax_get_product_feed_processing_status() {
         if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
@@ -52,31 +52,16 @@ class Heartbeat extends Abstract_Class {
                 continue;
             }
 
-            $proc_perc = 0;
-            if ( 'ready' === $feed->status ) {
-                $proc_perc = 100;
-            } elseif ( 'not run yet' === $feed->status ) {
-                $proc_perc = 999;
-            } elseif ( 'processing' === $feed->status ) {
-                $proc_perc = $feed->get_processing_percentage();
-
-                // If the feed is processing and the percentage is less than 100,
-                // and there is no cron job scheduled for woosae_update_project_stats, schedule it.
-                if ( 100 > $proc_perc ) {
-                    $feed->run_batch_event( true );
-                } else {
-                    // If the feed is processing and the percentage more than 100, set it to 100.
-                    $proc_perc    = 100;
-                    $feed->status = 'ready';
-                }
-            } elseif ( 'stopped' === $feed->status ) {
-                $proc_perc = 999;
-            }
+            $proc_perc = $feed->get_processing_percentage();
 
             $response[] = array(
-                'hash'      => $project_hash,
-                'status'    => $feed->status,
-                'proc_perc' => $proc_perc,
+                'feed_id'       => $feed->id,
+                'hash'          => $project_hash,
+                'status'        => $feed->status,
+                'executed_from' => $feed->executed_from,
+                'offset'        => $feed->total_products_processed,
+                'batch_size'    => $feed->batch_size,
+                'proc_perc'     => $proc_perc,
             );
         }
 
@@ -88,12 +73,54 @@ class Heartbeat extends Abstract_Class {
     }
 
     /**
+     * Generate product feed via AJAX.
+     *
+     * @since 13.4.1
+     * @access public
+     */
+    public function ajax_generate_product_feed() {
+        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
+            wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
+        }
+
+        $feed_id    = sanitize_text_field( $_POST['feed_id'] );
+        $offset     = sanitize_text_field( $_POST['offset'] );
+        $batch_size = sanitize_text_field( $_POST['batch_size'] );
+
+        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
+        if ( ! $feed->id ) {
+            wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
+        }
+
+        /**
+         * Check if the feed is stopped.
+         *
+         * If in the middle of processing a feed and the feed is stopped by the user.
+         * This is to avoid the feed from continuing to process when the user has stopped it.
+         */
+        if ( 'stopped' === $feed->status ) {
+            wp_send_json_success(
+                array(
+                    'feed_id'    => $feed->id,
+                    'offset'     => $offset,
+                    'batch_size' => $batch_size,
+                    'status'     => $feed->status,
+                )
+            );
+        }
+
+        $feed->run_batch_event( $offset, $batch_size, 'ajax' );
+    }
+
+    /**
      * Run the class
      *
      * @codeCoverageIgnore
      * @since 13.3.5
      */
     public function run() {
-        add_action( 'wp_ajax_woosea_project_processing_status', array( $this, 'get_product_feed_processing_status' ) );
+        add_action( 'wp_ajax_woosea_project_processing_status', array( $this, 'ajax_get_product_feed_processing_status' ) );
+
+        add_action( 'wp_ajax_adt_pfp_generate_product_feed', array( $this, 'ajax_generate_product_feed' ) );
     }
 }

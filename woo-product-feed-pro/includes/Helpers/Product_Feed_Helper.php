@@ -166,6 +166,64 @@ class Product_Feed_Helper {
     }
 
     /**
+     * Get total published products.
+     *
+     * @since 13.3.5
+     * @access private
+     *
+     * @param Product_Feed $feed The product feed instance.
+     * @return int
+     */
+    public static function get_feed_total_published_products( $feed ) {
+        // Get total of published products to process.
+        if ( $feed->create_preview ) {
+            // User would like to see a preview of their feed, retrieve only 5 products by default.
+            $published_products = apply_filters( 'adt_product_feed_preview_products', 5, $feed );
+        } else {
+            $published_products = self::get_total_published_products( $feed->include_product_variations );
+        }
+
+        /**
+         * Filter the total number of products to process.
+         *
+         * @since 13.3.5
+         *
+         * @param int $published_products Total number of published products to process.
+         * @param \AdTribes\PFP\Factories\Product_Feed $feed The product feed instance.
+         */
+        return apply_filters( 'adt_product_feed_total_published_products', intval( $published_products ), $feed );
+    }
+
+    /**
+     * Get batch size.
+     *
+     * @since 13.4.1
+     * @access public
+     *
+     * @param Product_Feed $feed The product feed instance.
+     * @param int          $published_products The total number of published products.
+     * @return int
+     */
+    public static function get_batch_size( $feed, $published_products = null ) {
+        $published_products = $published_products ?? self::get_feed_total_published_products( $feed );
+
+        // By default process a 750 products per batch.
+        // If the number of products is greater than 50000, process a 2500 products per batch.
+        $batch_size = $published_products > 50000 ? 2500 : 750;
+
+        /**
+         * User set his own batch size
+         */
+        $batch_option      = get_option( 'add_batch', 'no' );
+        $batch_size_option = get_option( 'woosea_batch_size', '' );
+        if ( 'yes' === $batch_option && ! empty( $batch_size_option ) && is_numeric( $batch_size_option ) ) {
+            $batch_size = intval( $batch_size_option );
+        }
+
+        return $batch_size;
+    }
+
+    /**
      * Remove cache.
      *
      * The method is used to remove the cache for the feed processing.

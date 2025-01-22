@@ -1,0 +1,39 @@
+#wpadminbar #wp-admin-bar-adt-pfp-funnelkit-stripe .ab-item {
+  display: flex;
+  align-items: center;
+}
+
+#wp-admin-bar-adt-pfp-funnelkit-stripe img.menu-icon {
+  height: 24px;
+  width: auto;
+  float: left;
+  margin-right: 6px;
+}
+
+.adt-pfp-funnelkit-stripe-pointer ul {
+  list-style: initial;
+  padding: 0 20px 0 3em;
+}
+
+.adt-pfp-funnelkit-stripe-pointer.wp-pointer-top .wp-pointer-arrow {
+  left: calc(50% - 13px);
+}
+
+.adt-pfp-funnelkit-stripe-pointer .adt-pfp-funnelkit-stripe-pointer-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.adt-pfp-funnelkit-stripe-pointer .adt-pfp-funnelkit-stripe-pointer-buttons .close {
+  margin-left: auto;
+  color: #797c82;
+}
+
+.adt-pfp-funnelkit-stripe-pointer .adt-pfp-funnelkit-stripe-pointer-buttons .install.installing::before {
+  content: url(../images/loading.gif);
+}
+
+.adt-pfp-funnelkit-stripe-pointer .adt-pfp-funnelkit-stripe-pointer-buttons a.close:focus,
+.adt-pfp-funnelkit-stripe-pointer .adt-pfp-funnelkit-stripe-pointer-buttons a.close:active {
+  box-shadow: none;
+}

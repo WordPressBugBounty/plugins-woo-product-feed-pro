@@ -51,6 +51,10 @@ class Plugin_Installer extends Abstract_Class {
             'token'    => 'wst',
             'basename' => 'woocommerce-store-toolkit/store-toolkit.php',
         ),
+        'funnelkit-stripe-woo-payment-gateway'  => array(
+            'token'    => 'funnelkit-stripe',
+            'basename' => 'funnelkit-stripe-woo-payment-gateway/funnelkit-stripe-woo-payment-gateway.php',
+        ),
     );
 
     /**

@@ -1,15 +1,15 @@
-# Copyright (C) 2024 AdTribes.io
+# Copyright (C) 2025 AdTribes.io
 # This file is distributed under the GPL3.
 msgid ""
 msgstr ""
-"Project-Id-Version: Product Feed PRO for WooCommerce 13.4.0\n"
+"Project-Id-Version: Product Feed PRO for WooCommerce 13.4.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woo-product-feed-pro\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-12-11T02:29:56+00:00\n"
+"POT-Creation-Date: 2025-01-22T03:49:46+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: woo-product-feed-pro\n"
@@ -41,13 +41,14 @@ msgstr ""
 
 #: bootstrap-old.php:633
 #: includes/Classes/Heartbeat.php:34
+#: includes/Classes/Heartbeat.php:83
 #: includes/Classes/Product_Feed_Admin.php:42
 #: includes/Classes/Product_Feed_Admin.php:139
 #: includes/Classes/Product_Feed_Admin.php:235
 #: includes/Classes/Product_Feed_Admin.php:287
 #: includes/Classes/Product_Feed_Admin.php:377
-#: includes/Classes/Product_Feed_Admin.php:419
-#: includes/Classes/Product_Feed_Admin.php:459
+#: includes/Classes/Product_Feed_Admin.php:421
+#: includes/Classes/Product_Feed_Admin.php:456
 #: includes/Classes/Usage.php:760
 #: includes/Classes/Usage.php:790
 #: includes/Classes/WP_Admin.php:420
@@ -75,15 +76,71 @@ msgstr ""
 msgid "Please contact support if this issue persists."
 msgstr ""
 
+#: includes/Classes/FunnelKit_Stripe.php:84
+msgid "Stripe"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:113
+msgid "Setup FunnelKit Stripe (Recommended)"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:114
+msgid "Use FunnelKit's Stripe for Maximum Compatibility & Trustworthy Support"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:116
+msgid "Better Express Payment with Apple & Google Pay"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:117
+msgid "Supports One Click Upsells with Express Pay Options"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:118
+msgid "Personalised Support for any payments related issues"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:119
+msgid "Increase Revenue with Buy Now Pay Later services such as Affirm, Klarna and AfterPay"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:124
+msgid "Swap To FunnelKit Stripe (Recommended)"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:152
+msgid "Install"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:153
+msgid "Installing..."
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:154
+msgid "Go to Settings"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:155
+msgid "Connect"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:156
+msgid "Dismiss Forever"
+msgstr ""
+
+#: includes/Classes/FunnelKit_Stripe.php:248
+msgid "Error: FunnelKit Stripe Admin class not found."
+msgstr ""
+
 #: includes/Classes/Heartbeat.php:38
 #: includes/Classes/Product_Feed_Admin.php:46
 #: includes/Classes/Product_Feed_Admin.php:143
 #: includes/Classes/Product_Feed_Admin.php:239
 #: includes/Classes/Product_Feed_Admin.php:291
 #: includes/Classes/Product_Feed_Admin.php:381
-#: includes/Classes/Product_Feed_Admin.php:423
-#: includes/Classes/Product_Feed_Admin.php:463
-#: includes/Classes/Product_Feed_Attributes.php:529
+#: includes/Classes/Product_Feed_Admin.php:425
+#: includes/Classes/Product_Feed_Admin.php:460
+#: includes/Classes/Product_Feed_Attributes.php:579
 msgid "You do not have permission to manage product feed."
 msgstr ""
 
@@ -92,8 +149,17 @@ msgstr ""
 msgid "Invalid request."
 msgstr ""
 
-#: includes/Classes/Heartbeat.php:84
+#: includes/Classes/Heartbeat.php:69
 msgid "Product feed(s) not found."
+msgstr ""
+
+#: includes/Classes/Heartbeat.php:92
+#: includes/Classes/Product_Feed_Admin.php:247
+#: includes/Classes/Product_Feed_Admin.php:296
+#: includes/Classes/Product_Feed_Admin.php:388
+#: includes/Classes/Product_Feed_Admin.php:432
+#: includes/Classes/Product_Feed_Admin.php:467
+msgid "Product feed not found."
 msgstr ""
 
 #: includes/Classes/Marketing.php:42
@@ -101,96 +167,84 @@ msgstr ""
 msgid "Advanced Coupons"
 msgstr ""
 
-#: includes/Classes/Plugin_Installer.php:84
+#: includes/Classes/Plugin_Installer.php:88
 msgid "You do not have sufficient permissions to install and activate plugins."
 msgstr ""
 
-#: includes/Classes/Plugin_Installer.php:89
+#: includes/Classes/Plugin_Installer.php:93
 msgid "The plugin is not valid."
 msgstr ""
 
-#: includes/Classes/Plugin_Installer.php:108
+#: includes/Classes/Plugin_Installer.php:112
 msgid "The plugin is already installed."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:247
-#: includes/Classes/Product_Feed_Admin.php:296
-#: includes/Classes/Product_Feed_Admin.php:388
-#: includes/Classes/Product_Feed_Admin.php:430
-#: includes/Classes/Product_Feed_Admin.php:470
-msgid "Product feed not found."
-msgstr ""
-
-#: includes/Classes/Product_Feed_Admin.php:408
+#: includes/Classes/Product_Feed_Admin.php:410
 msgid "Product feed process has been cancelled."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:446
-msgid "Product feed has been refreshed."
-msgstr ""
-
-#: includes/Classes/Product_Feed_Admin.php:479
+#: includes/Classes/Product_Feed_Admin.php:476
 msgid "Product feed has been deleted."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:606
+#: includes/Classes/Product_Feed_Admin.php:603
 #: views/manage-feed/step/woosea-generate-feed-step-0.php:81
 msgid "General feed settings"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:612
+#: includes/Classes/Product_Feed_Admin.php:609
 #: views/manage-feed/step/woosea-generate-feed-step-7.php:113
 msgid "Field mapping"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:618
+#: includes/Classes/Product_Feed_Admin.php:615
 #: views/manage-feed/step/woosea-generate-feed-step-4.php:90
 msgid "Feed filters and rules"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:624
+#: includes/Classes/Product_Feed_Admin.php:621
 #: views/manage-feed/step/woosea-generate-feed-step-5.php:85
 msgid "Conversion & Google Analytics settings"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:635
+#: includes/Classes/Product_Feed_Admin.php:632
 #: views/manage-feed/step/woosea-generate-feed-step-1.php:79
 msgid "Category mapping"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:702
+#: includes/Classes/Product_Feed_Admin.php:699
 msgid "Feed settings"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:712
+#: includes/Classes/Product_Feed_Admin.php:709
 msgid "Start product feed processing"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:723
+#: includes/Classes/Product_Feed_Admin.php:720
 msgid "Cancel product feed processing"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:730
+#: includes/Classes/Product_Feed_Admin.php:727
 msgid "Copy product feed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:736
+#: includes/Classes/Product_Feed_Admin.php:733
 msgid "Delete product feed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:746
+#: includes/Classes/Product_Feed_Admin.php:743
 msgid "Download product feed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:535
+#: includes/Classes/Product_Feed_Attributes.php:585
 msgid "No attributes found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:543
+#: includes/Classes/Product_Feed_Attributes.php:593
 msgid "No channel data found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:549
+#: includes/Classes/Product_Feed_Attributes.php:599
 msgid "Channel file not found."
 msgstr ""
 
@@ -375,23 +429,19 @@ msgstr ""
 msgid "Update plugin"
 msgstr ""
 
-#: includes/Factories/Product_Feed.php:625
-msgid "Product Feed Pro: Batch processing"
-msgstr ""
-
-#: includes/Helpers/Product_Feed_Helper.php:245
+#: includes/Helpers/Product_Feed_Helper.php:303
 msgid "Hourly"
 msgstr ""
 
-#: includes/Helpers/Product_Feed_Helper.php:246
+#: includes/Helpers/Product_Feed_Helper.php:304
 msgid "Twice Daily"
 msgstr ""
 
-#: includes/Helpers/Product_Feed_Helper.php:247
+#: includes/Helpers/Product_Feed_Helper.php:305
 msgid "Daily"
 msgstr ""
 
-#: includes/Helpers/Product_Feed_Helper.php:250
+#: includes/Helpers/Product_Feed_Helper.php:308
 msgid "No Refresh"
 msgstr ""
 

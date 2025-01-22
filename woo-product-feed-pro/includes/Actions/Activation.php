@@ -12,6 +12,7 @@ use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Factories\Product_Feed_Query;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
+use AdTribes\PFP\Classes\FunnelKit_Stripe;
 
 // Updates.
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
@@ -91,6 +92,8 @@ class Activation extends Abstract_Class {
         $this->_fetch_google_product_taxonomy();
 
         $this->_register_custom_capabilities();
+
+        $this->_schedule_funnelkit_stripe_promote();
 
         /**
          * Register date of first activation of plugin
@@ -197,6 +200,17 @@ class Activation extends Abstract_Class {
                 $user->add_cap( 'manage_adtribes_product_feeds' );
             }
         }
+    }
+
+    /**
+     * Schedule FunnelKit Stripe promote.
+     *
+     * @since 13.4.1
+     * @access private
+     */
+    private function _schedule_funnelkit_stripe_promote() {
+        $funnelkit_stripe = FunnelKit_Stripe::instance();
+        $funnelkit_stripe->schedule_funnelkit_stripe_promote();
     }
 
     /**

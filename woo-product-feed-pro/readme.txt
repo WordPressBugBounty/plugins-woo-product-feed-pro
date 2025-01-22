@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.7
-Stable tag: 13.4.0
+Stable tag: 13.4.1
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -385,6 +385,20 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.4.1 (2025-01-16) =
+* Bug Fix: Case insensitive option is not working for filter
+* Bug Fix: Comma separator in pricing is breaking multiply/divide/plus/minus rules
+* Bug Fix: Creating a feed adds an irrelevant action-scheduler event
+* Bug Fix: Feed Pricing Separator Following WooCommerce Settings
+* Bug Fix: Feed processing doesn't progress until someone visits the Manage Feeds page
+* Bug Fix: Google Local Products Inventory Empty When Using CSV, TXT or TSV
+* Bug Fix: Incorrect create feed URL on the fresh Manage Feeds screen
+* Bug Fix: Remove single quote from pricing as a thousand separator
+* Bug Fix: Tax does not apply to the shipping cost
+* Bug Fix: Update the Sale price effective date format
+* Bug Fix: Values Not Being Sanitized In Feed
+* Feature: Recommend FunnelKit Stripe via temporary admin bar menu
 
 = 13.4.0 (2024-12-06) =
 * Bug Fix: Advanced Flat Rate Shipping formulas do not work properly

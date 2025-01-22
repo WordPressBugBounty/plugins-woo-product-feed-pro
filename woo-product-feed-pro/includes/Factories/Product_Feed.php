@@ -8,6 +8,7 @@
 namespace AdTribes\PFP\Factories;
 
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
+use AdTribes\PFP\Classes\Cron;
 
 /**
  * Class Product_Feed.
@@ -74,6 +75,10 @@ class Product_Feed {
      */
     protected $data = array(
         'status'                                 => '',
+        'products_count'                         => 0,
+        'total_products_processed'               => 0,
+        'batch_size'                             => 0,
+        'executed_from'                          => '',
         'country'                                => '',
         'channel_hash'                           => '',
         'channel'                                => array(),
@@ -87,8 +92,6 @@ class Product_Feed {
         'include_product_variations'             => false,
         'only_include_default_product_variation' => false,
         'only_include_lowest_product_variation'  => false,
-        'products_count'                         => 0,
-        'total_products_processed'               => 0,
         'utm_enabled'                            => true,
         'utm_source'                             => '',
         'utm_medium'                             => '',
@@ -606,25 +609,138 @@ class Product_Feed {
     }
 
     /**
-     * Execute product feed batch event.
+     * Generate product feed.
      *
-     * @since 13.3.5.4
-     * @since 13.3.9    Swap cron with Action Scheduler.
+     * @since 13.4.1
      * @access public
      *
-     * @param bool $no_queue Whether to run the batch event without queue.
+     * @param string $context The context of the generation. 'ajax' or 'cron'.
      */
-    public function run_batch_event( $no_queue = false ) {
-        // Set the next scheduled event.
-        if ( ! as_has_scheduled_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH, array( 'feed_id' => $this->id ) ) ) {
-            $action_id = as_schedule_single_action( time() + 1, ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH, array( 'feed_id' => $this->id ) );
+    public function generate( $context = '' ) {
+        // Get the total number of products.
+        $published_products = Product_Feed_Helper::get_feed_total_published_products( $this );
+        $batch_size         = Product_Feed_Helper::get_batch_size( $this, $published_products );
 
-            if ( $no_queue ) {
-                if ( ! empty( $action_id ) && class_exists( '\ActionScheduler_QueueRunner' ) ) {
-                    $as_runner = \ActionScheduler_QueueRunner::instance();
-                    $as_runner->process_action( $action_id, __( 'Product Feed Pro: Batch processing', 'woo-product-feed-pro' ) );
-                }
+        // Set feed status to processing.
+        $this->status = 'processing';
+
+        // Update the feed with the total number of products.
+        $this->products_count           = intval( $published_products );
+        $this->total_products_processed = 0;
+        $this->batch_size               = $batch_size;
+        $this->executed_from            = 'ajax' === $context ? 'ajax' : 'cron';
+        $this->save();
+
+        if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+            wp_send_json_success(
+                array(
+                    'feed_id'    => $this->id,
+                    'offset'     => 0,
+                    'batch_size' => $batch_size,
+                )
+            );
+        } else {
+            return Cron::schedule_next_batch( $this->id, 0, $batch_size );
+        }
+    }
+
+    /**
+     * Run batch event.
+     *
+     * @since 13.4.1
+     * @access public
+     *
+     * @param int    $offset     The offset of the batch.
+     * @param int    $batch_size The batch size.
+     * @param string $context The context of the generation. 'ajax' or 'cron'.
+     */
+    public function run_batch_event( $offset = 0, $batch_size = 0, $context = '' ) {
+        $get_product_class = new \WooSEA_Get_Products();
+        $get_product_class->woosea_get_products( $this, $offset, $batch_size );
+
+        // Update the total number of products processed.
+        $this->total_products_processed = min( $this->total_products_processed + $batch_size, $this->products_count );
+
+        /**
+         * Batch processing.
+         *
+         * If the batch size is less than the total number of published products, then we need to create a batch.
+         * The batching logic is from the legacy code base as it's has the batch size.
+         * We need to refactor this logic so it's not stupid.
+         */
+        if ( $this->total_products_processed >= $this->products_count || $batch_size >= $this->products_count ) { // End of processing.
+            // Set status to ready.
+            $this->status = 'ready';
+
+            // Set counters back to 0.
+            $this->total_products_processed = 0;
+            $this->batch_size               = 0;
+            $this->executed_from            = '';
+
+            // Set last updated date and time.
+            $this->last_updated = gmdate( 'd M Y H:i:s' );
+        }
+
+        // Save feed changes.
+        $this->save();
+
+        if ( 'ready' === $this->status ) {
+            $this->move_feed_file_to_final();
+
+            // Check the amount of products in the feed and update the history count.
+            as_schedule_single_action( time() + 1, ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS, array( 'feed_id' => $this->id ) );
+
+            /**
+             * After feed generation action.
+             */
+            do_action( 'adt_after_product_feed_generation', $this->id, $offset, $batch_size );
+
+            if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+                wp_send_json_success(
+                    array(
+                        'feed_id'    => $this->id,
+                        'offset'     => $this->total_products_processed,
+                        'batch_size' => $batch_size,
+                        'status'     => $this->status,
+                    )
+                );
             }
+
+            return;
+        }
+
+        // Run next batch event via AJAX or cron.
+        if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+            wp_send_json_success(
+                array(
+                    'feed_id'    => $this->id,
+                    'offset'     => $this->total_products_processed,
+                    'batch_size' => $batch_size,
+                    'status'     => $this->status,
+                )
+            );
+        } else {
+            Cron::schedule_next_batch( $this->id, $this->total_products_processed, $batch_size );
+        }
+    }
+
+
+    /**
+     * Move the feed file to the final file.
+     *
+     * @since 13.4.1
+     * @access public
+     */
+    public function move_feed_file_to_final() {
+        $upload_dir = wp_upload_dir();
+        $base       = $upload_dir['basedir'];
+        $path       = $base . '/woo-product-feed-pro/' . $this->file_format;
+        $tmp_file   = $path . '/' . sanitize_file_name( $this->file_name ) . '_tmp.' . $this->file_format;
+        $new_file   = $path . '/' . sanitize_file_name( $this->file_name ) . '.' . $this->file_format;
+
+        // Move the temporary file to the final file.
+        if ( copy( $tmp_file, $new_file ) ) {
+            wp_delete_file( $tmp_file );
         }
     }
 
@@ -638,7 +754,13 @@ class Product_Feed {
         // Unschedule the Action Scheduler event if it exists.
         $this->unregister_action();
 
-        $interval            = $this->refresh_interval ?? 'daily';
+        $interval = $this->refresh_interval ?? '';
+
+        // Return if the interval is empty, to prevent scheduling recurring the event.
+        if ( empty( $interval ) ) {
+            return;
+        }
+
         $interval_in_seconds = 0;
         $timestamp           = 0;
         switch ( $interval ) {
@@ -654,7 +776,6 @@ class Product_Feed {
                 $interval_in_seconds = HOUR_IN_SECONDS;
                 break;
             case 'daily':
-            default:
                 // Time is set to the next day.
                 $timestamp           = strtotime( 'tomorrow 00:00:00' );
                 $interval_in_seconds = DAY_IN_SECONDS;

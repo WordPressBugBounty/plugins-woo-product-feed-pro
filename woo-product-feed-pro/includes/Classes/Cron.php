@@ -8,7 +8,6 @@
 namespace AdTribes\PFP\Classes;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
-use AdTribes\PFP\Factories\Product_Feed_Query;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Traits\Singleton_Trait;
@@ -73,110 +72,53 @@ class Cron extends Abstract_Class {
     }
 
     /**
-     * Update product feed.
+     * Move the feed file to the final file.
      *
-     * This method is used to update the product feed after generating the products from the legacy code base.
-     *
-     * @since 13.3.5
+     * @since 13.4.1
      * @access public
      *
-     * @param int $feed_id     Feed ID.
-     * @param int $batch_size  Offset step size.
+     * @param Product_Feed $feed The feed data object.
      */
-    public function update_product_feed( $feed_id, $batch_size ) {
-        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( ! Product_Feed_Helper::is_a_product_feed( $feed ) && ! $feed->id ) {
-            return false;
-        }
+    public function move_feed_file_to_final( $feed ) {
+        $upload_dir = wp_upload_dir();
+        $base       = $upload_dir['basedir'];
+        $path       = $base . '/woo-product-feed-pro/' . $feed->file_format;
+        $tmp_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '_tmp.' . $feed->file_format;
+        $new_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '.' . $feed->file_format;
 
-        // User would like to see a preview of their feed, retrieve only 5 products by default.
-        $preview_count = $feed->create_preview ? apply_filters( 'adt_product_feed_preview_products', 5, $feed ) : null;
-
-        // Get total of published products to process.
-        $published_products = $preview_count ? $preview_count : Product_Feed_Helper::get_total_published_products( $feed->include_product_variations );
-
-        /**
-         * Filter the total number of products to process.
-         *
-         * @since 13.3.5
-         *
-         * @param int $published_products Total number of published products to process.
-         * @param \AdTribes\PFP\Factories\Product_Feed $feed The product feed instance.
-         */
-        $published_products = apply_filters( 'adt_product_feed_total_published_products', $published_products, $feed );
-
-        // Update the feed with the total number of products.
-        $feed->products_count           = intval( $published_products );
-        $feed->total_products_processed = min( $feed->total_products_processed + $batch_size, $feed->products_count );
-
-        /**
-         * Batch processing.
-         *
-         * If the batch size is less than the total number of published products, then we need to create a batch.
-         * The batching logic is from the legacy code base as it's has the batch size.
-         * We need to refactor this logic so it's not stupid.
-         */
-        if ( $feed->total_products_processed >= $published_products || $batch_size >= $published_products ) { // End of processing.
-            $upload_dir = wp_upload_dir();
-            $base       = $upload_dir['basedir'];
-            $path       = $base . '/woo-product-feed-pro/' . $feed->file_format;
-            $tmp_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '_tmp.' . $feed->file_format;
-            $new_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '.' . $feed->file_format;
-
-            // Move the temporary file to the final file.
-            if ( copy( $tmp_file, $new_file ) ) {
-                wp_delete_file( $tmp_file );
-            }
-
-            // Set status to ready.
-            $feed->status = 'ready';
-
-            // Set counters back to 0.
-            $feed->total_products_processed = 0;
-
-            // Set last updated date and time.
-            $feed->last_updated = gmdate( 'd M Y H:i:s' );
-        }
-
-        // Save feed changes.
-        $feed->save();
-
-        if ( 'ready' === $feed->status ) {
-            // Check the amount of products in the feed and update the history count.
-            as_schedule_single_action( time() + 1, ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS, array( 'feed_id' => $feed->id ) );
-        } else {
-            // Set the next scheduled event.
-            $feed->run_batch_event();
+        // Move the temporary file to the final file.
+        if ( copy( $tmp_file, $new_file ) ) {
+            wp_delete_file( $tmp_file );
         }
     }
 
     /**
-     * Get total published products.
+     * Schedule the next batch.
      *
-     * @param Product_Feed $feed The product feed instance.
+     * @since 13.4.1
+     * @access public
      *
-     * @return int
+     * @param int $feed_id    The feed ID.
+     * @param int $offset     The offset of the batch.
+     * @param int $batch_size The batch size.
+     * @return int The action ID.
      */
-    private function _get_total_published_products( $feed ) {
-        // Get total of published products to process.
-        if ( $feed->create_preview ) {
-            // User would like to see a preview of their feed, retrieve only 5 products by default.
-            $published_products = apply_filters( 'adt_product_feed_preview_products', 5, $feed );
-        } elseif ( $feed->include_product_variations ) {
-            $published_products = Product_Feed_Helper::get_total_published_products( true );
-        } else {
-            $published_products = Product_Feed_Helper::get_total_published_products();
-        }
+    public static function schedule_next_batch( $feed_id, $offset, $batch_size ) {
+        // Set the next scheduled event.
+        $action_id = as_schedule_single_action(
+            time() + 1,
+            ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH,
+            array(
+                'feed_id'    => $feed_id,
+                'offset'     => $offset,
+                'batch_size' => $batch_size,
+            ),
+            'adt_pfp_as_generate_product_feed_batch_' . $feed_id,
+            false,
+            5
+        );
 
-        /**
-         * Filter the total number of products to process.
-         *
-         * @since 13.3.5
-         *
-         * @param int $published_products Total number of published products to process.
-         * @param \AdTribes\PFP\Factories\Product_Feed $feed The product feed instance.
-         */
-        return apply_filters( 'adt_product_feed_total_published_products', intval( $published_products ), $feed );
+        return $action_id;
     }
 
     /***************************************************************************
@@ -200,7 +142,7 @@ class Cron extends Abstract_Class {
 
         Product_Feed_Helper::disable_cache();
 
-        $feed->run_batch_event();
+        $feed->generate( 'cron' );
     }
 
     /**
@@ -209,9 +151,11 @@ class Cron extends Abstract_Class {
      * @since 13.3.9
      * @access public
      *
-     * @param int $feed_id The feed ID.
+     * @param int $feed_id    The feed ID.
+     * @param int $offset     The offset of the batch.
+     * @param int $batch_size The batch size.
      */
-    public function as_generate_product_feed_batch_callback( $feed_id ) {
+    public function as_generate_product_feed_batch_callback( $feed_id, $offset = 0, $batch_size = 0 ) {
         $feed = Product_Feed_Helper::get_product_feed( $feed_id );
         if ( $feed->id ) {
             /**
@@ -224,9 +168,7 @@ class Cron extends Abstract_Class {
                 return;
             }
 
-            $feed->status      = 'processing';
-            $get_product_class = new \WooSEA_Get_Products();
-            $get_product_class->woosea_get_products( $feed );
+            $feed->run_batch_event( $offset, $batch_size, 'cron' );
         }
     }
 
@@ -243,9 +185,6 @@ class Cron extends Abstract_Class {
         if ( ! $feed->id ) {
             return;
         }
-
-        // Filter the amount of history products in the system report.
-        $max_history_products = apply_filters( 'adt_product_feed_max_history_products', 10 );
 
         $products_count = 0;
         $file           = $feed->get_file_path();
@@ -264,11 +203,9 @@ class Cron extends Abstract_Class {
      * @since 13.3.5
      */
     public function run() {
-        add_action( 'adt_after_product_feed_generation', array( $this, 'update_product_feed' ), 10, 2 );
-
         // Action Scheduler.
         add_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED, array( $this, 'as_generate_product_feed_callback' ), 1, 1 );
-        add_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH, array( $this, 'as_generate_product_feed_batch_callback' ), 1, 1 );
+        add_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH, array( $this, 'as_generate_product_feed_batch_callback' ), 1, 3 );
         add_action( ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS, array( $this, 'as_product_feed_update_stats' ), 1, 1 );
     }
 }

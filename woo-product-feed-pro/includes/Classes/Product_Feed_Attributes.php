@@ -242,6 +242,56 @@ class Product_Feed_Attributes extends Abstract_Class {
     public $custom_attributes = array();
 
     /**
+     * The prices attributes.
+     *
+     * @since 13.4.1
+     * @access public
+     *
+     * @var array
+     */
+    public $prices_attributes = array(
+        'price',
+        'regular_price',
+        'sale_price',
+        'price_forced',
+        'regular_price_forced',
+        'sale_price_forced',
+        'net_price',
+        'net_regular_price',
+        'net_sale_price',
+        'rounded_price',
+        'rounded_regular_price',
+        'rounded_sale_price',
+        'price_forced_rounded',
+        'regular_price_forced_rounded',
+        'sale_price_forced_rounded',
+        'net_price_rounded',
+        'net_regular_price_rounded',
+        'net_sale_price_rounded',
+        'system_price',
+        'system_regular_price',
+        'system_sale_price',
+        'system_net_price',
+        'system_net_sale_price',
+        'system_net_regular_price',
+        'system_price_forced',
+        'system_sale_price_forced',
+        'system_regular_price_forced',
+        'shipping_price',
+        'vivino_price',
+        'vivino_sale_price',
+        'vivino_regular_price',
+        'vivino_net_price',
+        'vivino_net_regular_price',
+        'vivino_net_sale_price',
+        'non_geo_wcml_price',
+        'mm_min_price',
+        'mm_min_regular_price',
+        'mm_max_price',
+        'mm_max_regular_price',
+    );
+
+    /**
      * Constructor.
      *
      * @since 13.3.7

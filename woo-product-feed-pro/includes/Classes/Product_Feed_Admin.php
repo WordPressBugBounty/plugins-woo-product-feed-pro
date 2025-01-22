@@ -121,7 +121,7 @@ class Product_Feed_Admin extends Abstract_Class {
          * Run the product feed batch processing.
          * This is the legacy code base processing logic.
          */
-        $product_feed->run_batch_event( true );
+        $product_feed->generate( 'cron' );
     }
 
     /**
@@ -260,7 +260,7 @@ class Product_Feed_Admin extends Abstract_Class {
             /**
              * Run the product feed batch processing.
              */
-            $feed->run_batch_event( true );
+            $feed->generate( 'cron' );
         }
 
         $feed->post_status = 'true' === $is_publish ? 'publish' : 'draft';
@@ -391,9 +391,11 @@ class Product_Feed_Admin extends Abstract_Class {
         do_action( 'adt_before_cancel_product_feed', $feed );
 
         // Remove the scheduled event.
-        as_unschedule_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH, array( 'feed_id' => $this->id ) );
+        as_unschedule_all_actions( '', array(), 'adt_pfp_as_generate_product_feed_batch_' . $feed->id );
 
         $feed->total_products_processed = 0;
+        $feed->batch_size               = 0;
+        $feed->executed_from            = '';
         $feed->status                   = 'stopped';
         $feed->last_updated             = gmdate( 'd M Y H:i:s' );
         $feed->save();
@@ -430,20 +432,15 @@ class Product_Feed_Admin extends Abstract_Class {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }
 
-        // Set status to processing.
-        $feed->status                   = 'processing';
-        $feed->total_products_processed = 0;
-        $feed->save();
-
         // Remove cache.
         Product_Feed_Helper::disable_cache();
 
         /**
          * Run the product feed batch processing.
          */
-        $feed->run_batch_event( true );
+        $response = $feed->generate( 'ajax' );
 
-        wp_send_json_success( __( 'Product feed has been refreshed.', 'woo-product-feed-pro' ) );
+        wp_send_json_success( $response );
     }
 
     /**
