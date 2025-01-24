@@ -1,3 +1,7 @@
+= 13.4.1.1 (2025-01-24) =
+* Bug Fix: Hidden products is not excluded from the feed
+* Bug Fix: Include Only filter type doesn't work when using Category on IF
+
 = 13.4.1 (2025-01-16) =
 * Bug Fix: Case insensitive option is not working for filter
 * Bug Fix: Comma separator in pricing is breaking multiply/divide/plus/minus rules

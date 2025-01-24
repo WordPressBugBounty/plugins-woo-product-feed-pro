@@ -1937,6 +1937,15 @@ class WooSEA_Get_Products {
             'update_post_meta_cache' => false,
             'suppress_filters'       => false,
             'custom_query'           => 'adt_published_products_and_variations', // Custom flag to trigger the filter
+            'post_password'          => '',
+            'tax_query' => array(
+				array(
+					'taxonomy' => 'product_visibility',
+					'field'    => 'name',
+					'terms'    => array( 'exclude-from-catalog', 'exclude-from-search' ),
+					'operator' => 'NOT IN',
+				),
+			),
         );
 
         /**
@@ -3649,17 +3658,6 @@ class WooSEA_Get_Products {
             $product_data = $this->woosea_exclude_individual( $product_data );
 
             /**
-             * Check if we need to add category taxonomy mappings (Google Shopping)
-             */
-            if ( isset( $product_data['id'] ) && $feed_channel['taxonomy'] == 'google_shopping' ) {
-                if ( ! empty( $feed_mappings ) ) {
-                    $product_data = $this->woocommerce_sea_mappings( $feed_mappings, $product_data );
-                } else {
-                    $product_data['categories'] = '';
-                }
-            }
-
-            /**
              * Do final check on Skroutz out of stock sizes
              * When a size is not on stock remove it
              */
@@ -3938,6 +3936,17 @@ class WooSEA_Get_Products {
             if ( ! empty( $product_data ) ) {
                 $product_data_instance = AdTribes\PFP\Classes\Product_Data::instance();
                 $product_data          = $product_data_instance->localize_prices( $product_data, $feed );
+            }
+
+            /**
+             * Check if we need to add category taxonomy mappings (Google Shopping)
+             */
+            if ( ! empty( $product_data ) && ! empty( $product_data['id'] ) && $feed_channel['taxonomy'] == 'google_shopping' ) {
+                if ( ! empty( $feed_mappings ) ) {
+                    $product_data = $this->woocommerce_sea_mappings( $feed_mappings, $product_data );
+                } else {
+                    $product_data['categories'] = '';
+                }
             }
 
             /**
