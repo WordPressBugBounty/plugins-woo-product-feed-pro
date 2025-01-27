@@ -1,3 +1,7 @@
+= 13.4.1.2 (2025-01-27) =
+* Bug Fix: Feed is only accepting the End of Rules and Filter
+* Bug Fix: Product Tags Filter not Working As Intended for Include Only
+
 = 13.4.1.1 (2025-01-24) =
 * Bug Fix: Hidden products is not excluded from the feed
 * Bug Fix: Include Only filter type doesn't work when using Category on IF

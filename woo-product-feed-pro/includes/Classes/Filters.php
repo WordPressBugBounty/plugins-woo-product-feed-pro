@@ -43,6 +43,11 @@ class Filters extends Abstract_Class {
         $passed = true;
 
         foreach ( $filters as $filter ) {
+            // If a previous filter is not passed, skip processing the remaining filters.
+            if ( ! $passed ) {
+                break;
+            }
+
             // Skip if any required filter parameters are missing.
             // Required parameters are: attribute, condition, criteria, than.
             if ( ! isset( $filter['attribute'] ) || ! isset( $filter['condition'] ) || ! isset( $filter['criteria'] ) || ! isset( $filter['than'] ) ) {
@@ -60,6 +65,12 @@ class Filters extends Abstract_Class {
 
             // if the attribute is an array then we need to loop through the array and check if the values.
             if ( is_array( $value ) ) {
+                // If empty array then add a value to the array.
+                // This is to keep the filter to check the value against the filter criteria.
+                if ( empty( $value ) ) {
+                    $value[] = '';
+                }
+
                 foreach ( $value as $v ) {
                     $passed = $this->filter_data( $passed, $v, $filter, $feed );
                     if ( ! $passed ) {
@@ -69,20 +80,19 @@ class Filters extends Abstract_Class {
             } else {
                 $passed = $this->filter_data( $passed, $value, $filter, $feed );
             }
-
-            /**
-             * Filter the data.
-             *
-             * @since 13.4.1
-             *
-             * @param bool   $passed The passed value.
-             * @param string $value  The value to filter.
-             * @param array  $filter The filter criteria.
-             * @param object $feed   The feed object.
-             * @return bool
-             */
-            $passed = apply_filters( 'adt_pfp_filter_data', $passed, $value, $filter, $feed );
         }
+
+        /**
+         * Filter the data.
+         *
+         * @since 13.4.1
+         *
+         * @param bool   $passed The passed value.
+         * @param array  $filters The filter criteria.
+         * @param object $feed   The feed object.
+         * @return bool
+         */
+        $passed = apply_filters( 'adt_pfp_filter_product_feed_data', $passed, $filters, $feed );
 
         if ( ! $passed ) {
             $data = array();
