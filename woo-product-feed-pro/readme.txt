@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.7
-Stable tag: 13.4.1.2
+Stable tag: 13.4.1.3
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -385,6 +385,17 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.4.1.3 (2025-02-04) =
+* Bug Fix: Applying "Include Only" filter method no longer works for any dynamic attributes
+* Bug Fix: Facebook/Meta feed template is adding g prefix on facebook specific fields
+* Bug Fix: Feed Failing to refresh due to get_category_ids() function
+* Bug Fix: Flatsome theme builder based description doesn't appear in the feed
+* Bug Fix: Include rule and exclude rule functions are swapped
+* Bug Fix: Item Group ID filter method doesn't work
+* Bug Fix: Main Image value affecting all products after applying a rule for a specific product
+* Bug Fix: Multiply, divide, minus, plus rules not working due to currency options
+* Bug Fix: PHP Warning when feed selected country tax is not configured
 
 = 13.4.1.2 (2025-01-27) =
 * Bug Fix: Feed is only accepting the End of Rules and Filter

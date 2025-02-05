@@ -42,7 +42,12 @@ class WooSEA_Get_Products {
             // Replace tags by space rather than deleting them, first we add a space before the tag, then we strip the tags.
             // This is to prevent words from sticking together.
             $string = str_replace('<', ' <', $string);
-            $string = strip_shortcodes( strip_tags( $string ) );
+
+            // Remove shortcodes from the string.
+            $string = do_shortcode( $string );
+            
+            // Remove tags from the string.
+            $string = strip_tags( $string );
             $string = htmlentities( $string, ENT_QUOTES | ENT_SUBSTITUTE | ENT_XML1, 'UTF-8', false );
 
             // Remove new line breaks.
@@ -2087,8 +2092,15 @@ class WooSEA_Get_Products {
             $cat_alt    = array();
             $cat_term   = '';
             $cat_order  = '';
-            $categories = $parent_id ? $parent_product->get_category_ids() : $product->get_category_ids();
-            $cat_alt    = $categories;
+            $categories = array();
+            if ( $parent_id && method_exists( $parent_product, 'get_category_ids' ) ) {
+                $categories = $parent_product->get_category_ids();
+            } elseif ( method_exists( $product, 'get_category_ids' ) ) {
+                $categories = $product->get_category_ids();
+            }
+            $cat_alt = $categories;
+
+
 
             // Determine real category hierarchy
             $cat_order = array();
@@ -2616,7 +2628,7 @@ class WooSEA_Get_Products {
             // unset($all_standard_taxes);
 
             $tax_rates_first = reset( $tax_rates );
-            $fullrate        = 100 + $tax_rates_first['rate'];
+            $fullrate        = ! empty( $tax_rates_first ) ? 100 + $tax_rates_first['rate'] : 100;
 
             if ( array_key_exists( 1, $tax_rates ) ) {
                 $product_data['vat'] = $tax_rates[1]['rate'];

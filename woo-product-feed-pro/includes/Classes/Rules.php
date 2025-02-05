@@ -40,15 +40,6 @@ class Rules extends Abstract_Class {
             return $data;
         }
 
-        // For some reason, the calculation rules conditions doesn't show the than_attribute in the frontend.
-        // So instead of altering the then_attribute, it will alter the attribute.
-        $calculation_rules = array(
-            'multiply',
-            'divide',
-            'plus',
-            'minus',
-        );
-
         foreach ( $rules as $rule ) {
             // Skip if any required rule parameters are missing.
             // Required parameters are: attribute, condition, criteria.
@@ -64,24 +55,26 @@ class Rules extends Abstract_Class {
 
             $value = $data[ $rule['attribute'] ];
 
-            // if the attribute is an array then we need to loop through the array and check if the values.
-            if ( is_array( $value ) ) {
-                foreach ( $value as $key => $v ) {
-                    $new_value = $this->rules_data( $v, $rule, $feed );
+            // For some reason, the calculation rules conditions doesn't show the than_attribute in the frontend.
+            // So instead of altering the then_attribute, it will alter the attribute.
 
-                    if ( in_array( $rule['condition'], $calculation_rules, true ) ) {
-                        $data[ $rule['attribute'] ][ $key ] = $new_value;
-                    } else {
-                        $data[ $rule['than_attribute'] ][ $key ] = $new_value;
-                    }
-                }
+            $calculation_rules = array(
+                'multiply',
+                'divide',
+                'plus',
+                'minus',
+            );
+
+            if ( in_array( $rule['condition'], $calculation_rules, true ) ) {
+                $data[ $rule['attribute'] ] = $this->calculate( $value, $rule['criteria'], $rule['condition'] );
+            } elseif ( 'findreplace' === $rule['condition'] ) {
+                // Find and replace only work on same attribute field, otherwise create a contains rule.
+                $data[ $rule['attribute'] ] = $this->find_replace( $value, $rule );
             } else {
-                $new_value = $this->rules_data( $value, $rule, $feed );
+                $is_rule_met = $this->is_rule_met( $value, $rule );
+                if ( $is_rule_met && isset( $rule['than_attribute'] ) && isset( $data[ $rule['than_attribute'] ] ) ) {
 
-                if ( in_array( $rule['condition'], $calculation_rules, true ) ) {
-                    $data[ $rule['attribute'] ] = $new_value;
-                } else {
-                    $data[ $rule['than_attribute'] ] = $new_value;
+                    $data[ $rule['than_attribute'] ] = $rule['newvalue'];
                 }
             }
         }
@@ -90,110 +83,127 @@ class Rules extends Abstract_Class {
     }
 
     /**
-     * Rules data.
+     * Recursively check if the rule is met. For array compatibility.
+     *
+     * @since 13.4.1
+     * @access private
+     *
+     * @param string $value The value to filter.
+     * @param array  $rule The rule criteria.
+     * @return bool
+     */
+    private function is_rule_met( $value, $rule ) {
+        $rule_met = false;
+        if ( ! is_array( $value ) ) {
+            $rule_met = $this->check_rule( $value, $rule );
+        } else {
+            foreach ( $value as $key => $v ) {
+                $rule_met = $this->is_rule_met( $v, $rule );
+                if ( $rule_met ) {
+                    break;
+                }
+            }
+        }
+
+        return $rule_met;
+    }
+
+    /**
+     * Check if the rule is met.
      *
      * @since 13.4.1
      * @access private
      *
      * @param string $value The value to filter.
      * @param array  $rule  The rule criteria.
-     * @param object $feed  The feed object.
      * @return bool
      */
-    private function rules_data( $value, $rule, $feed ) {
+    private function check_rule( $value, $rule ) {
+        $rule_met = false;
+
         $condition  = $rule['condition'] ?? '';
         $rule_value = $rule['criteria'] ?? '';
-        $attribute  = $rule['attribute'] ?? '';
-        $then       = $rule['than_attribute'] ?? '';
-        $new_value  = $rule['newvalue'] ?? '';
 
         switch ( $condition ) {
             case 'contains':
                 if ( preg_match( '/' . preg_quote( $rule_value, '/' ) . '/', $value ) ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
                 break;
             case 'containsnot':
                 if ( ! preg_match( '/' . preg_quote( $rule_value, '/' ) . '/', $value ) ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
                 break;
             case '=':
                 if ( strcmp( $value, $rule_value ) === 0 ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
                 break;
             case '!=':
                 if ( strcmp( $value, $rule_value ) !== 0 ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
                 break;
             case '>':
                 if ( $value > $rule_value ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
                 break;
             case '>=':
                 if ( $value >= $rule_value ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
                 break;
             case '<':
                 if ( $value < $rule_value ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
                 break;
             case '<=':
+            case '=<':
                 if ( $value <= $rule_value ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
                 break;
             case 'empty':
                 if ( empty( $value ) ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
                 break;
             case 'notempty':
                 if ( ! empty( $value ) ) {
-                    $return_value = $new_value;
+                    $rule_met = true;
                 }
-                break;
-            case 'multiply':
-                $return_value = $this->calculate( $value, $rule_value, 'multiply' );
-                break;
-            case 'divide':
-                $return_value = $this->calculate( $value, $rule_value, 'divide' );
-                break;
-            case 'plus':
-                $return_value = $this->calculate( $value, $rule_value, 'plus' );
-                break;
-            case 'minus':
-                $return_value = $this->calculate( $value, $rule_value, 'minus' );
-                break;
-            case 'findreplace':
-                // Find and replace only work on same attribute field, otherwise create a contains rule.
-                if ( $attribute === $then && is_string( $value ) && strpos( $value, $rule_value ) !== false ) {
-                    $return_value = str_replace( $rule_value, $new_value, $value );
-                }
-                break;
-            default:
-                $return_value = $value;
                 break;
         }
 
-        /**
-         * Filter the return value.
-         *
-         * @since 13.4.1
-         *
-         * @param string $return_value The return value.
-         * @param string $value        The value.
-         * @param array  $rule         The rule.
-         * @param object $feed         The feed object.
-         * @return string
-         */
-        return isset( $return_value ) ? apply_filters( 'adt_pfp_rules_return_value', $return_value, $value, $rule, $feed ) : $value;
+        return $rule_met;
     }
+
+    /**
+     * String to replace.
+     *
+     * @since 13.4.1
+     * @access private
+     *
+     * @param string $original_value The original value.
+     * @param array  $rule The rule criteria.
+     * @return mixed
+     */
+    private function find_replace( $original_value, $rule ) {
+        $replaced_value = $original_value;
+
+        if ( is_array( $original_value ) ) {
+            foreach ( $original_value as $key => $v ) {
+                $replaced_value[ $key ] = $this->find_replace( $v, $rule );
+            }
+        } elseif ( is_string( $original_value ) ) {
+            $replaced_value = str_replace( $rule['criteria'], $rule['newvalue'], $original_value );
+        }
+        return $replaced_value;
+    }
+
 
     /**
      * Calculate the value.

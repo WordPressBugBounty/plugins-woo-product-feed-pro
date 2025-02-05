@@ -1,3 +1,14 @@
+= 13.4.1.3 (2025-02-04) =
+* Bug Fix: Applying "Include Only" filter method no longer works for any dynamic attributes
+* Bug Fix: Facebook/Meta feed template is adding g prefix on facebook specific fields
+* Bug Fix: Feed Failing to refresh due to get_category_ids() function
+* Bug Fix: Flatsome theme builder based description doesn't appear in the feed
+* Bug Fix: Include rule and exclude rule functions are swapped
+* Bug Fix: Item Group ID filter method doesn't work
+* Bug Fix: Main Image value affecting all products after applying a rule for a specific product
+* Bug Fix: Multiply, divide, minus, plus rules not working due to currency options
+* Bug Fix: PHP Warning when feed selected country tax is not configured
+
 = 13.4.1.2 (2025-01-27) =
 * Bug Fix: Feed is only accepting the End of Rules and Filter
 * Bug Fix: Product Tags Filter not Working As Intended for Include Only

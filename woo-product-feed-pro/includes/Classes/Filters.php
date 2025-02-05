@@ -54,14 +54,8 @@ class Filters extends Abstract_Class {
                 continue;
             }
 
-            // Skip if the attribute is not set in the data array.
-            // This prevents PHP notices and warnings when trying to access non-existent array keys.
-            if ( ! isset( $data[ $filter['attribute'] ] ) ) {
-                continue;
-            }
-
             $passed = true;
-            $value  = $data[ $filter['attribute'] ];
+            $value  = $data[ $filter['attribute'] ] ?? '';
 
             // if the attribute is an array then we need to loop through the array and check if the values.
             if ( is_array( $value ) ) {
@@ -182,16 +176,16 @@ class Filters extends Abstract_Class {
                 }
                 break;
             case 'empty':
-                if ( 'exclude' === $then && ! empty( $value ) ) {
+                if ( 'exclude' === $then && empty( $value ) ) {
                     $passed = false;
-                } elseif ( 'include_only' === $then && empty( $value ) ) {
+                } elseif ( 'include_only' === $then && ! empty( $value ) ) {
                     $passed = false;
                 }
                 break;
             case 'notempty':
-                if ( 'exclude' === $then && empty( $value ) ) {
+                if ( 'exclude' === $then && ! empty( $value ) ) {
                     $passed = false;
-                } elseif ( 'include_only' === $then && ! empty( $value ) ) {
+                } elseif ( 'include_only' === $then && empty( $value ) ) {
                     $passed = false;
                 }
                 break;
