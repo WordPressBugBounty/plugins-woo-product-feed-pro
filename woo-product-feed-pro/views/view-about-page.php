@@ -55,7 +55,27 @@ use AdTribes\PFP\Helpers\Helper;
                                 <?php endif; ?>
                             </div>
                         </div>
-                    </li> 
+                    </li>
+                    <li class="card">
+                        <div class="card-title">
+                            <img src="<?php echo esc_url( 'https://ps.w.org/storeagent-ai-for-woocommerce/assets/icon-128x128.png' ); ?>" alt="<?php esc_attr_e( 'StoreAgent AI for WooCommerce', 'woo-product-feed-pro' ); ?>" />
+                            <h3><?php esc_html_e( 'StoreAgent AI for WooCommerce (Free Plugin)', 'woo-product-feed-pro' ); ?></h3>
+                        </div>
+                        <div class="card-body xs-text-center">
+                            <p class="mt-0"><?php esc_html_e( 'Boost your WooCommerce store with AI agents. Generate product descriptions, automatically create review summaries with sentiment analysis, add AI-powered product Q&A, and loads more.', 'woo-product-feed-pro' ); ?></p>
+                        </div>
+                        <div class="card-footer">
+                            <div class="install-status">
+                                <p class="m-0">
+                                    <strong><?php esc_html_e( 'Status:', 'woo-product-feed-pro' ); ?></strong>
+                                    <span class="install-status-value"><?php echo Helper::is_plugin_installed( 'storeagent-ai-for-woocommerce/storeagent-ai-for-woocommerce.php' ) ? esc_html_e( 'Installed', 'woo-product-feed-pro' ) : esc_html_e( 'Not installed', 'woo-product-feed-pro' ); ?></span>
+                                </p>
+                                <?php if ( ! Helper::is_plugin_installed( 'storeagent-ai-for-woocommerce/storeagent-ai-for-woocommerce.php' ) ) : ?>
+                                <a href="#" data-plugin-slug="storeagent-ai-for-woocommerce" class="button button-primary pfp-install-plugin"><?php esc_html_e( 'Install Plugin', 'woo-product-feed-pro' ); ?></a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </li>
                     <li class="card">
                         <div class="card-title">
                             <img src="<?php echo esc_url( 'https://ps.w.org/wc-vendors/assets/icon.svg' ); ?>" alt="<?php esc_attr_e( 'WC Vendors', 'woo-product-feed-pro' ); ?>" />
@@ -156,7 +176,7 @@ use AdTribes\PFP\Helpers\Helper;
                                 <?php endif; ?>
                             </div>
                         </div>
-                    </li> 
+                    </li>
                 </ul>
             </div>
         </div>

@@ -61,7 +61,7 @@ class WooSEA_google_local { // phpcs:ignore
                 'Quantity'                  => array(
                     'name'        => 'Quantity',
                     'feed_name'   => 'g:quantity',
-                    'format'      => 'required',
+                    'format'      => 'optional',
                     'woo_suggest' => 'quantity',
                 ),
                 'Weeks of supply'           => array(

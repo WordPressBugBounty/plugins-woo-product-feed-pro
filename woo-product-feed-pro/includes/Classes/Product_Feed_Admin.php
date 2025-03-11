@@ -112,10 +112,10 @@ class Product_Feed_Admin extends Abstract_Class {
          */
         do_action( 'adt_create_product_feed_before_save', $product_feed, $project_data );
 
+        $product_feed->save();
+
         // Register the product feed action scheduler.
         $product_feed->register_action();
-
-        $product_feed->save();
 
         /**
          * Run the product feed batch processing.
@@ -154,7 +154,6 @@ class Product_Feed_Admin extends Abstract_Class {
                 case 0: // General settings.
                     $props_to_update = array(
                         'title'                      => $post_data['projectname'] ?? '',
-                        'country'                    => isset( $post_data['countries'] ) ? Product_Feed_Helper::get_code_from_legacy_country_name( $post_data['countries'] ) : '',
                         'file_format'                => $post_data['fileformat'] ?? '',
                         'delimiter'                  => $post_data['delimiter'] ?? '',
                         'refresh_interval'           => $post_data['cron'] ?? '',
@@ -347,9 +346,8 @@ class Product_Feed_Admin extends Abstract_Class {
          */
         do_action( 'adt_clone_product_feed_before_save', $feed, $original_feed );
 
-        $feed->register_action();
-
         $feed->save();
+        $feed->register_action();
 
         $response = array(
             'project_hash'  => $feed->legacy_project_hash,
@@ -474,6 +472,23 @@ class Product_Feed_Admin extends Abstract_Class {
         do_action( 'adt_after_delete_product_feed', $feed );
 
         wp_send_json_success( __( 'Product feed has been deleted.', 'woo-product-feed-pro' ) );
+    }
+
+    /**
+     * Print channel options for the channel dropdown.
+     *
+     * @since 13.4.2
+     * @access public
+     */
+    public function ajax_print_channels() {
+        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
+            wp_send_json_error( __( 'Nonce verification failed', 'woo-product-feed-pro' ) );
+        }
+
+        $country  = sanitize_text_field( $_POST['country'] );
+        $channels = Product_Feed_Attributes::get_channels( $country );
+        $data     = Product_Feed_Helper::print_channel_options( $channels );
+        wp_send_json_success( $data );
     }
 
     /**
@@ -782,6 +797,7 @@ class Product_Feed_Admin extends Abstract_Class {
         add_action( 'wp_ajax_woosea_project_cancel', array( $this, 'ajax_cancel_product_feed' ) );
         add_action( 'wp_ajax_woosea_project_refresh', array( $this, 'ajax_refresh_product_feed' ) );
         add_action( 'wp_ajax_woosea_project_delete', array( $this, 'ajax_delete_product_feed' ) );
+        add_action( 'wp_ajax_woosea_print_channels', array( $this, 'ajax_print_channels' ) );
 
         // Views.
         add_action( 'adt_view_generate_pages', array( $this, 'generate_pages' ) );

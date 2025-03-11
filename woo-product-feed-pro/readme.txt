@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.7
-Stable tag: 13.4.1.3
+Stable tag: 13.4.2
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -385,6 +385,25 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.4.2 (2025-03-11) =
+* Bug Fix: Custom Fields not showing in field mappings
+* Bug Fix: Description splits into multiple columns in the CSV feed
+* Bug Fix: Newly created feed gets ID 0 in the scheduled action event
+* Bug Fix: Plugin calculation value doesn't work
+* Bug Fix: Product Tags include only rule failing when product has multiple tags
+* Bug Fix: Products are being excluded when Product visibility is set to shop only
+* Bug Fix: Quantity stock rules and filter not working when stock management is disabled for product
+* Bug Fix: Scheduled actions for feed are not removed when a feed is deleted
+* Bug Fix: Shipping attribute is empty when Table Shipping plugin activated
+* Bug Fix: Shipping method doesn't appear when US shipping zone has multiple countries
+* Bug Fix: TXT format does not work for Google Local Products Inventory feed
+* Bug Fix: Uncaught TypeError when flat rate method has dynamic rate in PHP 8+
+* Bug Fix: Uncaught TypeError while generating a feed
+* Bug Fix: Wholesale Prices: Products should only be included if they're visible to guest users
+* Improvement: Add loading or disable feed channel select when after the feed country changed
+* Improvement: Security and code improvements
+* Integration: Fatal Error Occurs in Custom Feed with Weight-Based Shipping Plugin
 
 = 13.4.1.3 (2025-02-04) =
 * Bug Fix: Applying "Include Only" filter method no longer works for any dynamic attributes

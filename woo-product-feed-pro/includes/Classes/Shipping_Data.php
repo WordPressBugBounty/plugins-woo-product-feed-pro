@@ -39,6 +39,10 @@ class Shipping_Data extends Abstract_Class {
             return $shipping_data;
         }
 
+        if ( ! function_exists( 'wc_get_cart_item_data_hash' ) ) {
+            include_once WC_ABSPATH . 'includes/wc-cart-functions.php';
+        }
+
         $shipping_zones    = \WC_Shipping_Zones::get_zones();
         $shipping_currency = apply_filters( 'adt_product_feed_shipping_cost_currency', get_woocommerce_currency(), $feed );
         $country_code      = $feed->country;
@@ -51,18 +55,54 @@ class Shipping_Data extends Abstract_Class {
             'remove_local_pickup_shipping' => get_option( 'local_pickup_shipping', 'no' ), // Remove local pickup shipping method.
         );
 
+        /**
+         * Filter the product price.
+         *
+         * @since 13.4.0
+         *
+         * @param float $product_price The product price.
+         * @param object $product The product object.
+         * @param array $shipping_zones The shipping zones.
+         * @param object $feed The feed object.
+         * @return float
+         */
+        $product_price = apply_filters( 'adt_product_feed_shipping_product_price', (float) $product->get_price( 'edit' ), $product, $shipping_zones, $feed );
+
         // Build the package data for the product.
         $package = array(
-            'contents'      => array(
+            'contents'        => array(
                 array(
-                    'product_id' => $product->get_id(),
-                    'quantity'   => 1,
-                    'data'       => $product,
-                    'line_total' => $product->get_price(),
+                    'key'               => md5( uniqid( wp_rand(), true ) ),
+                    'product_id'        => $product->get_id(),
+                    'variation_id'      => $product->is_type( 'variation' ) ? $product->get_id() : 0,
+                    'variation'         => $product->is_type( 'variation' ) ? $this->format_variation_attributes( $product->get_attributes() ) : array(),
+                    'quantity'          => 1,
+                    'data_hash'         => function_exists( 'wc_get_cart_item_data_hash' ) ? wc_get_cart_item_data_hash( $product ) : '',
+                    'line_tax_data'     => array(
+                        'subtotal' => array(),
+                        'total'    => array(),
+                    ),
+                    'line_subtotal'     => $product_price,
+                    'line_subtotal_tax' => 0,
+                    'line_total'        => $product_price,
+                    'line_tax'          => 0,
+                    'data'              => $product,
                 ),
             ),
-            'contents_cost' => $product->get_price(),
-            'destination'   => array(),
+            'contents_cost'   => $product_price,
+            'applied_coupons' => array(),
+            'user'            => array(
+                'ID' => get_current_user_id(),
+            ),
+            'destination'     => array(
+                'country'   => '',
+                'state'     => '',
+                'postcode'  => '',
+                'city'      => '',
+                'address'   => '',
+                'address_2' => '',
+            ),
+            'cart_subtotal'   => $product_price,
         );
 
         if ( ! empty( $shipping_zones ) ) {
@@ -92,6 +132,7 @@ class Shipping_Data extends Abstract_Class {
      * Get the shipping zones data.
      *
      * @since 13.4.0
+     * @since 13.4.2 Fixed the issue with multiple countries in the same zone & states by country.
      * @access private
      *
      * @param array  $shipping_zone    The shipping zone data.
@@ -105,43 +146,121 @@ class Shipping_Data extends Abstract_Class {
     private function _get_shipping_zones_data( $shipping_zone, $package, $options, $country_code, $shipping_currency, $feed ) {
         $shipping_zones_data = array();
 
-        /**
-         * Check if country zone is same as the feed country.
-         * If the Add all shipping is enabled, we will add all shipping zones to the feed.
-         */
         $zone_locations = $shipping_zone['zone_locations'] ?? array();
-        $zone           = array(
-            'country'  => '',
-            'region'   => '',
-            'postcode' => '',
-        );
+
+        // Collect all countries and states in this zone.
+        $countries_in_zone = array();
+        $states_by_country = array();
+
         foreach ( $zone_locations as $zone_location ) {
-            switch ( $zone_location->type ) {
-                case 'country':
-                case 'code':
-                    $zone['country'] = $zone_location->code;
-                    break;
-                case 'state':
-                    $zone_expl       = explode( ':', $zone_location->code );
-                    $zone['country'] = $zone_expl[0] ?? '';
-                    $zone['region']  = $zone_expl[1] ?? '';
-                    break;
-                case 'postcode':
-                    $zone['postcode'] = $zone_location->code;
-                    break;
+            if ( 'country' === $zone_location->type || 'code' === $zone_location->type ) {
+                $countries_in_zone[] = $zone_location->code;
+            } elseif ( 'state' === $zone_location->type ) {
+                $zone_expl = explode( ':', $zone_location->code );
+                if ( ! empty( $zone_expl[0] ) && ! empty( $zone_expl[1] ) ) {
+                    // Group states by country.
+                    if ( ! isset( $states_by_country[ $zone_expl[0] ] ) ) {
+                        $states_by_country[ $zone_expl[0] ] = array();
+                    }
+                    $states_by_country[ $zone_expl[0] ][] = $zone_expl[1];
+
+                    // Also track the country.
+                    if ( ! in_array( $zone_expl[0], $countries_in_zone, true ) ) {
+                        $countries_in_zone[] = $zone_expl[0];
+                    }
+                }
             }
         }
 
         // Skip this zone if it's not for the feed country and Add all shipping is not enabled.
-        if ( $zone['country'] !== $country_code && 'yes' !== $options['add_all_shipping'] ) {
+        if ( ! in_array( $country_code, $countries_in_zone, true ) && 'yes' !== $options['add_all_shipping'] ) {
             return $shipping_zones_data;
         }
 
-        // Set package destination based on the zone.
-        $package['destination']['country']  = $zone['country'];
-        $package['destination']['state']    = $zone['region'];
-        $package['destination']['postcode'] = $zone['postcode'];
+        // Get and filter shipping methods.
+        $methods = $this->_get_filtered_shipping_methods( $shipping_zone, $options );
 
+        // If the feed country is in the zone.
+        if ( in_array( $country_code, $countries_in_zone, true ) ) {
+            // Check if there are specific states for this country.
+            if ( isset( $states_by_country[ $country_code ] ) && ! empty( $states_by_country[ $country_code ] ) ) {
+                // Process each state for this country.
+                foreach ( $states_by_country[ $country_code ] as $state_code ) {
+                    $zone_data = $this->_setup_zone_and_package( $country_code, $state_code, $package );
+
+                    // Process shipping methods for this state.
+                    $shipping_zones_data = $this->_process_shipping_methods(
+                        $methods,
+                        $shipping_zone,
+                        $zone_data['package'],
+                        $zone_data['zone'],
+                        $options,
+                        $zone_data['has_free_shipping'],
+                        $shipping_currency,
+                        $feed,
+                        $shipping_zones_data
+                    );
+                }
+            } else {
+                // No specific states, process the country as a whole.
+                $zone_data = $this->_setup_zone_and_package( $country_code, '', $package );
+
+                // Process shipping methods for the whole country.
+                $shipping_zones_data = $this->_process_shipping_methods(
+                    $methods,
+                    $shipping_zone,
+                    $zone_data['package'],
+                    $zone_data['zone'],
+                    $options,
+                    $zone_data['has_free_shipping'],
+                    $shipping_currency,
+                    $feed,
+                    $shipping_zones_data
+                );
+            }
+        } elseif ( 'yes' === $options['add_all_shipping'] ) {
+            // Feed country is not in the zone, but add all shipping is enabled.
+            // Use the first country in the zone.
+            $first_country = $countries_in_zone[0] ?? '';
+
+            if ( ! empty( $first_country ) ) {
+                $first_state = '';
+                if ( isset( $states_by_country[ $first_country ] ) && ! empty( $states_by_country[ $first_country ] ) ) {
+                    // Use the first state for this country.
+                    $first_state = $states_by_country[ $first_country ][0];
+                }
+
+                $zone_data = $this->_setup_zone_and_package( $first_country, $first_state, $package );
+
+                // Process shipping methods.
+                $shipping_zones_data = $this->_process_shipping_methods(
+                    $methods,
+                    $shipping_zone,
+                    $zone_data['package'],
+                    $zone_data['zone'],
+                    $options,
+                    $zone_data['has_free_shipping'],
+                    $shipping_currency,
+                    $feed,
+                    $shipping_zones_data
+                );
+            }
+        }
+
+        return $shipping_zones_data;
+    }
+
+    /**
+     * Get and filter shipping methods for a zone.
+     *
+     * @since 13.4.2
+     * @access private
+     *
+     * @param array $shipping_zone The shipping zone data.
+     * @param array $options       The shipping options.
+     * @return array Filtered shipping methods.
+     */
+    private function _get_filtered_shipping_methods( $shipping_zone, $options ) {
         $wc_shipping_zone = new \WC_Shipping_Zone( $shipping_zone['id'] );
         $methods          = $wc_shipping_zone->get_shipping_methods( true );
 
@@ -170,10 +289,62 @@ class Shipping_Data extends Abstract_Class {
             $methods = $this->_sort_free_shipping_method( $methods );
         }
 
+        return $methods;
+    }
+
+    /**
+     * Setup zone and package data.
+     *
+     * @since 13.4.2
+     * @access private
+     *
+     * @param string $country_code The country code.
+     * @param string $state_code   The state code.
+     * @param array  $package      The package data.
+     * @return array Zone and package data.
+     */
+    private function _setup_zone_and_package( $country_code, $state_code, $package ) {
+        // Create zone data.
+        $zone = array(
+            'country'  => $country_code,
+            'region'   => $state_code,
+            'postcode' => '',
+        );
+
+        // Set package destination.
+        $package['destination']['country']  = $country_code;
+        $package['destination']['state']    = $state_code;
+        $package['destination']['postcode'] = '';
+
+        return array(
+            'zone'              => $zone,
+            'package'           => $package,
+            'has_free_shipping' => false, // This will be set by the caller.
+        );
+    }
+
+    /**
+     * Process shipping methods for a zone and package.
+     *
+     * @since 13.4.0
+     * @access private
+     *
+     * @param array  $methods            The shipping methods.
+     * @param array  $shipping_zone      The shipping zone data.
+     * @param array  $package            The package data.
+     * @param array  $zone               The zone data.
+     * @param array  $options            The shipping options.
+     * @param bool   $has_free_shipping  Whether the zone has free shipping.
+     * @param string $shipping_currency  The shipping currency.
+     * @param object $feed               The feed object.
+     * @param array  $shipping_zones_data The shipping zones data.
+     * @return array
+     */
+    private function _process_shipping_methods( $methods, $shipping_zone, $package, $zone, $options, $has_free_shipping, $shipping_currency, $feed, $shipping_zones_data ) {
         $free_shipping_met = false;
+
         foreach ( $methods as $method ) {
             if ( $this->_is_shipping_available( $method, $package ) ) {
-
                 // Skip all other shipping methods if free shipping is met.
                 if ( 'yes' === $options['only_free_shipping'] && $has_free_shipping ) {
                     if ( $free_shipping_met && 'free_shipping' !== $method->id ) {
@@ -212,15 +383,17 @@ class Shipping_Data extends Abstract_Class {
         $feed_channel         = $feed->get_channel();
 
         /**
-         * Calculate rates for the method.
+         * Filter the package data before calculating shipping rates.
          *
-         * Surpressing the deprecated notice, due to:
-         * PHP Deprecated:  preg_match(): Passing null to parameter #2 ($subject) of type string is deprecated in wp-content\plugins\woocommerce\includes\libraries\class-wc-eval-math.php on line 162
-         *
-         * This deprecation notice is showing in WooCommerce version 9.4.2.
-         * We will suppress this notice until WooCommerce fixes this issue.
+         * @since 13.5.0
+         * @param array  $package       The package data.
+         * @param object $method        The shipping method object.
+         * @param array  $shipping_zone The shipping zone data.
+         * @param object $feed          The feed object.
+         * @return array
          */
-        @$method->calculate_shipping( $package ); // phpcs:ignore
+        $package = apply_filters( 'adt_product_feed_shipping_package', $package, $method, $shipping_zone, $feed );
+        $method->calculate_shipping( $package );
 
         foreach ( $method->rates as $rate ) {
             $shipping = array(
@@ -392,6 +565,24 @@ class Shipping_Data extends Abstract_Class {
             $is_available = $method->is_available( $package );
         }
         return $is_available;
+    }
+
+    /**
+     * Format variation attributes to match WooCommerce cart format
+     *
+     * @param array $attributes The product attributes.
+     * @return array Formatted attributes with 'attribute_' prefix
+     */
+    private function format_variation_attributes( $attributes ) {
+        $formatted_attributes = array();
+
+        if ( ! empty( $attributes ) ) {
+            foreach ( $attributes as $key => $value ) {
+                $formatted_attributes[ 'attribute_' . $key ] = $value;
+            }
+        }
+
+        return $formatted_attributes;
     }
 
     /**

@@ -34,11 +34,8 @@ $versions = array(
     'WooCommerce Product Feed PRO' => WOOCOMMERCESEA_PLUGIN_VERSION,
 );
 
-$nonce = wp_create_nonce( 'woosea_ajax_nonce' );
-
-$default_location = wc_get_base_location();
-$country          = apply_filters( 'woocommerce_countries_base_country', $default_location['country'] );
-$country          = Product_Feed_Helper::get_legacy_country_from_code( $country );
+$nonce   = wp_create_nonce( 'woosea_ajax_nonce' );
+$country = '';
 
 /**
  * Get shipping zones
@@ -116,86 +113,32 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                             <tr>
                                 <td><span><?php esc_html_e( 'Country', 'woo-product-feed-pro' ); ?>:</span></td>
                                 <td>
+                                    <?php if ( $feed ) : ?>
+                                    <select name="countries" id="countries" class="select-field woo-sea-select2" disabled>
+                                        <option value="<?php echo esc_attr( $country ); ?>" selected><?php echo esc_html( $country ); ?></option>
+                                    </select>
+                                    <?php else : ?>
                                     <select name="countries" id="countries" class="select-field woo-sea-select2">
                                         <option><?php esc_html_e( 'Select a country', 'woo-product-feed-pro' ); ?></option>
                                         <?php foreach ( $countries as $value ) : ?>
-                                            <?php if ( $feed && ( $value == $country ) ) : ?>
-                                                <option value="<?php echo esc_attr( $value ); ?>" selected><?php echo esc_html( $value ); ?></option>
-                                            <?php else : ?>
-                                                <option value="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( $value ); ?></option>
-                                            <?php endif; ?>
+                                            <option value="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( $value ); ?></option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <tr>
                                 <td><span><?php esc_html_e( 'Channel', 'woo-product-feed-pro' ); ?>:</span></td>
                                 <td>
                                     <?php if ( $feed ) : ?>
-                                    <select name="channel_hash" id="channel_hash" class="select-field" disabled>
+                                    <select name="channel_hash" id="channel_hash" class="select-field woo-sea-select2" disabled>
                                         <option value="<?php echo esc_html( $feed->channel_hash ); ?>" selected><?php echo esc_html( $feed->get_channel( 'name' ) ); ?></option>
                                     </select>
-                                    <?php
-                                    else :
-                                        $customfeed           = '';
-                                        $advertising          = '';
-                                        $marketplace          = '';
-                                        $shopping             = '';
-                                        $optgroup_customfeed  = 0;
-                                        $optgroup_advertising = 0;
-                                        $optgroup_marketplace = 0;
-                                        $optgroup_shopping    = 0;
-
-                                        print '<select name="channel_hash" id="channel_hash" class="select-field woo-sea-select2">';
-
-                                        foreach ( $channels as $key => $val ) {
-                                            if ( $val['type'] == 'Custom Feed' ) {
-                                                if ( $optgroup_customfeed == 1 ) {
-                                                    $customfeed .= "<option value=\"$val[channel_hash]\">$key</option>";
-                                                } else {
-                                                    $customfeed          = '<optgroup label="Custom Feed">';
-                                                    $customfeed         .= "<option value=\"$val[channel_hash]\">$key</option>";
-                                                    $optgroup_customfeed = 1;
-                                                }
-                                            }
-
-                                            if ( $val['type'] == 'Advertising' ) {
-                                                if ( $optgroup_advertising == 1 ) {
-                                                    $advertising .= "<option value=\"$val[channel_hash]\">$key</option>";
-                                                } else {
-                                                    $advertising          = '<optgroup label="Advertising">';
-                                                    $advertising         .= "<option value=\"$val[channel_hash]\">$key</option>";
-                                                    $optgroup_advertising = 1;
-                                                }
-                                            }
-
-                                            if ( $val['type'] == 'Marketplace' ) {
-                                                if ( $optgroup_marketplace == 1 ) {
-                                                    $marketplace .= "<option value=\"$val[channel_hash]\">$key</option>";
-                                                } else {
-                                                    $marketplace          = '<optgroup label="Marketplace">';
-                                                    $marketplace         .= "<option value=\"$val[channel_hash]\">$key</option>";
-                                                    $optgroup_marketplace = 1;
-                                                }
-                                            }
-
-                                            if ( $val['type'] == 'Comparison shopping engine' ) {
-                                                if ( $optgroup_shopping == 0 ) {
-                                                    $shopping .= "<option value=\"$val[channel_hash]\">$key</option>";
-                                                } else {
-                                                    $shopping          = '<optgroup label="Comparison Shopping Engine">';
-                                                    $shopping         .= "<option value=\"$val[channel_hash]\" selected>$key</option>";
-                                                    $optgroup_shopping = 1;
-                                                }
-                                            }
-                                        }
-                                        echo "$customfeed";
-                                        echo "$advertising";
-                                        echo "$marketplace";
-                                        echo "$shopping";
-                                        print '</select>';
-                                    endif;
-                                    ?>
+                                    <?php else : ?>
+                                    <select name="channel_hash" id="channel_hash" class="select-field woo-sea-select2">
+                                        <?php echo Product_Feed_Helper::print_channel_options( $channels ); ?>
+                                    </select>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <tr id="product_variations">

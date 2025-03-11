@@ -19,7 +19,6 @@ use AdTribes\PFP\Classes\Marketing;
 use AdTribes\PFP\Classes\Usage;
 use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
 use AdTribes\PFP\Classes\Plugin_Installer;
-use AdTribes\PFP\Classes\FunnelKit_Stripe;
 use AdTribes\PFP\Post_Types\Product_Feed_Post_Type;
 
 defined( 'ABSPATH' ) || exit;
@@ -38,6 +37,5 @@ return array(
     Usage::instance(),
     Google_Product_Taxonomy_Fetcher::instance(),
     Plugin_Installer::instance(),
-    FunnelKit_Stripe::instance(),
     Product_Feed_Post_Type::instance(),
 );

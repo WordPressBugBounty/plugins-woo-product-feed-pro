@@ -47,17 +47,10 @@ class Rules extends Abstract_Class {
                 continue;
             }
 
-            // Skip if the attribute is not set in the data array.
-            // This prevents PHP notices and warnings when trying to access non-existent array keys.
-            if ( ! isset( $data[ $rule['attribute'] ] ) ) {
-                continue;
-            }
-
-            $value = $data[ $rule['attribute'] ];
+            $value = $data[ $rule['attribute'] ] ?? '';
 
             // For some reason, the calculation rules conditions doesn't show the than_attribute in the frontend.
             // So instead of altering the then_attribute, it will alter the attribute.
-
             $calculation_rules = array(
                 'multiply',
                 'divide',
@@ -71,9 +64,9 @@ class Rules extends Abstract_Class {
                 // Find and replace only work on same attribute field, otherwise create a contains rule.
                 $data[ $rule['attribute'] ] = $this->find_replace( $value, $rule );
             } else {
-                $is_rule_met = $this->is_rule_met( $value, $rule );
-                if ( $is_rule_met && isset( $rule['than_attribute'] ) && isset( $data[ $rule['than_attribute'] ] ) ) {
-
+                $is_rule_met    = $this->is_rule_met( $value, $rule );
+                $than_attribute = $rule['than_attribute'] ?? '';
+                if ( $is_rule_met && ! empty( $than_attribute ) ) {
                     $data[ $rule['than_attribute'] ] = $rule['newvalue'];
                 }
             }

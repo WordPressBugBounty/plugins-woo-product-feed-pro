@@ -391,7 +391,7 @@ class Product_Feed_Attributes extends Abstract_Class {
      */
     public function get_custom_attributes() {
         $custom_attributes = get_transient( ADT_TRANSIENT_CUSTOM_ATTRIBUTES );
-        if ( $custom_attributes ) {
+            if ( $custom_attributes ) {
             return $custom_attributes;
         }
 
@@ -447,7 +447,7 @@ class Product_Feed_Attributes extends Abstract_Class {
             JOIN (
                 SELECT ID
                 FROM {$wpdb->posts}
-                WHERE post_type = 'product'
+                WHERE (post_type = 'product' OR post_type = 'product_variation')
                     AND post_status = 'publish'
                 ORDER BY post_date DESC
                 $limit_clause

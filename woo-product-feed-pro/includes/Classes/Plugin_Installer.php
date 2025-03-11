@@ -28,32 +28,39 @@ class Plugin_Installer extends Abstract_Class {
      */
     private $allowed_plugins = array(
         'advanced-coupons-for-woocommerce-free' => array(
-            'token'    => 'acfwf',
-            'basename' => 'advanced-coupons-for-woocommerce-free/advanced-coupons-for-woocommerce-free.php',
+            'token'       => 'acfw_installed_by',
+            'token_value' => 'pfp',
+            'basename'    => 'advanced-coupons-for-woocommerce-free/advanced-coupons-for-woocommerce-free.php',
+        ),
+        'storeagent-ai-for-woocommerce'         => array(
+            'token'       => 'saai_installed_by',
+            'token_value' => 'pfp',
+            'basename'    => 'storeagent-ai-for-woocommerce/storeagent-ai-for-woocommerce.php',
         ),
         'wc-vendors'                            => array(
-            'token'    => 'wcv',
-            'basename' => 'wc-vendors/class-wc-vendors.php',
+            'token'       => 'wcv_installed_by',
+            'token_value' => 'pfp',
+            'basename'    => 'wc-vendors/class-wc-vendors.php',
         ),
         'woocommerce-wholesale-prices'          => array(
-            'token'    => 'wwp',
-            'basename' => 'woocommerce-wholesale-prices/woocommerce-wholesale-prices.bootstrap.php',
+            'token'       => 'wwp_installed_by',
+            'token_value' => 'pfp',
+            'basename'    => 'woocommerce-wholesale-prices/woocommerce-wholesale-prices.bootstrap.php',
         ),
         'invoice-gateway-for-woocommerce'       => array(
-            'token'    => 'igfw',
-            'basename' => 'invoice-gateway-for-woocommerce/invoice-gateway-for-woocommerce.php',
+            'token'       => 'igfw_installed_by',
+            'token_value' => 'pfp',
+            'basename'    => 'invoice-gateway-for-woocommerce/invoice-gateway-for-woocommerce.php',
         ),
         'woocommerce-exporter'                  => array(
-            'token'    => 'wse',
-            'basename' => 'woocommerce-exporter/exporter.php',
+            'token'       => 'wse_installed_by',
+            'token_value' => 'pfp',
+            'basename'    => 'woocommerce-exporter/exporter.php',
         ),
         'woocommerce-store-toolkit'             => array(
-            'token'    => 'wst',
-            'basename' => 'woocommerce-store-toolkit/store-toolkit.php',
-        ),
-        'funnelkit-stripe-woo-payment-gateway'  => array(
-            'token'    => 'funnelkit-stripe',
-            'basename' => 'funnelkit-stripe-woo-payment-gateway/funnelkit-stripe-woo-payment-gateway.php',
+            'token'       => 'wst_installed_by',
+            'token_value' => 'pfp',
+            'basename'    => 'woocommerce-store-toolkit/store-toolkit.php',
         ),
     );
 
@@ -133,9 +140,10 @@ class Plugin_Installer extends Abstract_Class {
             return $result;
         }
 
-        $plugin_token = $this->get_plugin_token_by_slug( $plugin_slug );
-        if ( '' !== $plugin_token ) {
-            update_option( $plugin_token . '_installed_by', 'pfp', false );
+        $plugin_token_info = $this->get_plugin_token_by_slug( $plugin_slug );
+
+        if ( '' !== $plugin_token_info['token'] ) {
+            update_option( $plugin_token_info['token'], $plugin_token_info['token_value'], false );
         }
 
         // Activate the plugin.
@@ -201,18 +209,21 @@ class Plugin_Installer extends Abstract_Class {
     }
 
     /**
-     * Get the plugin token by slug.
+     * Get the plugin token info by slug.
      *
      * @since 13.3.4
      * @access public
      *
      * @param string $plugin_slug Plugin slug.
-     * @return string Plugin basename.
+     * @return array Plugin token information containing token and token_value.
      */
     public function get_plugin_token_by_slug( $plugin_slug ) {
         $allowed_plugins = $this->get_allowed_plugins();
 
-        return $allowed_plugins[ $plugin_slug ]['token'] ?? '';
+        return array(
+            'token'       => $allowed_plugins[ $plugin_slug ]['token'] ?? '',
+            'token_value' => $allowed_plugins[ $plugin_slug ]['token_value'] ?? '',
+        );
     }
 
     /*

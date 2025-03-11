@@ -797,22 +797,6 @@ function woosea_shipping_zones() {
 add_action( 'wp_ajax_woosea_shipping_zones', 'woosea_shipping_zones' );
 
 /**
- * Get the available channels for a specific country.
- */
-function woosea_channel() {
-    if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
-        wp_send_json_error( __( 'Nonce verification failed', 'woo-product-feed-pro' ) );
-    }
-
-    $country     = sanitize_text_field( $_POST['country'] );
-    $data        = \AdTribes\PFP\Classes\Product_Feed_Attributes::get_channels( $country );
-
-    echo json_encode( $data );
-    wp_die();
-}
-add_action( 'wp_ajax_woosea_channel', 'woosea_channel' );
-
-/**
  * Register interaction with the review request notification.
  * We do not want to keep bothering our users with the notification.
  */

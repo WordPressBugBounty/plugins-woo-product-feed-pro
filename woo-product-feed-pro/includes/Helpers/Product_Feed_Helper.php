@@ -568,4 +568,53 @@ class Product_Feed_Helper {
             )
         );
     }
+
+    /**
+     * Group channels by their type and print channel options.
+     *
+     * This method is used to organize channels into groups based on their type
+     * and generate HTML for select options.
+     *
+     * @since 13.4.2
+     * @access public
+     * @param array  $channels        Array of channels to be grouped.
+     * @param string $default_channel Default channel to be selected.
+     * @return string HTML content for select options.
+     */
+    public static function print_channel_options( $channels, $default_channel = 'Google Shopping' ) {
+        // Start output buffering.
+        ob_start();
+
+        // Group channels by their type.
+        $grouped_channels = array();
+
+        foreach ( $channels as $key => $val ) {
+            if ( ! isset( $val['type'] ) ) {
+                continue;
+            }
+
+            $type = $val['type'];
+
+            if ( ! isset( $grouped_channels[ $type ] ) ) {
+                $grouped_channels[ $type ] = array();
+            }
+
+            $grouped_channels[ $type ][ $key ] = $val;
+        }
+
+        // Generate the select options grouped by type.
+        foreach ( $grouped_channels as $type => $type_channels ) {
+            echo '<optgroup label="' . esc_attr( $type ) . '">';
+
+            foreach ( $type_channels as $key => $val ) {
+                $selected = $default_channel === $key ? ' selected' : '';
+                echo '<option value="' . esc_attr( $val['channel_hash'] ) . '"' . esc_attr( $selected ) . '>' . esc_html( $val['name'] ) . '</option>';
+            }
+
+            echo '</optgroup>';
+        }
+
+        // Get the buffered content and return it.
+        return ob_get_clean();
+    }
 }

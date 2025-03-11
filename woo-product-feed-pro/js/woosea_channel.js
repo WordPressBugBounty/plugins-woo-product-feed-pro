@@ -57,60 +57,60 @@ jQuery(document).ready(function ($) {
   jQuery('#countries').on('change', function () {
     var country = this.value;
     var security = $('#_wpnonce').val();
+    var td = $('#channel_hash').closest('td');
+
+    var select = $('#channel_hash');
+    select.empty();
+
+    // Show loading indicator
+    select.html('<option value="">Loading channels...</option>');
+
+    // Add a spinner inside the td element
+    if ($('#channel-loading-spinner').length === 0) {
+      td.append(
+        '<span id="channel-loading-spinner" class="spinner is-active" style="float:none;margin-left:5px;display:inline-block;"></span>'
+      );
+    }
+
+    // Disable the select while loading channels
+    select.prop('disabled', true);
 
     jQuery
       .ajax({
         method: 'POST',
         url: ajaxurl,
-        data: { action: 'woosea_channel', country: country, security: security },
+        data: { action: 'woosea_print_channels', country: country, security: security },
       })
 
-      .done(function (data) {
-        data = JSON.parse(data);
+      .done(function (response) {
+        // Check if data is successful and contains HTML
+        if (response.success && response.data) {
+          // Append the HTML content to the select element
+          select.html(response.data);
 
-        var select = $('#channel_hash');
-        select.empty();
-
-        $.each(data, function (index, val) {
-          if (val.type == 'Custom Feed') {
-            if ($('optgroup[label="Custom Feed"]').length == 0) {
-              var optgroup_customfeed = $('<optgroup id="CustomFeed">');
-              optgroup_customfeed.attr('label', val.type);
-              $('#channel_hash').append(optgroup_customfeed);
-            }
-            $('<option>').val(val.channel_hash).text(val.name).appendTo('#CustomFeed');
+          // Reinitialize select2 if it's being used
+          if (select.hasClass('woo-sea-select2')) {
+            select.select2({
+              containerCssClass: 'woo-sea-select2-selection',
+            });
           }
-
-          if (val.type == 'Advertising') {
-            if ($('optgroup[label="Advertising"]').length == 0) {
-              var optgroup_advertising = $('<optgroup id="Advertising">');
-              optgroup_advertising.attr('label', val.type);
-              $('#channel_hash').append(optgroup_advertising);
-            }
-            $('<option>').val(val.channel_hash).text(val.name).appendTo('#Advertising');
-          }
-
-          if (val.type == 'Comparison shopping engine') {
-            if ($('optgroup[label="Comparison shopping engine"]').length == 0) {
-              var optgroup_shopping = $('<optgroup id="Shopping">');
-              optgroup_shopping.attr('label', val.type);
-              $('#channel_hash').append(optgroup_shopping);
-            }
-            $('<option>').val(val.channel_hash).text(val.name).appendTo('#Shopping');
-          }
-
-          if (val.type == 'Marketplace') {
-            if ($('optgroup[label="Marketplace"]').length == 0) {
-              var optgroup_marketplace = $('<optgroup id="Marketplace">');
-              optgroup_marketplace.attr('label', val.type);
-              $('#channel_hash').append(optgroup_marketplace);
-            }
-            $('<option>').val(val.channel_hash).text(val.name).appendTo('#Marketplace');
-          }
-        });
+        } else {
+          console.error('Invalid response format:', response);
+          // Add a default option if the response is invalid
+          select.html('<option value="">Error loading channels</option>');
+        }
       })
-      .fail(function (data) {
-        console.log('Failed AJAX Call :( /// Return Data: ' + data);
+      .fail(function (response) {
+        console.log('Failed AJAX Call :( /// Return Data: ' + response);
+        // Add a default option if the AJAX call fails
+        select.html('<option value="">Error loading channels</option>');
+      })
+      .always(function () {
+        // Re-enable the select after loading channels
+        select.prop('disabled', false);
+
+        // Remove the spinner
+        $('#channel-loading-spinner').remove();
       });
   });
 

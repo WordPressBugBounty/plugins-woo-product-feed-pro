@@ -119,7 +119,7 @@ class Product_Feed {
         $this->context = $context;
 
         if ( is_numeric( $feed ) && $feed > 0 ) {
-            $this->id = $feed;
+            $this->id = absint( $feed );
         } elseif ( is_string( $feed ) && ! empty( $feed ) ) {
             $this->id = self::get_feed_id_by_project_hash( $feed );
         } elseif ( $feed instanceof \WP_Post ) {
