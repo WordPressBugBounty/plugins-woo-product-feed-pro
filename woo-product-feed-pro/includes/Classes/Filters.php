@@ -9,6 +9,8 @@ namespace AdTribes\PFP\Classes;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
 use AdTribes\PFP\Traits\Singleton_Trait;
+use AdTribes\PFP\Traits\Filters_Rules_Trait;
+use AdTribes\PFP\Classes\Product_Feed_Attributes;
 
 /**
  * Filters class.
@@ -18,6 +20,7 @@ use AdTribes\PFP\Traits\Singleton_Trait;
 class Filters extends Abstract_Class {
 
     use Singleton_Trait;
+    use Filters_Rules_Trait;
 
     /**
      * Filter data
@@ -154,10 +157,19 @@ class Filters extends Abstract_Class {
      * @return bool
      */
     private function process_array_value( $values, $filter, $feed, $requires_any_match ) {
+        if ( empty( $values ) ) {
+            return false;
+        }
+
         if ( $requires_any_match ) {
             // ANY match should pass.
             foreach ( $values as $v ) {
-                if ( $this->filter_data( $v, $filter, $feed ) ) {
+                // If value is an array, recursively process it.
+                if ( is_array( $v ) ) {
+                    if ( $this->process_array_value( $v, $filter, $feed, $requires_any_match ) ) {
+                        return true;
+                    }
+                } elseif ( $this->filter_data( $v, $filter, $feed ) ) {
                     return true;
                 }
             }
@@ -165,7 +177,12 @@ class Filters extends Abstract_Class {
         } else {
             // ALL must pass.
             foreach ( $values as $v ) {
-                if ( ! $this->filter_data( $v, $filter, $feed ) ) {
+                // If value is an array, recursively process it.
+                if ( is_array( $v ) ) {
+                    if ( ! $this->process_array_value( $v, $filter, $feed, $requires_any_match ) ) {
+                        return false;
+                    }
+                } elseif ( ! $this->filter_data( $v, $filter, $feed ) ) {
                     return false;
                 }
             }
@@ -261,11 +278,43 @@ class Filters extends Abstract_Class {
     }
 
     /**
+     * AJAX handler for adding a filter row
+     *
+     * @since 13.4.2
+     * @return void
+     */
+    public function ajax_add_filter() {
+        check_ajax_referer( 'woosea_ajax_nonce', 'security' );
+
+        if ( ! \AdTribes\PFP\Helpers\Helper::is_current_user_allowed() ) {
+            wp_send_json_error( __( 'You are not allowed to perform this action.', 'woo-product-feed-pro' ) );
+        }
+
+        // Generate a unique row ID.
+        $row_count = isset( $_POST['rowCount'] ) ? absint( $_POST['rowCount'] ) : round( microtime( true ) * 1000 );
+
+        // Get attributes for the dropdown.
+        $product_feed_attributes = new Product_Feed_Attributes();
+        $attributes              = $product_feed_attributes->get_attributes();
+
+        // Generate the HTML template.
+        $html = $this->get_filter_template( $row_count, $attributes );
+
+        wp_send_json_success(
+            array(
+                'html'     => $html,
+                'rowCount' => $row_count,
+            )
+        );
+    }
+
+    /**
      * Run the class
      *
      * @codeCoverageIgnore
      * @since 13.4.1
      */
     public function run() {
+        add_action( 'wp_ajax_woosea_ajax_add_filter', array( $this, 'ajax_add_filter' ) );
     }
 }

@@ -73,7 +73,7 @@ class Version_13_3_5_Update extends Abstract_Class {
                 $feed->set_props(
                     array(
                         'title'                      => $project_data['projectname'] ?? '',
-                        'post_status'                => $project_data['active'] ? 'publish' : 'draft',
+                        'post_status'                => isset( $project_data['active'] ) && 'true' === $project_data['active'] ? 'publish' : 'draft',
                         'status'                     => $project_data['running'] ?? '',
                         'country'                    => $country_code,
                         'channel_hash'               => $project_data['channel_hash'] ?? '',

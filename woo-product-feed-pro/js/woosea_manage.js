@@ -320,8 +320,9 @@ jQuery(function ($) {
               const feed_id = response.data.feed_id || null;
               const offset = response.data.offset || 0;
               const batch_size = response.data.batch_size || 0;
+              const executed_from = response.data.executed_from || 'cron';
 
-              if (feed_id) {
+              if (feed_id && executed_from === 'ajax') {
                 woosea_generate_product_feed(feed_id, offset, batch_size);
               }
 
@@ -504,12 +505,7 @@ jQuery(function ($) {
             } else {
               $status.removeClass('woo-product-feed-pro-blink_me');
               $row.removeClass('processing');
-
-              if (feed.status === 'stopped') {
-                $status.text('stopped');
-              } else {
-                $status.text('ready');
-              }
+              $status.text(feed.status);
             }
           });
         }

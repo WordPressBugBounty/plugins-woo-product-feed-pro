@@ -60,7 +60,7 @@ class WP_Admin extends Abstract_Class {
             wp_enqueue_script( 'woosea_validation-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/woosea_validation.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
 
             // JS for adding table rows to the rules page.
-            wp_enqueue_script( 'woosea_rules-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/woosea_rules.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_enqueue_script( 'woosea_filters_rules-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/woosea_filters_rules.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
 
             // JS for adding table rows to the field mappings page.
             wp_enqueue_script( 'woosea_field_mapping-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/woosea_field_mapping.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );

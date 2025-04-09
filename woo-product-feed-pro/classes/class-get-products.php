@@ -2040,15 +2040,6 @@ class WooSEA_Get_Products {
         // SHIPPING ZONES IS BIG, TAKES TOO MUCH MEMORY
         $shipping_zones = $this->woosea_get_shipping_zones();
 
-        // Log some information to the WooCommerce logs
-        $add_woosea_logging = get_option( 'add_woosea_logging' );
-        if ( $add_woosea_logging == 'yes' ) {
-            $logger = new WC_Logger();
-            $logger->add( 'Product Feed Pro by AdTribes.io', '<!-- Start new QUERY -->' );
-            $logger->add( 'Product Feed Pro by AdTribes.io', print_r( $wp_query, true ) );
-            $logger->add( 'Product Feed Pro by AdTribes.io', '<!-- START new QUERY -->' );
-        }
-
         while ( $prods->have_posts() ) :
             $prods->the_post();
 
@@ -2086,6 +2077,7 @@ class WooSEA_Get_Products {
                     continue;
                 }
             }
+
             $product_data['title']                 = $this->woosea_sanitize_html( $product->get_title() );
             $product_data['title']                 = $this->woosea_utf8_for_xml( $product_data['title'] );
             $product_data['mother_title']          = $product_data['title'];
@@ -2374,12 +2366,11 @@ class WooSEA_Get_Products {
                 $product_data['link_no_tracking'] = $vlink_piece[0];
             }
 
-            $product_data['condition']     = get_post_meta( $product_data['id'], '_woosea_condition', true );
-            $product_data['condition']     = is_string( $product_data['condition'] ) ? ucfirst( $product_data['condition'] ) : $product_data['condition'];
             $product_data['purchase_note'] = get_post_meta( $product_data['id'], '_purchase_note' );
 
+            // Product condition is default to 'new' if not set.
             if ( empty( $product_data['condition'] ) || $product_data['condition'] == 'Array' ) {
-                $product_data['condition'] = 'New';
+                $product_data['condition'] = 'new';
             }
 
             // get_stock only works as of WC 5 and higher?
@@ -4052,9 +4043,7 @@ class WooSEA_Get_Products {
                 }
 
                 if ( isset( $old_attributes_config ) && is_array( $old_attributes_config ) ) {
-                    $identifier_positions = array();
                     $loop_count           = 0;
-
                     foreach ( $old_attributes_config as $attr_key => $attr_value ) {
                         if ( ! $attr_line ) {
                             if ( array_key_exists( 'static_value', $attr_value ) ) {
@@ -4075,12 +4064,6 @@ class WooSEA_Get_Products {
                         } elseif ( array_key_exists( 'static_value', $attr_value ) ) {
                             $attr_line .= ",'" . $attr_value['prefix'] . $attr_value['mapfrom'] . $attr_value['suffix'] . "'";
                         } else {
-                            // Determine position of identifiers in CSV row
-                            if ( $attr_value['attribute'] == 'g:brand' || $attr_value['attribute'] == 'g:gtin' || $attr_value['attribute'] == 'g:mpn' || $attr_value['attribute'] == 'g:identifier_exists' ) {
-                                $arr_pos              = array( $attr_value['attribute'] => $loop_count );
-                                $identifier_positions = array_merge( $identifier_positions, $arr_pos );
-                            }
-
                             if ( array_key_exists( $attr_value['mapfrom'], $product_data ) ) {
                                 if ( is_array( $product_data[ $attr_value['mapfrom'] ] ) ) {
                                     if ( $attr_value['mapfrom'] == 'product_tag' ) {
@@ -4159,21 +4142,56 @@ class WooSEA_Get_Products {
                     $pieces_row = explode( "','", $attr_line );
                     $pieces_row = array_map( 'trim', $pieces_row );
 
+                    // Fix the first and last elements to remove the extra quotes
+                    if (!empty($pieces_row)) {
+                        // Remove leading quote from first element
+                        $pieces_row[0] = ltrim($pieces_row[0], "'");
+                        
+                        // Remove trailing quote from last element
+                        $last_index = count($pieces_row) - 1;
+                        $pieces_row[$last_index] = rtrim($pieces_row[$last_index], "'");
+                    }
+
+                    // Identifier exists attribute for Google Shopping with Plugin Calculation Value Attribute
                     if ( $feed_channel['fields'] == 'google_shopping' ) {
-                        foreach ( $identifier_positions as $id_key => $id_value ) {
-                            if ( $id_key != 'g:identifier_exists' ) {
-                                if ( $pieces_row[ $id_value ] ) {
-                                    $identifier_exists = 'yes';
+                        // Identifier Attributes
+                        $identifier_attributes = array( 'g:brand', 'g:gtin', 'g:mpn' );
+
+                        $has_plugin_calculation_mapfrom = false;
+                        $identifier_exists_position = -1;
+                        $identifier_attributes_positions = array();
+                        $loop_count = 0;
+                        foreach ($old_attributes_config as $attr) {
+                            if (isset($attr['attribute'])) {
+                                if ( $attr['attribute'] == 'g:identifier_exists' ) {
+                                    $identifier_exists_position = $loop_count;
                                 }
-                            } else {
-                                $identifier_position = $id_value;
+
+                                if (in_array($attr['attribute'], $identifier_attributes)) {
+                                    $identifier_attributes_positions[] = $loop_count;
+                                }
                             }
+
+                            if ( isset( $attr['mapfrom'] ) && $attr['mapfrom'] == 'calculated' ) {
+                                $has_plugin_calculation_mapfrom = true;
+                            }
+                            $loop_count++;
                         }
 
-                        if ( ( isset( $identifier_exists ) ) && ( $identifier_exists == 'yes' ) ) {
-                            $pieces_row[ $id_value ] = $identifier_exists;
-                        } elseif ( isset( $id_value ) ) {
-                            $pieces_row[ $id_value ] = 'no';
+                        // If the plugin calculation mapfrom is found,
+                        // and the identifier attributes are present in the feed,
+                        // and the identifier position is set, set the identifier exists to yes.
+                        if ( $has_plugin_calculation_mapfrom && $identifier_exists_position != -1 ) {
+                            $pieces_row[ $identifier_exists_position ] = 'no';
+
+                            if ( ! empty( $identifier_attributes_positions ) ) {
+                                foreach ( $identifier_attributes_positions as $identifier_attribute_position ) {
+                                    if ( isset( $pieces_row[ $identifier_attribute_position ] ) && '' !== $pieces_row[ $identifier_attribute_position ] ) {
+                                        $pieces_row[ $identifier_exists_position ] = 'yes';
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
                     $attr_line  = implode( "','", $pieces_row );

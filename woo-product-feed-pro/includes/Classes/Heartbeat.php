@@ -19,6 +19,16 @@ use AdTribes\PFP\Traits\Singleton_Trait;
  */
 class Heartbeat extends Abstract_Class {
 
+    /**
+     * Whether the feed batch has been run.
+     *
+     * @since 13.4.3
+     * @access private
+     *
+     * @var boolean
+     */
+    private $has_run_feed_batch = false;
+
     use Singleton_Trait;
 
     /**
@@ -52,6 +62,9 @@ class Heartbeat extends Abstract_Class {
                 continue;
             }
 
+            // Force run a single scheduled batch for the feed (only for the first feed in the queue).
+            $this->maybe_run_feed_batch_action_schedules( $feed->id );
+
             $proc_perc = $feed->get_processing_percentage();
 
             $response[] = array(
@@ -70,6 +83,67 @@ class Heartbeat extends Abstract_Class {
         }
 
         wp_send_json_success( apply_filters( 'adt_product_feed_processing_status_response', $response, $feed ) );
+    }
+
+    /**
+     * Maybe run the feed batch action schedules.
+     *
+     * @since 13.4.3
+     * @access private
+     *
+     * @param string $feed_id Feed ID.
+     */
+    private function maybe_run_feed_batch_action_schedules( $feed_id ) {
+        // Only run once per heartbeat check.
+        if ( $this->has_run_feed_batch ) {
+            return;
+        }
+
+        $schedules = $this->query_feed_batch_action_schedules( $feed_id );
+
+        if ( empty( $schedules ) ) {
+            return;
+        }
+
+        // Force Action Scheduler to run the next scheduled batch event of the feed.
+        if ( ! empty( $schedules ) && class_exists( '\ActionScheduler_QueueRunner' ) ) {
+            $as_runner = \ActionScheduler_QueueRunner::instance();
+
+            foreach ( $schedules as $schedule ) {
+                if ( 'pending' === $schedule['status'] ) {
+                    $as_runner->process_action( $schedule['action_id'], __( 'Product Feed: heartbeat', 'woo-product-feed-pro' ) );
+                    $this->has_run_feed_batch = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Query the import action schedules for a given plugin.
+     *
+     * @since 13.4.3
+     * @access private
+     *
+     * @param string $feed_id Feed ID.
+     */
+    private function query_feed_batch_action_schedules( $feed_id ) {
+        global $wpdb;
+
+        $schedules = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT action_id, status, args, extended_args FROM {$wpdb->prefix}actionscheduler_actions WHERE hook=%s 
+                AND (args LIKE %s OR extended_args LIKE %s)
+                AND status='pending'
+                ORDER BY scheduled_date_gmt ASC",
+                ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH,
+                '%' . $feed_id . '%',
+                '%' . $feed_id . '%',
+            ),
+            ARRAY_A
+        );
+
+        return $schedules;
     }
 
     /**

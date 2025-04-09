@@ -33,6 +33,9 @@ class Shipping_Data extends Abstract_Class {
      * @return array
      */
     public function get_shipping_data( $product, $feed ) {
+        // Initialize WC session if it doesn't exist (for cron context).
+        $this->maybe_init_wc_session();
+
         $shipping_data = array();
         $feed_channel  = $feed->get_channel();
         if ( empty( $feed_channel ) ) {
@@ -180,8 +183,48 @@ class Shipping_Data extends Abstract_Class {
         // Get and filter shipping methods.
         $methods = $this->_get_filtered_shipping_methods( $shipping_zone, $options );
 
-        // If the feed country is in the zone.
-        if ( in_array( $country_code, $countries_in_zone, true ) ) {
+        if ( 'yes' === $options['add_all_shipping'] ) {
+            // Feed country is not in the zone, but add all shipping is enabled.
+            // Process all countries in the zone.
+            foreach ( $countries_in_zone as $country_code ) {
+                // Check if there are specific states for this country.
+                if ( isset( $states_by_country[ $country_code ] ) && ! empty( $states_by_country[ $country_code ] ) ) {
+                    // Process each state for this country.
+                    foreach ( $states_by_country[ $country_code ] as $state_code ) {
+                        $zone_data = $this->_setup_zone_and_package( $country_code, $state_code, $package );
+
+                        // Process shipping methods for this state.
+                        $shipping_zones_data = $this->_process_shipping_methods(
+                            $methods,
+                            $shipping_zone,
+                            $zone_data['package'],
+                            $zone_data['zone'],
+                            $options,
+                            $zone_data['has_free_shipping'],
+                            $shipping_currency,
+                            $feed,
+                            $shipping_zones_data
+                        );
+                    }
+                } else {
+                    // No specific states, process the country as a whole.
+                    $zone_data = $this->_setup_zone_and_package( $country_code, '', $package );
+
+                    // Process shipping methods for the whole country.
+                    $shipping_zones_data = $this->_process_shipping_methods(
+                        $methods,
+                        $shipping_zone,
+                        $zone_data['package'],
+                        $zone_data['zone'],
+                        $options,
+                        $zone_data['has_free_shipping'],
+                        $shipping_currency,
+                        $feed,
+                        $shipping_zones_data
+                    );
+                }
+            }
+        } elseif ( in_array( $country_code, $countries_in_zone, true ) ) { // If the feed country is in the zone.
             // Check if there are specific states for this country.
             if ( isset( $states_by_country[ $country_code ] ) && ! empty( $states_by_country[ $country_code ] ) ) {
                 // Process each state for this country.
@@ -206,33 +249,6 @@ class Shipping_Data extends Abstract_Class {
                 $zone_data = $this->_setup_zone_and_package( $country_code, '', $package );
 
                 // Process shipping methods for the whole country.
-                $shipping_zones_data = $this->_process_shipping_methods(
-                    $methods,
-                    $shipping_zone,
-                    $zone_data['package'],
-                    $zone_data['zone'],
-                    $options,
-                    $zone_data['has_free_shipping'],
-                    $shipping_currency,
-                    $feed,
-                    $shipping_zones_data
-                );
-            }
-        } elseif ( 'yes' === $options['add_all_shipping'] ) {
-            // Feed country is not in the zone, but add all shipping is enabled.
-            // Use the first country in the zone.
-            $first_country = $countries_in_zone[0] ?? '';
-
-            if ( ! empty( $first_country ) ) {
-                $first_state = '';
-                if ( isset( $states_by_country[ $first_country ] ) && ! empty( $states_by_country[ $first_country ] ) ) {
-                    // Use the first state for this country.
-                    $first_state = $states_by_country[ $first_country ][0];
-                }
-
-                $zone_data = $this->_setup_zone_and_package( $first_country, $first_state, $package );
-
-                // Process shipping methods.
                 $shipping_zones_data = $this->_process_shipping_methods(
                     $methods,
                     $shipping_zone,
@@ -539,9 +555,6 @@ class Shipping_Data extends Abstract_Class {
     /**
      * Check if the shipping method is available.
      *
-     * The reason why we don't use the is_available method for free shipping, is because it expects a the cart session to be set.
-     * So, we have to check if the free shipping requirements are met manually.
-     *
      * @since 13.4.0
      * @access private
      *
@@ -552,7 +565,6 @@ class Shipping_Data extends Abstract_Class {
     private function _is_shipping_available( $method, $package ) {
         $is_available = false;
         if ( 'free_shipping' === $method->id ) {
-
             if ( in_array( $method->requires, array( 'min_amount', 'either', 'both' ), true ) ) {
                 $total = $package['contents_cost'];
                 $total = \Automattic\WooCommerce\Utilities\NumberUtil::round( $total, wc_get_price_decimals() );
@@ -583,6 +595,21 @@ class Shipping_Data extends Abstract_Class {
         }
 
         return $formatted_attributes;
+    }
+
+    /**
+     * Initialize WooCommerce cart session if it doesn't exist
+     * This prevents errors when running via cron with table rate shipping.
+     *
+     * @since 13.4.3
+     * @access private
+     */
+    private function maybe_init_wc_session() {
+        // Check if WC exists but session is not initialized.
+        if ( wp_doing_cron() && function_exists( 'wc_load_cart' ) && ( ! isset( WC()->session ) || ! is_object( WC()->session ) ) ) {
+            // Use wc_load_cart to initialize session and cart properly.
+            wc_load_cart();
+        }
     }
 
     /**

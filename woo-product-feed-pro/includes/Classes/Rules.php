@@ -9,6 +9,8 @@ namespace AdTribes\PFP\Classes;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
 use AdTribes\PFP\Traits\Singleton_Trait;
+use AdTribes\PFP\Traits\Filters_Rules_Trait;
+use AdTribes\PFP\Classes\Product_Feed_Attributes;
 
 /**
  * Rules class.
@@ -18,6 +20,7 @@ use AdTribes\PFP\Traits\Singleton_Trait;
 class Rules extends Abstract_Class {
 
     use Singleton_Trait;
+    use Filters_Rules_Trait;
 
     /**
      * Rules data.
@@ -230,11 +233,43 @@ class Rules extends Abstract_Class {
     }
 
     /**
+     * AJAX handler for adding a rule row
+     *
+     * @since 13.4.2
+     * @return void
+     */
+    public function ajax_add_rule() {
+        check_ajax_referer( 'woosea_ajax_nonce', 'security' );
+
+        if ( ! \AdTribes\PFP\Helpers\Helper::is_current_user_allowed() ) {
+            wp_send_json_error( __( 'You are not allowed to perform this action.', 'woo-product-feed-pro' ) );
+        }
+
+        // Generate a unique row ID.
+        $row_count = isset( $_POST['rowCount'] ) ? absint( $_POST['rowCount'] ) : round( microtime( true ) * 1000 );
+
+        // Get attributes for the dropdown.
+        $product_feed_attributes = new Product_Feed_Attributes();
+        $attributes              = $product_feed_attributes->get_attributes();
+
+        // Generate the HTML template.
+        $html = $this->get_rule_template( $row_count, $attributes );
+
+        wp_send_json_success(
+            array(
+                'html'     => $html,
+                'rowCount' => $row_count,
+            )
+        );
+    }
+
+    /**
      * Run the class
      *
      * @codeCoverageIgnore
      * @since 13.4.1
      */
     public function run() {
+        add_action( 'wp_ajax_woosea_ajax_add_rule', array( $this, 'ajax_add_rule' ) );
     }
 }

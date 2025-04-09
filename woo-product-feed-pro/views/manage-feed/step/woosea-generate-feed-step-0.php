@@ -263,6 +263,21 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                             </tr>
 
                             <tr>
+                                <td>
+                                    <span>
+                                        <?php esc_html_e( 'Remove products that did not have sales in the last days', 'woo-product-feed-pro' ); ?>: 
+                                        <a href="<?php echo esc_url( Helper::get_utm_url( 'create-feed-performing-products', 'pfp', 'googleanalytics-settings', 'total product orders lookback' ) ); ?>" target="_blank">
+                                            <?php esc_html_e( 'What does this do?', 'woo-product-feed-pro' ); ?>
+                                        </a>
+                                    </span>
+                                </td>
+                                <td>
+                                    <input type="number" class="input-field input-field-small" name="total_product_orders_lookback" min="0" value="<?php echo $feed && $feed->utm_total_product_orders_lookback ? esc_attr( max(0, intval($feed->utm_total_product_orders_lookback)) ) : ''; ?>" />
+                                    <?php esc_html_e( 'days', 'woo-product-feed-pro' ); ?>
+                                </td>
+                            </tr>
+
+                            <tr>
                                 <td colspan="2">
                                     <?php if ( $feed ) : ?>
                                         <input type="hidden" name="project_hash" id="project_hash" value="<?php echo esc_attr( $feed->legacy_project_hash ); ?>" />

@@ -74,7 +74,7 @@ foreach ( $product_feeds_query->get_posts() as $product_feed ) :
             <td id="manage_inline" colspan="8">
                 <div>
                     <table class="woo-product-feed-pro-inline_manage">
-                        <?php if ( in_array( $product_feed->status, array( 'ready', 'stopped', 'not run yet' ), true ) ) : ?>
+                        <?php if ( in_array( $product_feed->status, array( 'ready', 'stopped', 'not run yet', 'error' ), true ) ) : ?>
                             <tr>
                                 <td>
                                     <?php include WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'manage-feed/view-manage-feed-table-settings.php'; ?>

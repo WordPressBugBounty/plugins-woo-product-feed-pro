@@ -129,10 +129,7 @@ do_action( 'adt_before_product_feed_manage_page', 5, $project_hash, $feed );
                             <td><span><?php esc_html_e( 'Google Analytics campaign content (utm_content)', 'woo-product-feed-pro' ); ?>:</span></td>
                             <td><input type="text" class="input-field" name="utm_content" value="<?php echo esc_attr( $utm_content ); ?>" /></td>
                         </tr>
-                        <tr>
-                            <td><span><?php esc_html_e( 'Remove products that did not have sales in the last days', 'woo-product-feed-pro' ); ?>: <a href="<?php echo esc_url( Helper::get_utm_url( 'create-feed-performing-products', 'pfp', 'googleanalytics-settings', 'total product orders lookback' ) ); ?>" target="_blank">What does this do?</a></span></td>
-                            <td><input type="text" class="input-field" name="total_product_orders_lookback" value="<?php echo esc_attr( $total_product_orders_lookback ); ?>" /> days</td>
-                        </tr>
+                       
 
                         <tr>
                             <td colspan="2">

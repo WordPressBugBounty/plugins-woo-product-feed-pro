@@ -162,6 +162,7 @@ class Product_Feed_Admin extends Abstract_Class {
                         'only_include_lowest_product_variation' => isset( $post_data['lowest_price_variations'] ) && 'on' === $post_data['lowest_price_variations'] ? 'yes' : 'no',
                         'create_preview'             => isset( $post_data['preview_feed'] ) && 'on' === $post_data['preview_feed'] ? 'yes' : 'no',
                         'refresh_only_when_product_changed' => isset( $post_data['products_changed'] ) && 'on' === $post_data['products_changed'] ? 'yes' : 'no',
+                        'utm_total_product_orders_lookback' => $post_data['total_product_orders_lookback'] ?? '',
                     );
                     break;
                 case 1: // Categories mapping. (Google only).
@@ -183,7 +184,6 @@ class Product_Feed_Admin extends Abstract_Class {
                         'utm_campaign' => $post_data['utm_campaign'] ?? '',
                         'utm_term'     => $post_data['utm_term'] ?? '',
                         'utm_content'  => $post_data['utm_content'] ?? '',
-                        'utm_total_product_orders_lookback' => $post_data['total_product_orders_lookback'] ?? '',
                     );
                     break;
                 case 7: // Field mapping.
@@ -433,10 +433,14 @@ class Product_Feed_Admin extends Abstract_Class {
         // Remove cache.
         Product_Feed_Helper::disable_cache();
 
+        // Determine if the feed is executed from AJAX or cron.
+        // For debugging purposes, ajax is easier to debug.
+        $executed_from = defined( 'ADT_PFP_MANUAL_REFRESH_FEED_EXECUTION_METHOD' ) ? ADT_PFP_MANUAL_REFRESH_FEED_EXECUTION_METHOD : 'cron';
+
         /**
          * Run the product feed batch processing.
          */
-        $response = $feed->generate( 'ajax' );
+        $response = $feed->generate( $executed_from );
 
         wp_send_json_success( $response );
     }

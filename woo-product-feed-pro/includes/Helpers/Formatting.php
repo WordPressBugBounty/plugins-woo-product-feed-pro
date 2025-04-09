@@ -65,6 +65,10 @@ class Formatting {
             }
 
             $price = html_entity_decode( wc_clean( wc_price( $price, array_filter( $args ) ) ) );
+
+            // Convert to ASCII, then trim.
+            $price = preg_replace( '/[^\x20-\x7E]/', '', $price ); // Remove non-ASCII.
+            $price = trim( $price );
         }
 
         return $price;

@@ -634,9 +634,10 @@ class Product_Feed {
         if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
             wp_send_json_success(
                 array(
-                    'feed_id'    => $this->id,
-                    'offset'     => 0,
-                    'batch_size' => $batch_size,
+                    'feed_id'       => $this->id,
+                    'offset'        => 0,
+                    'batch_size'    => $batch_size,
+                    'executed_from' => $this->executed_from,
                 )
             );
         } else {
@@ -655,46 +656,65 @@ class Product_Feed {
      * @param string $context The context of the generation. 'ajax' or 'cron'.
      */
     public function run_batch_event( $offset = 0, $batch_size = 0, $context = '' ) {
-        $get_product_class = new \WooSEA_Get_Products();
-        $get_product_class->woosea_get_products( $this, $offset, $batch_size );
+        try {
+            // Create the product class instance.
+            $get_product_class = new \WooSEA_Get_Products();
 
-        // Update the total number of products processed.
-        $this->total_products_processed = min( $this->total_products_processed + $batch_size, $this->products_count );
+            // This is where errors might occur.
+            $get_product_class->woosea_get_products( $this, $offset, $batch_size );
 
-        /**
-         * Batch processing.
-         *
-         * If the batch size is less than the total number of published products, then we need to create a batch.
-         * The batching logic is from the legacy code base as it's has the batch size.
-         * We need to refactor this logic so it's not stupid.
-         */
-        if ( $this->total_products_processed >= $this->products_count || $batch_size >= $this->products_count ) { // End of processing.
-            // Set status to ready.
-            $this->status = 'ready';
-
-            // Set counters back to 0.
-            $this->total_products_processed = 0;
-            $this->batch_size               = 0;
-            $this->executed_from            = '';
-
-            // Set last updated date and time.
-            $this->last_updated = gmdate( 'd M Y H:i:s' );
-        }
-
-        // Save feed changes.
-        $this->save();
-
-        if ( 'ready' === $this->status ) {
-            $this->move_feed_file_to_final();
-
-            // Check the amount of products in the feed and update the history count.
-            as_schedule_single_action( time() + 1, ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS, array( 'feed_id' => $this->id ) );
+            // Update the total number of products processed.
+            $this->total_products_processed = min( $this->total_products_processed + $batch_size, $this->products_count );
 
             /**
-             * After feed generation action.
+             * Batch processing.
+             *
+             * If the batch size is less than the total number of published products, then we need to create a batch.
+             * The batching logic is from the legacy code base as it's has the batch size.
+             * We need to refactor this logic so it's not stupid.
              */
-            do_action( 'adt_after_product_feed_generation', $this->id, $offset, $batch_size );
+            if ( $this->total_products_processed >= $this->products_count || $batch_size >= $this->products_count ) { // End of processing.
+                // Set status to ready.
+                $this->status = 'ready';
 
+                // Set counters back to 0.
+                $this->total_products_processed = 0;
+                $this->batch_size               = 0;
+                $this->executed_from            = '';
+
+                // Set last updated date and time.
+                $this->last_updated = gmdate( 'd M Y H:i:s' );
+            }
+
+            // Save feed changes.
+            $this->save();
+
+            if ( 'ready' === $this->status ) {
+                $this->move_feed_file_to_final();
+
+                // Check the amount of products in the feed and update the history count.
+                as_schedule_single_action( time() + 1, ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS, array( 'feed_id' => $this->id ) );
+
+                /**
+                 * After feed generation action.
+                 */
+                do_action( 'adt_after_product_feed_generation', $this->id, $offset, $batch_size );
+
+                if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+                    wp_send_json_success(
+                        array(
+                            'feed_id'    => $this->id,
+                            'offset'     => $this->total_products_processed,
+                            'batch_size' => $batch_size,
+                            'status'     => $this->status,
+                        )
+                    );
+                }
+
+                return;
+            }
+
+            // Run next batch event via AJAX or cron.
             if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
                 wp_send_json_success(
                     array(
@@ -704,23 +724,58 @@ class Product_Feed {
                         'status'     => $this->status,
                     )
                 );
+            } else {
+                Cron::schedule_next_batch( $this->id, $this->total_products_processed, $batch_size );
+            }
+        } catch ( \Throwable $e ) {
+
+            // Log the error for debugging.
+            $logging = get_option( 'add_woosea_logging', 'no' );
+            if ( 'yes' === $logging ) {
+                // Build comprehensive error information.
+                $error_info  = array(
+                    'feed_id'         => $this->id,
+                    'feed_title'      => $this->title,
+                    'execution_date'  => gmdate( 'Y-m-d H:i:s' ),
+                    'context'         => $context,
+                    'offset'          => $offset,
+                    'batch_size'      => $batch_size,
+                    'error_message'   => $e->getMessage(),
+                    'error_code'      => $e->getCode(),
+                    'error_file'      => $e->getFile(),
+                    'error_line'      => $e->getLine(),
+                    'products_count'  => $this->products_count,
+                    'processed_count' => $this->total_products_processed,
+                    'channel'         => $this->channel,
+                    'file_format'     => $this->file_format,
+                );
+                $log_message = 'Product Feed Error: ' . print_r( $error_info, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+
+                $logger = new \WC_Logger();
+                $logger->add( 'Product Feed Pro by AdTribes.io', $log_message, 'error' );
             }
 
-            return;
-        }
+            // Set status to error.
+            $this->status = 'error';
 
-        // Run next batch event via AJAX or cron.
-        if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-            wp_send_json_success(
-                array(
-                    'feed_id'    => $this->id,
-                    'offset'     => $this->total_products_processed,
-                    'batch_size' => $batch_size,
-                    'status'     => $this->status,
-                )
-            );
-        } else {
-            Cron::schedule_next_batch( $this->id, $this->total_products_processed, $batch_size );
+            // Set counters back to 0.
+            $this->total_products_processed = 0;
+            $this->batch_size               = 0;
+            $this->executed_from            = '';
+
+            // Save feed changes.
+            $this->save();
+
+            // If this is an AJAX request, send back the error.
+            if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+                wp_send_json_error(
+                    array(
+                        'feed_id' => $this->id,
+                        'message' => $e->getMessage(),
+                        'status'  => $this->status,
+                    )
+                );
+            }
         }
     }
 

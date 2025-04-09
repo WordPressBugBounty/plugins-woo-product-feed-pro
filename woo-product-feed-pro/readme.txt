@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.7
-Stable tag: 13.4.2
+Stable tag: 13.4.3
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -385,6 +385,21 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.4.3 (2025-04-03) =
+* Bug Fix: Category options in filters/rules are not loaded when editing a feed that has it
+* Bug Fix: Deactivated feeds are enabled again on plugin activation
+* Bug Fix: Extra Attributes for CSV, TSV, and TXT shows "yes" on the last column instead of the product meta value
+* Bug Fix: Fatal error when using reviews option in filter
+* Bug Fix: Feed stuck when running scheduled action with table rate shipping plugin
+* Bug Fix: Stock status field fetches product quantity instead of stock status
+* Bug Fix: Manual feed refresh pauses if the Manage Feeds screen is inactive
+* Bug Fix: Not all shipping countries are included in the feed
+* Bug Fix: Remove unnecessary space from price when no currency code is set
+* Bug Fix: Rules for an empty option doesn't work properly
+* Bug Fix: Shipping class shipping cost is zero when variations are undefined
+* Improvement: Move "Remove products that did not have sales in the last days" to the general settings
+* Improvement: Throw error when feed generation fails
 
 = 13.4.2 (2025-03-11) =
 * Bug Fix: Custom Fields not showing in field mappings

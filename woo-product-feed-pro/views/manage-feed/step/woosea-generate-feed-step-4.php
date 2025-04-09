@@ -6,6 +6,8 @@ use AdTribes\PFP\Factories\Admin_Notice;
 use AdTribes\PFP\Classes\Product_Feed_Admin;
 use AdTribes\PFP\Classes\Product_Feed_Attributes;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
+use AdTribes\PFP\Classes\Filters;
+use AdTribes\PFP\Classes\Rules;
 
 /**
  * Change default footer text, asking to review our plugin.
@@ -24,6 +26,10 @@ function my_footer_text( $default ) {
     return $rating_link;
 }
 add_filter( 'admin_footer_text', 'my_footer_text' );
+
+// Instantiate the classes.
+$filters_instance = new Filters();
+$rules_instance   = new Rules();
 
 /**
  * Create product attribute object
@@ -183,343 +189,25 @@ do_action( 'adt_before_product_feed_manage_page', 4, $project_hash, $feed );
                     </tr>
                 </thead>
       
+                <tbody class="woo-product-feed-pro-body">
                 <?php
-                    print '<tbody class="woo-product-feed-pro-body">';
-                    if ( isset( $feed_filters ) ) {
-                        foreach ( $feed_filters as $rule_key => $rule_array ) {
-
-                            if ( isset( $feed_filters[ $rule_key ]['criteria'] ) ) {
-                                $criteria = $feed_filters[ $rule_key ]['criteria'];
-                            } else {
-                                $criteria = '';
-                            }
-                            ?>
-                            <tr class="rowCount">
-                                <td><input type="hidden" name="rules[<?php echo "$rule_key"; ?>][rowCount]" value="<?php echo "$rule_key"; ?>"><input type="checkbox" name="record" class="checkbox-field"></td>
-                                <td><i><?php esc_html_e( 'Filter', 'woo-product-feed-pro' ); ?></i></td>
-                                <td>
-                                    <select name="rules[<?php echo "$rule_key"; ?>][attribute]" class="select-field woo-sea-select2">
-                                        <option></option>
-                                        <?php
-                                        if ( ! empty( $attributes ) ) :
-                                            foreach ( $attributes as $group_name => $attribute ) :
-                                            ?>
-                                                <optgroup label='<?php echo esc_html( $group_name ); ?>'>
-                                                <?php
-                                                if ( ! empty( $attribute ) ) :
-                                                    foreach ( $attribute as $attr => $attr_label ) :
-                                                    ?>
-                                                        <option 
-                                                            value="<?php echo esc_attr( $attr ); ?>"
-                                                            <?php echo $feed_filters[ $rule_key ]['attribute'] === $attr ? 'selected' : ''; ?>
-                                                        >
-                                                            <?php echo esc_html( $attr_label ); ?>
-                                                        </option>
-                                                        <?php
-                                                    endforeach;
-                                                endif;
-                                            endforeach;
-                                        endif;
-                                        ?>
-                                    </select>
-                                </td>
-                                <td>
-                                    <select name="rules[<?php echo "$rule_key"; ?>][condition]" class="select-field woo-sea-select2">
-                                        <?php
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == 'contains' ) ) {
-                                            print '<option value="contains" selected>contains</option>';
-                                        } else {
-                                            print '<option value="contains">contains</option>';
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == 'containsnot' ) ) {
-                                            echo "<option value=\"containsnot\" selected>doesn't contain</option>";
-                                        } else {
-                                            echo "<option value=\"containsnot\">doesn't contain</option>";
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == '=' ) ) {
-                                            print '<option value="=" selected>is equal to</option>';
-                                        } else {
-                                            print '<option value="=">is equal to</option>';
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == '!=' ) ) {
-                                            print '<option value="!=" selected>is not equal to</option>';
-                                        } else {
-                                            print '<option value="!=">is not equal to</option>';
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == '>' ) ) {
-                                            print '<option value=">" selected>is greater than</option>';
-                                        } else {
-                                            print '<option value=">">is greater than</option>';
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == '>=' ) ) {
-                                            print '<option value=">=" selected>is greater or equal to</option>';
-                                        } else {
-                                            print '<option value=">=">is greater or equal to</option>';
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == '<' ) ) {
-                                            print '<option value="<" selected>is less than</option>';
-                                        } else {
-                                            print '<option value="<">is less than</option>';
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == '=<' ) ) {
-                                            print '<option value="=<" selected>is less or equal to</option>';
-                                        } else {
-                                            print '<option value="=<">is less or equal to</option>';
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == 'empty' ) ) {
-                                            print '<option value="empty" selected>is empty</option>';
-                                        } else {
-                                            print '<option value="empty">is empty</option>';
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['condition'] ) && ( $feed_filters[ $rule_key ]['condition'] == 'notempty' ) ) {
-                                            print '<option value="notempty" selected>is not empty</option>';
-                                        } else {
-                                            print '<option value="notempty">is not empty</option>';
-                                        }
-                                        ?>
-                                    </select>   
-                                </td>
-                                <td>
-                                    <div style="display: block;">
-                                        <input type="text" id="rulevalue" name="rules[<?php echo "$rule_key"; ?>][criteria]" class="input-field-large" value='<?php print $criteria; ?>'>
-                                    </div>
-                                </td>
-                                <td>
-                                    <?php
-                                    if ( isset( $feed_filters[ $rule_key ]['cs'] ) ) {
-                                        echo "<input type=\"checkbox\" name=\"rules[$rule_key][cs]\" class=\"checkbox-field\" alt=\"Case sensitive\" checked>";
-                                    } else {
-                                        echo "<input type=\"checkbox\" name=\"rules[$rule_key][cs]\" class=\"checkbox-field\" alt=\"Case sensitive\">";
-                                    }
-                                    ?>
-                                </td>
-                                <td>
-                                    <select name="rules[<?php echo "$rule_key"; ?>][than]" class="select-field">
-                                        <optgroup label='Action'>Action:
-                                        <?php
-                                        if ( isset( $feed_filters[ $rule_key ]['than'] ) && ( $feed_filters[ $rule_key ]['than'] == 'exclude' ) ) {
-                                            print '<option value="exclude" selected> Exclude</option>';
-                                        } else {
-                                            print '<option value="exclude"> Exclude</option>';
-                                        }
-
-                                        if ( isset( $feed_filters[ $rule_key ]['than'] ) && ( $feed_filters[ $rule_key ]['than'] == 'include_only' ) ) {
-                                            print '<option value="include_only" selected> Include only</option>';
-                                        } else {
-                                            print '<option value="include_only"> Include only</option>';
-                                        }
-                                        ?>
-                                        </optgroup>
-                                    </select>
-                                </td>
-                                <td>&nbsp;</td>
-                            </tr>
-                        <?php
-                        }
+                // FILTERS SECTION
+                if ( isset( $feed_filters ) && is_array( $feed_filters ) ) {
+                    foreach ( $feed_filters as $rule_key => $filter_data ) {
+                        // Use the template method to generate the filter row HTML
+                        echo $filters_instance->get_filter_template( $rule_key, $attributes, $filter_data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                     }
+                }
 
-                    // RULES SECTION
-                    if ( isset( $feed_rules ) ) {
-
-                        foreach ( $feed_rules as $rule2_key => $rule2_array ) {
-
-                            if ( isset( $feed_rules[ $rule2_key ]['criteria'] ) ) {
-                                $criteria = $feed_rules[ $rule2_key ]['criteria'];
-                            } else {
-                                $criteria = '';
-                            }
-                            if ( isset( $feed_rules[ $rule2_key ]['newvalue'] ) ) {
-                                $newvalue = $feed_rules[ $rule2_key ]['newvalue'];
-                            } else {
-                                $newvalue = '';
-                            }
-                            ?>
-                                <tr class="rowCount">
-                                    <td><input type="hidden" name="rules2[<?php echo "$rule2_key"; ?>][rowCount]" value="<?php echo "$rule2_key"; ?>"><input type="checkbox" name="record" class="checkbox-field"></td>
-                                    <td><i><?php esc_html_e( 'Rule', 'woo-product-feed-pro' ); ?></i></td>
-                                <td>
-                                <select name="rules2[<?php echo "$rule2_key"; ?>][attribute]" class="select-field woo-sea-select2">
-                                    <option></option>
-                                    <?php
-                                    if ( ! empty( $attributes ) ) :
-                                        foreach ( $attributes as $group_name => $attribute ) :
-                                        ?>
-                                            <optgroup label='<?php echo esc_html( $group_name ); ?>'>
-                                            <?php
-                                            if ( ! empty( $attribute ) ) :
-                                                foreach ( $attribute as $attr => $attr_label ) :
-                                                ?>
-                                                    <option 
-                                                        value="<?php echo esc_attr( $attr ); ?>"
-                                                        <?php echo $feed_rules[ $rule2_key ]['attribute'] === $attr ? 'selected' : ''; ?>
-                                                    >
-                                                        <?php echo esc_html( $attr_label ); ?>
-                                                    </option>
-                                                    <?php
-                                                endforeach;
-                                            endif;
-                                        endforeach;
-                                    endif;
-                                    ?>
-                                </select>
-                                </td>
-                                <td>
-                                    <select name="rules2[<?php echo "$rule2_key"; ?>][condition]" class="select-field woo-sea-select2">
-                                        <?php
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == 'contains' ) ) {
-                                            print '<option value="contains" selected>contains</option>';
-                                        } else {
-                                            print '<option value="contains">contains</option>';
-                                        }
-
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == 'containsnot' ) ) {
-                                            echo "<option value=\"containsnot\" selected>doesn't contain</option>";
-                                        } else {
-                                            echo "<option value=\"containsnot\">doesn't contain</option>";
-                                        }
-
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == '=' ) ) {
-                                            print '<option value="=" selected>is equal to</option>';
-                                        } else {
-                                            print '<option value="=">is equal to</option>';
-                                        }
-
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == '!=' ) ) {
-                                            print '<option value="!=" selected>is not equal to</option>';
-                                        } else {
-                                            print '<option value="!=">is not equal to</option>';
-                                        }
-
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == '>' ) ) {
-                                            print '<option value=">" selected>is greater than</option>';
-                                        } else {
-                                            print '<option value=">">is greater than</option>';
-                                        }
-
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == '>=' ) ) {
-                                            print '<option value=">=" selected>is greater or equal to</option>';
-                                        } else {
-                                            print '<option value=">=">is greater or equal to</option>';
-                                        }
-
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == '<' ) ) {
-                                            print '<option value="<" selected>is less than</option>';
-                                        } else {
-                                            print '<option value="<">is less than</option>';
-                                        }
-
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == '=<' ) ) {
-                                            print '<option value="=<" selected>is less or equal to</option>';
-                                        } else {
-                                            print '<option value="=<">is less or equal to</option>';
-                                        }
-
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == 'empty' ) ) {
-                                            print '<option value="empty" selected>is empty</option>';
-                                        } else {
-                                            print '<option value="empty">is empty</option>';
-                                        }
-
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == 'notempty' ) ) {
-                                            print '<option value="notempty" selected>is not empty</option>';
-                                        } else {
-                                            print '<option value="notempty">is not empty</option>';
-                                        }
-
-                                        // Data manipulators
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == 'multiply' ) ) {
-                                            print '<option value="multiply" selected>multiply</option>';
-                                        } else {
-                                            print '<option value="multiply">multiply</option>';
-                                        }
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == 'divide' ) ) {
-                                            print '<option value="divide" selected>divide</option>';
-                                        } else {
-                                            print '<option value="divide">divide</option>';
-                                        }
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == 'plus' ) ) {
-                                            print '<option value="plus" selected>plus</option>';
-                                        } else {
-                                            print '<option value="plus">plus</option>';
-                                        }
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == 'minus' ) ) {
-                                            print '<option value="minus" selected>minus</option>';
-                                        } else {
-                                            print '<option value="minus">minus</option>';
-                                        }
-                                        if ( isset( $feed_rules[ $rule2_key ]['condition'] ) && ( $feed_rules[ $rule2_key ]['condition'] == 'findreplace' ) ) {
-                                            print '<option value="findreplace" selected>find and replace</option>';
-                                        } else {
-                                            print '<option value="findreplace">find and replace</option>';
-                                        }
-                                        ?>
-                                    </select>   
-                                </td>
-                                <td>
-                                    <div style="display: block;">
-                                        <input type="text" id="rulevalue" name="rules2[<?php echo "$rule2_key"; ?>][criteria]" class="input-field-large" value='<?php print $criteria; ?>'>
-                                    </div>
-                                </td>
-                                <?php
-                                    $manipulators = array( 'multiply', 'divide', 'plus', 'minus' );
-                                    if ( in_array( $feed_rules[ $rule2_key ]['condition'], $manipulators, true ) ) {
-                                        print '<td colspan=3></td>';
-                                    } else {
-                                    ?>
-                                    <td>
-                                        <?php
-                                        if ( isset( $feed_rules[ $rule2_key ]['cs'] ) ) {
-                                            echo "<input type=\"checkbox\" name=\"rules2[$rule2_key][cs]\" class=\"checkbox-field\" alt=\"Case sensitive\" checked>";
-                                        } else {
-                                            echo "<input type=\"checkbox\" name=\"rules2[$rule2_key][cs]\" class=\"checkbox-field\" alt=\"Case sensitive\">";
-                                        }
-                                        ?>
-                                    </td>
-                                    <td>
-                                        <select name="rules2[<?php echo "$rule2_key"; ?>][than_attribute]" class="select-field woo-sea-select2" style="width:300px;">
-                                            <option></option>
-                                            <?php
-                                            if ( ! empty( $attributes ) ) :
-                                                foreach ( $attributes as $group_name => $attribute ) :
-                                                ?>
-                                                    <optgroup label='<?php echo esc_html( $group_name ); ?>'>
-                                                    <?php
-                                                    if ( ! empty( $attribute ) ) :
-                                                        foreach ( $attribute as $attr => $attr_label ) :
-                                                        ?>
-                                                            <option 
-                                                                value="<?php echo esc_attr( $attr ); ?>"
-                                                                <?php echo $feed_rules[ $rule2_key ]['than_attribute'] === $attr ? 'selected' : ''; ?>
-                                                            >
-                                                                <?php echo esc_html( $attr_label ); ?>
-                                                            </option>
-                                                            <?php
-                                                        endforeach;
-                                                    endif;
-                                                endforeach;
-                                            endif;
-                                            ?>
-                                        </select>
-                                    </td>
-                                    <td><input type="text" name="rules2[<?php echo "$rule2_key"; ?>][newvalue]" class="input-field-large" value="<?php echo "$newvalue"; ?>"></td>
-                                <?php
-                                    }
-                                ?>
-                            </tr>
-                        <?php
-                        }
+                // RULES SECTION
+                if ( isset( $feed_rules ) && is_array( $feed_rules ) ) {
+                    foreach ( $feed_rules as $rule2_key => $rule_data ) {
+                        // Use the template method to generate the rule row HTML
+                        echo $rules_instance->get_rule_template( $rule2_key, $attributes, $rule_data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                     }
-                    print '</tbody>';
+                }
                 ?>
+                </tbody>
                 <tbody>
                 <tr class="rules-buttons">
                     <td colspan="8">
