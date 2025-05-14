@@ -42,6 +42,19 @@ class WWPP extends Abstract_Class {
     public function exclude_restricted_wholesale_products( $product_data, $feed, $product ) {
         // Check if product is restricted to wholesale customers.
         if ( ! empty( $product_data ) ) {
+            if ( $product->get_type() === 'variation' ) {
+                $parent_product = wc_get_product( $product->get_parent_id() );
+                if ( $parent_product ) {
+                    $wwpp_parent_product_wholesale_visibility_filter = $parent_product->get_meta( 'wwpp_product_wholesale_visibility_filter', false );
+                    if ( is_array( $wwpp_parent_product_wholesale_visibility_filter ) && ! empty( $wwpp_parent_product_wholesale_visibility_filter ) ) {
+                        $wwpp_parent_product_wholesale_visibility_filter = wp_list_pluck( $wwpp_parent_product_wholesale_visibility_filter, 'value' );
+                        if ( ! in_array( 'all', $wwpp_parent_product_wholesale_visibility_filter, true ) ) {
+                            $product_data = array();
+                        }
+                    }
+                }
+            }
+
             $wwpp_product_wholesale_visibility_filter = $product->get_meta( 'wwpp_product_wholesale_visibility_filter', false );
             if ( is_array( $wwpp_product_wholesale_visibility_filter ) && ! empty( $wwpp_product_wholesale_visibility_filter ) ) {
                 $wwpp_product_wholesale_visibility_filter = wp_list_pluck( $wwpp_product_wholesale_visibility_filter, 'value' );

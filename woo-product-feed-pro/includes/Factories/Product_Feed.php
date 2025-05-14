@@ -174,7 +174,7 @@ class Product_Feed {
     public function __set( $key, $value ) {
         if ( array_key_exists( $key, $this->data ) ) {
             $this->data[ $key ] = $value;
-        } elseif ( in_array( $key, array( 'title', 'post_status' ), true ) ) {
+        } elseif ( in_array( $key, array( 'id', 'title', 'post_status' ), true ) ) {
             $this->$key = $value;
         } else {
             // Handle the case where the property does not exist.
@@ -224,7 +224,7 @@ class Product_Feed {
                 $value = absint( $value );
             }
             $this->data[ $prop ] = $value;
-        } elseif ( in_array( $prop, array( 'title', 'post_status' ), true ) ) {
+        } elseif ( in_array( $prop, array( 'id', 'title', 'post_status' ), true ) ) {
             $this->$prop = $value;
         } else {
             throw new \Exception( 'Trying to set unknown property ' . esc_html( $prop ) . ' on Product_Feed instance.' );
@@ -352,6 +352,7 @@ class Product_Feed {
     public function load() {
         $post = get_post( $this->id );
         if ( ! $post instanceof \WP_Post ) {
+            $this->id = 0;
             return false;
         }
 
@@ -581,7 +582,7 @@ class Product_Feed {
      * @return string
      */
     public function get_legacy_country() {
-        $legacy_countries = include WOOCOMMERCESEA_PATH . 'includes/I18n/legacy_countries.php';
+        $legacy_countries = include ADT_PFP_PLUGIN_DIR_PATH . 'includes/I18n/legacy_countries.php';
         return $legacy_countries[ $this->country ] ?? '';
     }
 

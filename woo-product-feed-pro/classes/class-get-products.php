@@ -39,19 +39,27 @@ class WooSEA_Get_Products {
             // Remove script and style tags and their content from the string.
             $string = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $string );
 
+            // Strip out Visual Composer raw HTML shortcodes
+            $string = preg_replace( '/\[vc_raw_html.*\[\/vc_raw_html\]/', '', $string );
+
             // Replace tags by space rather than deleting them, first we add a space before the tag, then we strip the tags.
             // This is to prevent words from sticking together.
             $string = str_replace('<', ' <', $string);
 
             // Remove shortcodes from the string.
             $string = do_shortcode( $string );
+
+            // Remove any remaining shortcodes if any.
+            $string = preg_replace( '/\[(.*?)\]/', ' ', $string );
             
             // Remove tags from the string.
             $string = strip_tags( $string );
+
+            // Convert special characters.
             $string = htmlentities( $string, ENT_QUOTES | ENT_SUBSTITUTE | ENT_XML1, 'UTF-8', false );
 
-            // Remove new line breaks.
-            $string = str_replace( array( "\r", "\n" ), '', $string );
+            // Remove new line breaks and non-breaking spaces
+            $string = str_replace( array( "\r", "\n", '&#xa0;' ), '', $string );
         }
         return $string;
     }
@@ -1305,6 +1313,12 @@ class WooSEA_Get_Products {
                                                         }
                                                     }
                                                 }
+
+                                                // Process other attributes that are not in identifiers or proper_order.
+                                                // This is additional/optional attributes, these attributes are for review child nodes.
+                                                if ( ! in_array( $k, $identifiers ) && ! in_array( $k, $proper_order ) ) {
+                                                    $productz->$k = $v;
+                                                }
                                             }
                                         }
                                     }
@@ -1999,10 +2013,17 @@ class WooSEA_Get_Products {
 
         unset( $prods );
 
+        // If we are creating a preview, limit the number of products to 5.
+        if ( $feed->create_preview ) {
+            $posts_per_page = apply_filters( 'adt_product_feed_preview_products', 5, $feed );
+        } else {
+            $posts_per_page = $batch_size;
+        }
+
         // Construct WP query
         $wp_query = array(
             'post_type'              => $post_type,
-            'posts_per_page'         => $batch_size,
+            'posts_per_page'         => $posts_per_page,
             'offset'                 => $offset,
             'post_status'            => 'publish',
             'orderby'                => 'date',
@@ -2307,40 +2328,61 @@ class WooSEA_Get_Products {
             $product_data['category_link']       = implode( '||', $catlink );
             $product_data['raw_categories']      = implode( '||', $catname );
             $product_data['categories']          = implode( '||', $catname );
+            
+            // Product Description.
+            $product_description = $product->get_description();
+            $product_short_description = $product->get_short_description();
+            $parent_product_description = is_object( $parent_product ) && method_exists( $parent_product, 'get_description' ) ? $parent_product->get_description() : '';
+            $parent_product_short_description = is_object( $parent_product ) && method_exists( $parent_product, 'get_short_description' ) ? $parent_product->get_short_description() : '';
+
+            $combined_description = $product_description;
+            $combined_short_description = $product_short_description;
+
+            if ( 'variation' === $product->get_type() ) {
+                $combined_description = '' !== $parent_product_description ? $parent_product_description . ' ' . $product_description : $product_description;
+                $combined_short_description = '' !== $parent_product_short_description ? $parent_product_short_description . ' ' . $product_short_description : $product_short_description;
+            }
 
             // Raw descriptions, unfiltered
-            $product_data['raw_description']       = do_shortcode( wpautop( $product->get_description() ) );
-            $product_data['raw_short_description'] = do_shortcode( wpautop( $product->get_short_description() ) );
-            $product_data['description']           = $this->woosea_sanitize_html( $product->get_description() );
-            $product_data['short_description']     = $this->woosea_sanitize_html( $product->get_short_description() );
+            $product_data['raw_description']       = do_shortcode( wpautop( $combined_description ) );
+            $product_data['raw_short_description'] = do_shortcode( wpautop( $combined_short_description ) );
+            $product_data['raw_parent_description'] = do_shortcode( wpautop( $parent_product_description ) );
+            $product_data['raw_parent_short_description'] = do_shortcode( wpautop( $parent_product_short_description ) );
+            $product_data['raw_variation_description'] = do_shortcode( wpautop( $product_description ) );
+            $product_data['raw_variation_short_description'] = do_shortcode( wpautop( $product_short_description ) );
 
-            // Strip out Visual Composer short codes, including the Visual Composer Raw HTML
-            $product_data['description']       = preg_replace( '/\[vc_raw_html.*\[\/vc_raw_html\]/', '', $product_data['description'] );
-            $product_data['description']       = preg_replace( '/\[(.*?)\]/', ' ', $product_data['description'] );
-            $product_data['short_description'] = preg_replace( '/\[vc_raw_html.*\[\/vc_raw_html\]/', '', $product_data['short_description'] );
-            $product_data['short_description'] = preg_replace( '/\[(.*?)\]/', ' ', $product_data['short_description'] );
-
-            // Strip out the non-line-brake character
-            $product_data['description']       = str_replace( '&#xa0;', '', $product_data['description'] );
-            $product_data['short_description'] = str_replace( '&#xa0;', '', $product_data['short_description'] );
+            // Sanitize descriptions
+            $product_data['description']              = $this->woosea_sanitize_html( $combined_description );
+            $product_data['short_description']        = $this->woosea_sanitize_html( $combined_short_description );
+            $product_data['mother_description']       = $this->woosea_sanitize_html( $parent_product_description );
+            $product_data['mother_short_description'] = $this->woosea_sanitize_html( $parent_product_short_description );
+            $product_data['variation_description']    = $this->woosea_sanitize_html( $product_description );
+            $product_data['variation_short_description'] = $this->woosea_sanitize_html( $product_short_description );
 
             // Strip strange UTF chars
             $product_data['description']       = trim( $this->woosea_utf8_for_xml( $product_data['description'] ) );
             $product_data['short_description'] = trim( $this->woosea_utf8_for_xml( $product_data['short_description'] ) );
+            $product_data['mother_description'] = trim( $this->woosea_utf8_for_xml( $product_data['mother_description'] ) );
+            $product_data['mother_short_description'] = trim( $this->woosea_utf8_for_xml( $product_data['mother_short_description'] ) );
+            $product_data['variation_description'] = trim( $this->woosea_utf8_for_xml( $product_data['variation_description'] ) );
+            $product_data['variation_short_description'] = trim( $this->woosea_utf8_for_xml( $product_data['variation_short_description'] ) );
 
             // Truncate description on 5000 characters for Google Shopping
             if ( $feed_channel['fields'] == 'google_shopping' ) {
                 $product_data['description']       = mb_substr( $product_data['description'], 0, 5000 );
                 $product_data['short_description'] = mb_substr( $product_data['short_description'], 0, 5000 );
+                $product_data['mother_description'] = mb_substr( $product_data['mother_description'], 0, 5000 );
+                $product_data['mother_short_description'] = mb_substr( $product_data['mother_short_description'], 0, 5000 );
+                $product_data['variation_description'] = mb_substr( $product_data['variation_description'], 0, 5000 );
+                $product_data['variation_short_description'] = mb_substr( $product_data['variation_short_description'], 0, 5000 );
+
+                $product_data['raw_description']       = mb_substr( $product_data['raw_description'], 0, 5000 );
+                $product_data['raw_short_description'] = mb_substr( $product_data['raw_short_description'], 0, 5000 );
+                $product_data['raw_parent_description'] = mb_substr( $product_data['raw_parent_description'], 0, 5000 );
+                $product_data['raw_parent_short_description'] = mb_substr( $product_data['raw_parent_short_description'], 0, 5000 );
+                $product_data['raw_variation_description'] = mb_substr( $product_data['raw_variation_description'], 0, 5000 );
+                $product_data['raw_variation_short_description'] = mb_substr( $product_data['raw_variation_short_description'], 0, 5000 );
             }
-
-            // Truncate to maximum 5000 characters
-            $product_data['raw_description']       = mb_substr( $product_data['raw_description'], 0, 5000 );
-            $product_data['raw_short_description'] = mb_substr( $product_data['raw_short_description'], 0, 5000 );
-
-            // Parent variable description
-            $product_data['mother_description']       = $parent_product ? $this->woosea_sanitize_html( $parent_product->get_description() ) : $product_data['description'];
-            $product_data['mother_short_description'] = $parent_product ? $this->woosea_sanitize_html( $parent_product->get_short_description() ) : $product_data['short_description'];
 
             /**
              * Check of we need to add Google Analytics UTM parameters
@@ -2558,11 +2600,15 @@ class WooSEA_Get_Products {
             if ( $product_data['product_type'] == 'variation' ) {
                 $product_data['content_type'] = 'product_group';
             }
-            $product_data['rating_total']   = $product->get_rating_count();
-            $product_data['rating_average'] = $product->get_average_rating();
+
+            $rating_count = $product->get_rating_count();
+            if ( $rating_count > 1 ) {
+                $product_data['rating_total']   = $rating_count;
+                $product_data['rating_average'] = $product->get_average_rating();
+            }
 
             // When a product has no reviews than remove the 0 rating
-            if ( $product_data['rating_average'] == 0 ) {
+            if ( isset( $product_data['rating_average'] ) && $product_data['rating_average'] == 0 ) {
                 unset( $product_data['rating_average'] );
             }
 
@@ -3322,29 +3368,7 @@ class WooSEA_Get_Products {
                 }
 
                 $append = '';
-
-                $variable_description       = get_post_meta( $product_data['id'], '_variation_description', true );
                 $product_data['parent_sku'] = get_post_meta( $product_data['item_group_id'], '_sku', true );
-
-                /**
-                 * When there is a specific description for a variation product than override the description of the mother product
-                 */
-                if ( ! empty( $variable_description ) ) {
-                    $product_data['description'] = $this->woosea_sanitize_html( $variable_description );
-                    // $product_data['short_description'] = html_entity_decode((str_replace("\r", "", $variable_description)), ENT_QUOTES | ENT_XML1, 'UTF-8');
-
-                    // Strip out Visual Composer short codes
-                    $product_data['description'] = preg_replace( '/\[(.*?)\]/', ' ', $product_data['description'] );
-                    // $product_data['short_description'] = preg_replace( '/\[(.*?)\]/', ' ', $product_data['short_description'] );
-
-                    // Strip out the non-line-brake character
-                    $product_data['description'] = str_replace( '&#xa0;', '', $product_data['description'] );
-                    // $product_data['short_description'] = str_replace("&#xa0;", "", $product_data['short_description']);
-
-                    // Strip unwanted UTF8 chars
-                    $product_data['description'] = $this->woosea_utf8_for_xml( $product_data['description'] );
-                    // $product_data['short_description'] = $this->woosea_utf8_for_xml( $product_data['short_description'] );
-                }
 
                 /**
                  * Add the product visibility values for variations based on the simple mother product

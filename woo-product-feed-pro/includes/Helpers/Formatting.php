@@ -104,7 +104,7 @@ class Formatting {
      */
     public static function format_date( $date, $feed = null ) {
         if ( is_string( $date ) ) {
-            $date = new \DateTime( $date, new \DateTimeZone( 'UTC' ) );
+            $date = new \WC_DateTime( $date, new \DateTimeZone( 'UTC' ) );
         }
 
         if ( ! is_a( $date, 'WC_DateTime' ) ) {
@@ -165,5 +165,52 @@ class Formatting {
         }
 
         return $date->__toString();
+    }
+
+    /**
+     * Format refresh interval.
+     *
+     * @since 13.4.1
+     * @access public
+     *
+     * @param string $interval The interval to format.
+     * @return string
+     */
+    public static function format_refresh_interval( $interval ) {
+        $intervals = array(
+            'daily'   => __( 'Daily', 'woo-product-feed-pro' ),
+            'weekly'  => __( 'Weekly', 'woo-product-feed-pro' ),
+            'monthly' => __( 'Monthly', 'woo-product-feed-pro' ),
+        );
+
+        return $intervals[ $interval ] ?? __( 'No Refresh', 'woo-product-feed-pro' );
+    }
+
+    /**
+     * Get feed status label.
+     *
+     * @since 13.4.1
+     * @access public
+     *
+     * @param Product_Feed $feed The feed object.
+     * @return string
+     */
+    public static function get_feed_status_label( $feed ) {
+        if ( 'publish' !== $feed->post_status ) {
+            return __( 'Inactive', 'woo-product-feed-pro' );
+        }
+
+        switch ( $feed->status ) {
+            case 'ready':
+                return __( 'Ready', 'woo-product-feed-pro' );
+            case 'processing':
+                return __( 'Processing', 'woo-product-feed-pro' );
+            case 'error':
+                return __( 'Error', 'woo-product-feed-pro' );
+            case 'stopped':
+                return __( 'Stopped', 'woo-product-feed-pro' );
+            default:
+                return __( 'Unknown', 'woo-product-feed-pro' );
+        }
     }
 }

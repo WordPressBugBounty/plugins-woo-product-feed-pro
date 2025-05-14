@@ -74,7 +74,7 @@ class Plugin_Installer extends Abstract_Class {
      */
     public function enqueue_plugin_installer_scripts( $hook ) {
         if ( 'product-feed-pro_page_pfp-about-page' === $hook ) {
-            wp_enqueue_script( 'pfp-about-page-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/pfp-plugin-installer.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_enqueue_script( 'pfp-about-page-js', ADT_PFP_JS_URL . 'pfp-plugin-installer.js', array( 'jquery' ), ADT_PFP_OPTION_INSTALLED_VERSION, true );
         }
     }
 

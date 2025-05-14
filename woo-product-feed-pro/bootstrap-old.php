@@ -647,7 +647,7 @@ add_action( 'wp_ajax_woosea_getelite_active_notification', 'woosea_getelite_acti
  * Add some JS and mark-up code on every front-end page in order to get the conversion tracking to work.
  */
 function woosea_hook_header() {
-    $marker       = sprintf( '<!-- This website runs the Product Feed PRO for WooCommerce by AdTribes.io plugin - version ' . WOOCOMMERCESEA_PLUGIN_VERSION . ' -->' );
+    $marker       = sprintf( '<!-- This website runs the Product Feed PRO for WooCommerce by AdTribes.io plugin - version ' . ADT_PFP_OPTION_INSTALLED_VERSION . ' -->' );
     $allowed_tags = array(
         '<!--' => array(),
         '-->'  => array(),
@@ -679,6 +679,12 @@ function woosea_categories_dropdown() {
 
     if ( Helper::is_current_user_allowed() ) {
         $feed_id = absint( esc_attr( sanitize_text_field( $_POST['feed_id'] ) ) );
+        $value = sanitize_text_field( $_POST['value'] ?? '' );
+
+        // Filters is called rules in the old version.
+        // Rules is called rules2 in the old version. It is what it is.
+        $type = sanitize_text_field( $_POST['type'] ?? '' );
+        $type = $type === 'filter' ? 'rules' : 'rules2';
 
         /**
          * Filter the arguments for the product categories dropdown.
@@ -708,9 +714,14 @@ function woosea_categories_dropdown() {
          */
         $product_categories = apply_filters( 'adt_pfp_get_categories_dropdown', get_terms( $cat_args ), $cat_args, $feed_id );
         
-        $categories_dropdown = "<select name=\"rules[$rowCount][criteria]\">";
+        $categories_dropdown = "<select name=\"" . esc_attr($type) . "[" . esc_attr($rowCount) . "][criteria]\">";
         foreach ( $product_categories as $key => $category ) {
-            $categories_dropdown .= "<option value=\"$category->name\">$category->name ($category->slug)</option>";
+            /**
+             * Before 13.4.4 the value was the category name. Now it is the category slug.
+             * For backwards compatibility we also need to check for the category name.
+             */
+            $selected = ($value === $category->slug || $value === $category->name) ? 'selected' : '';
+            $categories_dropdown .= "<option value=\"" . esc_attr($category->slug) . "\" $selected>" . esc_html($category->name) . " (" . esc_html($category->slug) . ")</option>";
         }
         $categories_dropdown .= '</select>';
 

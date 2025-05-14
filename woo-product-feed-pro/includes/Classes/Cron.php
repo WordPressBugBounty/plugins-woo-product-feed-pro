@@ -182,7 +182,7 @@ class Cron extends Abstract_Class {
      **/
     public function as_product_feed_update_stats( $feed_id ) {
         $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( ! $feed->id ) {
+        if ( ! $feed ) {
             return;
         }
 

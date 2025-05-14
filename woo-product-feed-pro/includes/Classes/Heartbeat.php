@@ -40,7 +40,7 @@ class Heartbeat extends Abstract_Class {
      * @return void
      */
     public function ajax_get_product_feed_processing_status() {
-        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
+        if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'adt_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -48,15 +48,15 @@ class Heartbeat extends Abstract_Class {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
-        if ( ! isset( $_POST['project_hashes'] ) || ! is_array( $_POST['project_hashes'] ) ) {
+        if ( ! isset( $_POST['feed_ids'] ) || ! is_array( $_POST['feed_ids'] ) ) {
             wp_send_json_error( __( 'Invalid request.', 'woo-product-feed-pro' ) );
         }
 
-        $project_hashes = array_map( 'sanitize_text_field', $_POST['project_hashes'] );
-        $response       = array();
+        $feed_ids = array_map( 'sanitize_text_field', $_POST['feed_ids'] );
+        $response = array();
 
-        foreach ( $project_hashes as $project_hash ) {
-            $feed = Product_Feed_Helper::get_product_feed( $project_hash );
+        foreach ( $feed_ids as $feed_id ) {
+            $feed = Product_Feed_Helper::get_product_feed( $feed_id );
 
             if ( ! $feed->id ) {
                 continue;
@@ -69,12 +69,13 @@ class Heartbeat extends Abstract_Class {
 
             $response[] = array(
                 'feed_id'       => $feed->id,
-                'hash'          => $project_hash,
                 'status'        => $feed->status,
                 'executed_from' => $feed->executed_from,
                 'offset'        => $feed->total_products_processed,
                 'batch_size'    => $feed->batch_size,
                 'proc_perc'     => $proc_perc,
+                'last_updated'  => \AdTribes\PFP\Helpers\Formatting::format_date( $feed->last_updated ),
+                'feed_url_html' => Product_Feed_Helper::get_feed_url_html( $feed ),
             );
         }
 
@@ -193,7 +194,7 @@ class Heartbeat extends Abstract_Class {
      * @since 13.3.5
      */
     public function run() {
-        add_action( 'wp_ajax_woosea_project_processing_status', array( $this, 'ajax_get_product_feed_processing_status' ) );
+        add_action( 'wp_ajax_adt_get_feed_processing_status', array( $this, 'ajax_get_product_feed_processing_status' ) );
 
         add_action( 'wp_ajax_adt_pfp_generate_product_feed', array( $this, 'ajax_generate_product_feed' ) );
     }

@@ -8,6 +8,8 @@
 
 namespace AdTribes\PFP\Traits;
 
+use AdTribes\PFP\Helpers\Helper;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -28,21 +30,27 @@ trait Filters_Rules_Trait {
         $criteria           = isset( $filter_data['criteria'] ) ? $filter_data['criteria'] : '';
         $condition          = isset( $filter_data['condition'] ) ? $filter_data['condition'] : '';
         $than               = isset( $filter_data['than'] ) ? $filter_data['than'] : '';
-        $is_case_sensitive  = isset( $filter_data['cs'] ) ? $filter_data['cs'] : false;
+        $is_case_sensitive  = isset( $filter_data['cs'] ) && 'on' === $filter_data['cs'] ? true : false;
         $selected_attribute = isset( $filter_data['attribute'] ) ? $filter_data['attribute'] : '';
-
-        // Get the template path.
-        $template_path = WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'filters-rules/view-filter-row.php';
-
-        // Only process if the file exists.
-        if ( ! file_exists( $template_path ) ) {
-            return '';
-        }
 
         // Use output buffering with an include to ensure the PHP is processed
         // and variables are available.
         ob_start();
-        require $template_path;
+        Helper::locate_admin_template(
+            'filters-rules/filter-row.php',
+            true,
+            false,
+            array(
+                'row_count'          => $row_count,
+                'attributes'         => $attributes,
+                'filter_data'        => $filter_data,
+                'criteria'           => $criteria,
+                'condition'          => $condition,
+                'than'               => $than,
+                'is_case_sensitive'  => $is_case_sensitive,
+                'selected_attribute' => $selected_attribute,
+            )
+        );
         return ob_get_clean();
     }
 
@@ -59,22 +67,29 @@ trait Filters_Rules_Trait {
         $criteria           = isset( $rule_data['criteria'] ) ? $rule_data['criteria'] : '';
         $condition          = isset( $rule_data['condition'] ) ? $rule_data['condition'] : '';
         $new_value          = isset( $rule_data['newvalue'] ) ? $rule_data['newvalue'] : '';
-        $is_case_sensitive  = isset( $rule_data['cs'] ) ? $rule_data['cs'] : false;
+        $is_case_sensitive  = isset( $rule_data['cs'] ) && 'on' === $rule_data['cs'] ? true : false;
         $selected_attribute = isset( $rule_data['attribute'] ) ? $rule_data['attribute'] : '';
         $than_attribute     = isset( $rule_data['than_attribute'] ) ? $rule_data['than_attribute'] : '';
-
-        // Get the template path.
-        $template_path = WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'filters-rules/view-rule-row.php';
-
-        // Only process if the file exists.
-        if ( ! file_exists( $template_path ) ) {
-            return '';
-        }
 
         // Use output buffering with an include to ensure the PHP is processed
         // and variables are available.
         ob_start();
-        require $template_path;
+        Helper::locate_admin_template(
+            'filters-rules/rule-row.php',
+            true,
+            false,
+            array(
+                'row_count'          => $row_count,
+                'attributes'         => $attributes,
+                'rule_data'          => $rule_data,
+                'criteria'           => $criteria,
+                'condition'          => $condition,
+                'new_value'          => $new_value,
+                'is_case_sensitive'  => $is_case_sensitive,
+                'selected_attribute' => $selected_attribute,
+                'than_attribute'     => $than_attribute,
+            )
+        );
         return ob_get_clean();
     }
 

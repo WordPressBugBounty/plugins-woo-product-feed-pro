@@ -15,7 +15,7 @@ use AdTribes\PFP\Traits\Singleton_Trait;
 
 defined( 'ABSPATH' ) || exit;
 
-require_once WOOCOMMERCESEA_PATH . 'includes/autoload.php';
+require_once ADT_PFP_PLUGIN_DIR_PATH . 'includes/autoload.php';
 
 /**
  * Class App
@@ -65,14 +65,14 @@ class App {
         // Added support for WooCommerce HPOS (High-Performnce Order Storage).
         add_action( 'before_woocommerce_init', array( $this, 'hpos_compatibility' ) );
 
-        register_deactivation_hook( WOOCOMMERCESEA_FILE, array( $this, 'deactivation_actions' ) );
+        register_deactivation_hook( ADT_PFP_PLUGIN_FILE, array( $this, 'deactivation_actions' ) );
 
         // Check plugin dependencies.
         if ( ! $this->_check_dependencies() ) {
             return;
         }
 
-        register_activation_hook( WOOCOMMERCESEA_FILE, array( $this, 'activation_actions' ) );
+        register_activation_hook( ADT_PFP_PLUGIN_FILE, array( $this, 'activation_actions' ) );
 
         // Execute codes that need to run on 'init' hook.
         add_action( 'init', array( $this, 'initialize' ) );
@@ -125,7 +125,7 @@ class App {
      */
     public function initialize() {
         // Execute activation codebase if not yet executed on plugin activation ( Mostly due to plugin dependencies ).
-        $installed_version = get_site_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION, false );
+        $installed_version = get_site_option( ADT_PFP_OPTION_INSTALLED_VERSION, false );
 
         if ( version_compare( $installed_version, Helper::get_plugin_version(), '!=' ) || get_option( 'adt_pfp_activation_code_triggered', false ) !== 'yes' ) {
             if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
@@ -286,7 +286,7 @@ class App {
      */
     public function hpos_compatibility() {
         if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', WOOCOMMERCESEA_FILE, true );
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', ADT_PFP_PLUGIN_FILE, true );
         }
     }
 }
@@ -299,9 +299,9 @@ class App {
  */
 App::instance()->register_objects(
     array_merge(
-        require_once WOOCOMMERCESEA_PATH . 'bootstrap/class-objects.php',
-        require_once WOOCOMMERCESEA_PATH . 'bootstrap/integration-objects.php',
-        require_once WOOCOMMERCESEA_PATH . 'bootstrap/rest-objects.php',
+        require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/class-objects.php',
+        require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/integration-objects.php',
+        require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/rest-objects.php',
     )
 );
 

@@ -1,0 +1,65 @@
+{
+  "_style-legacy.DfWtZn9a.js": {
+    "file": "common/style-legacy.DfWtZn9a.js",
+    "name": "style"
+  },
+  "_style.Ah1bX9TY.css": {
+    "file": "css/style.Ah1bX9TY.css",
+    "src": "_style.Ah1bX9TY.css"
+  },
+  "src/vanilla/edit-feed/index-legacy.ts": {
+    "file": "vanilla\\edit-feed/index-legacy.B0KCWnd1.js",
+    "name": "vanilla\\edit-feed/index",
+    "src": "src/vanilla/edit-feed/index-legacy.ts",
+    "isEntry": true,
+    "imports": [
+      "_style-legacy.DfWtZn9a.js"
+    ]
+  },
+  "src/vanilla/edit-feed/index.ts": {
+    "file": "vanilla\\edit-feed/index.BwE6Nb9_.js",
+    "name": "vanilla\\edit-feed/index",
+    "src": "src/vanilla/edit-feed/index.ts",
+    "isEntry": true,
+    "css": [
+      "css/style.Ah1bX9TY.css"
+    ]
+  },
+  "src/vanilla/manage-feeds/index-legacy.ts": {
+    "file": "vanilla\\manage-feeds/index-legacy.lthoy70z.js",
+    "name": "vanilla\\manage-feeds/index",
+    "src": "src/vanilla/manage-feeds/index-legacy.ts",
+    "isEntry": true,
+    "imports": [
+      "_style-legacy.DfWtZn9a.js",
+      "src/vanilla/manage-feeds/style-legacy.scss"
+    ]
+  },
+  "src/vanilla/manage-feeds/index.ts": {
+    "file": "vanilla\\manage-feeds/index.Cvv1VBpD.js",
+    "name": "vanilla\\manage-feeds/index",
+    "src": "src/vanilla/manage-feeds/index.ts",
+    "isEntry": true,
+    "css": [
+      "css/style.Ah1bX9TY.css",
+      "css/vanilla/manage-feeds/style.B315Lovp.css"
+    ]
+  },
+  "src/vanilla/manage-feeds/style-legacy.scss": {
+    "file": "vanilla\\manage-feeds/style.scss-legacy.DKdKEjjR.js",
+    "name": "vanilla\\manage-feeds/style.scss",
+    "src": "src/vanilla/manage-feeds/style-legacy.scss",
+    "isEntry": true
+  },
+  "src/vanilla/manage-feeds/style.scss": {
+    "file": "css/vanilla/manage-feeds/style.B315Lovp.css",
+    "src": "src/vanilla/manage-feeds/style.scss",
+    "isEntry": true
+  },
+  "vite/legacy-polyfills-legacy": {
+    "file": "polyfills-legacy.1YHuT6CT.js",
+    "name": "polyfills",
+    "src": "vite/legacy-polyfills-legacy",
+    "isEntry": true
+  }
+}

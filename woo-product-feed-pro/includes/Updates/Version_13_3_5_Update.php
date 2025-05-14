@@ -145,8 +145,8 @@ class Version_13_3_5_Update extends Abstract_Class {
     public function run() {
         if (
             (
-                version_compare( get_site_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION ), $this->version, '<=' ) ||
-                ! get_site_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION )
+                version_compare( get_site_option( ADT_PFP_OPTION_INSTALLED_VERSION ), $this->version, '<=' ) ||
+                ! get_site_option( ADT_PFP_OPTION_INSTALLED_VERSION )
             ) || $this->force_update
         ) {
             if ( is_multisite() ) {

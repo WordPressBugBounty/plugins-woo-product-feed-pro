@@ -1,3 +1,18 @@
+= 13.4.4 (2025-05-07) =
+* Bug Fix: Allow Adding Of Fields On Google Review Template
+* Bug Fix: Notice: Function _load_textdomain_just_in_time Is printed out in pages
+* Bug Fix: Preview Option Generates More Than 5 Products
+* Bug Fix: Product feed attribute for`rating_total` is not counting rating correctly and has invalid `rating_average`
+* Bug Fix: Rule “Is” Field Becomes Empty After Saving
+* Bug Fix: Saved Category Selection Not Retained – Defaults to First Category in Dropdown
+* Bug Fix: WWPP: Variations Remain Visible When Parent Variable Product Is Restricted
+* Improvement: Add Unfiltered Parent Long/Short Descriptions
+* Improvement: Add filter on google categories mapping for children categories
+* Improvement: Add product variation description field mapping
+* Improvement: Combine product feed edit page
+* Improvement: Lowercase download link support
+* Improvement: Manage Feeds Redesign
+
 = 13.4.3 (2025-04-03) =
 * Bug Fix: Category options in filters/rules are not loaded when editing a feed that has it
 * Bug Fix: Deactivated feeds are enabled again on plugin activation

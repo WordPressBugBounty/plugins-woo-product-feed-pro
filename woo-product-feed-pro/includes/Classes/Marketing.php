@@ -36,7 +36,16 @@ class Marketing extends Abstract_Class {
      * @since 13.3.4
      * @access public
      */
-    public function __construct() {
+    public function __construct() {}
+
+    /**
+     * Initialize the marketing submenus.
+     * This should be called at 'init' action or later.
+     *
+     * @since 13.3.4
+     * @access public
+     */
+    public function init_marketing_submenus() {
         $this->marketing_submenus = array(
             'acfw' => array(
                 'title'    => __( 'Advanced Coupons', 'woo-product-feed-pro' ),
@@ -54,6 +63,11 @@ class Marketing extends Abstract_Class {
      * @access public
      */
     public function register_marketing_submenu() {
+        // Initialize the submenus if not already done.
+        if ( empty( $this->marketing_submenus ) ) {
+            $this->init_marketing_submenus();
+        }
+
         foreach ( $this->marketing_submenus as $plugin_key => $submenu ) {
             if (
                 get_option( 'pfp_' . $plugin_key . '_marketing_page_closed', 'no' ) === 'yes'
@@ -83,7 +97,15 @@ class Marketing extends Abstract_Class {
         $plugin_data = $this->marketing_submenus['acfw'];
         $step        = $this->get_plugin_step( 'acfw' );
 
-        require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'marketing/view-acfw-marketing-page.php';
+        Helper::locate_admin_template(
+            'marketing/acfw-marketing-page.php',
+            true,
+            true,
+            array(
+                'plugin_data' => $plugin_data,
+                'step'        => $step,
+            )
+        );
     }
 
     /**
@@ -103,12 +125,12 @@ class Marketing extends Abstract_Class {
 
         foreach ( $this->marketing_submenus as $submenu ) {
             if ( strpos( $screen->id, $submenu['slug'] ) !== false ) {
-                wp_enqueue_style( 'pfp-admin-marketing', WOOCOMMERCESEA_PLUGIN_URL . '/css/pfp-admin-marketing.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
-                wp_enqueue_script( 'pfp-admin-marketing', WOOCOMMERCESEA_PLUGIN_URL . '/js/pfp-admin-marketing.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
+                wp_enqueue_style( 'pfp-admin-marketing', ADT_PFP_CSS_URL . 'pfp-admin-marketing.css', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
+                wp_enqueue_script( 'pfp-admin-marketing', ADT_PFP_JS_URL . 'pfp-admin-marketing.js', array( 'jquery' ), ADT_PFP_OPTION_INSTALLED_VERSION, true );
                 wp_localize_script( 'pfp-admin-marketing', 'pfp_admin_marketing', array( 'nonce' => wp_create_nonce( 'pfp-admin-marketing' ) ) );
 
                 // Load Poppins font from Google Fonts.
-                wp_enqueue_style( 'pfp-admin-marketing--font-poppins', 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
+                wp_enqueue_style( 'pfp-admin-marketing--font-poppins', 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
             }
         }
     }
@@ -224,6 +246,9 @@ class Marketing extends Abstract_Class {
         if ( ! is_admin() ) {
             return;
         }
+
+        // Initialize the marketing submenus at init hook.
+        add_action( 'init', array( $this, 'init_marketing_submenus' ) );
 
         // Add a new submenu.
         add_action( 'admin_menu', array( $this, 'register_marketing_submenu' ), 100 );

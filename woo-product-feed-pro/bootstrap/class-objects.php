@@ -19,6 +19,13 @@ use AdTribes\PFP\Classes\Marketing;
 use AdTribes\PFP\Classes\Usage;
 use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
 use AdTribes\PFP\Classes\Plugin_Installer;
+use AdTribes\PFP\Classes\Admin_Pages\Manage_Feeds_Page;
+use AdTribes\PFP\Classes\Admin_Pages\Settings_Page;
+use AdTribes\PFP\Classes\Admin_Pages\Edit_Feed_Page;
+use AdTribes\PFP\Classes\Admin_Pages\License_Page;
+use AdTribes\PFP\Classes\Admin_Pages\Help_Page;
+use AdTribes\PFP\Classes\Admin_Pages\About_Page;
+use AdTribes\PFP\Classes\Admin_Pages\Upgrade_To_Elite_Page;
 use AdTribes\PFP\Post_Types\Product_Feed_Post_Type;
 
 defined( 'ABSPATH' ) || exit;
@@ -37,5 +44,12 @@ return array(
     Usage::instance(),
     Google_Product_Taxonomy_Fetcher::instance(),
     Plugin_Installer::instance(),
+    Manage_Feeds_Page::instance(),
+    Settings_Page::instance(),
+    Edit_Feed_Page::instance(),
+    License_Page::instance(),
+    Help_Page::instance(),
+    About_Page::instance(),
+    Upgrade_To_Elite_Page::instance(),
     Product_Feed_Post_Type::instance(),
 );

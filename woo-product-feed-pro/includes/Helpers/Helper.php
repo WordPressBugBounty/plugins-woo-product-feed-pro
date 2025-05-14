@@ -27,7 +27,7 @@ class Helper {
      */
     public static function get_plugin_data( $key = null, $markup = false, $translate = false ) {
 
-        $plugin_data = get_plugin_data( WOOCOMMERCESEA_FILE, $markup, $translate );
+        $plugin_data = get_plugin_data( ADT_PFP_PLUGIN_FILE, $markup, $translate );
 
         if ( null !== $key ) {
             return $plugin_data[ $key ] ?? '';
@@ -50,37 +50,6 @@ class Helper {
     public static function get_plugin_version( $markup = true, $translate = true ) {
 
         return self::get_plugin_data( 'Version', $markup, $translate );
-    }
-
-    /**
-     * Loads admin template.
-     *
-     * @since 13.3.3
-     * @access public
-     *
-     * @param string $name Template name relative to `templates` directory.
-     * @param bool   $load Whether to load the template or not.
-     * @param bool   $once Whether to use require_once or require.
-     * @return string
-     */
-    public static function load_template( $name, $load = false, $once = true ) {
-
-        //phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
-        $template = WOOCOMMERCESEA_PATH . 'templates/' . rtrim( $name, '.php' ) . '.php';
-        if ( ! file_exists( $template ) ) {
-            return '';
-        }
-
-        if ( $load ) {
-            if ( $once ) {
-                require_once $template;
-            } else {
-                require $template;
-            }
-        }
-
-        //phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
-        return $template;
     }
 
     /**
@@ -222,18 +191,6 @@ class Helper {
     }
 
     /**
-     * Utility function that determines if the sidebar upgrade column should be shown or not.
-     *
-     * @since 13.3.6
-     * @access public
-     *
-     * @return boolean True if sidebar upgrade column should be shown, false otherwise.
-     */
-    public static function is_show_sidebar_upgrade_column() {
-        return apply_filters( 'adt_pfp_show_sidebar_upgrade_column', true );
-    }
-
-    /**
      * Check if a submenu is registered.
      *
      * @since 13.3.4
@@ -366,6 +323,29 @@ class Helper {
     }
 
     /**
+     * Sanitize an array recursively.
+     *
+     * @since 13.4.4
+     * @param array $array_data The array to sanitize.
+     * @return array
+     */
+    public static function sanitize_array( $array_data ) {
+        if ( ! is_array( $array_data ) ) {
+            return sanitize_text_field( $array_data );
+        }
+
+        foreach ( $array_data as $key => $value ) {
+            if ( is_array( $value ) ) {
+                $array_data[ $key ] = self::sanitize_array( $value );
+            } else {
+                $array_data[ $key ] = sanitize_text_field( $value );
+            }
+        }
+
+        return $array_data;
+    }
+
+    /**
      * Custom recursive function using array_walk_recursive to access keys and sanitize values.
      *
      * @since 13.3.9
@@ -485,5 +465,94 @@ class Helper {
             ),
             trailingslashit( $url )
         );
+    }
+
+    /**
+     * Loads admin template.
+     *
+     * @since 13.4.3
+     *
+     * @param string $name Template name relative to `templates/admin` directory.
+     * @param bool   $load Whether to load the template or not.
+     * @param bool   $once Whether to use require_once or require.
+     * @param array  $vars Variables to pass to the template.
+     * @return string
+     */
+    public static function locate_admin_template( $name, $load = false, $once = true, $vars = array() ) {
+
+        //phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+        $template = ADT_PFP_PLUGIN_DIR_PATH . 'templates/' . $name;
+        if ( ! file_exists( $template ) ) {
+            return '';
+        }
+
+        if ( ! empty( $vars ) ) {
+            extract( $vars ); // phpcs:ignore WordPress.PHP.DontExtract
+        }
+
+        if ( $load ) {
+            if ( $once ) {
+                require_once $template;
+            } else {
+                require $template;
+            }
+        }
+
+        //phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
+        return $template;
+    }
+
+    /**
+     * Generate pagination URL for the feed management page.
+     *
+     * @since 13.4.4
+     * @access public
+     *
+     * @param int $page The page number to generate the URL for.
+     * @param int $per_page The number of items per page.
+     * @return string The URL with pagination parameters.
+     */
+    public static function get_feed_pagination_url( $page, $per_page ) {
+        $base_url   = admin_url( 'admin.php' );
+        $query_args = array(
+            'page'     => 'woo-product-feed',
+            'page_num' => $page,
+            'per_page' => $per_page,
+        );
+
+        // Add any other query parameters from the current URL.
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended
+        if ( isset( $_GET['subpage'] ) ) {
+            $query_args['subpage'] = $_GET['subpage'];
+        }
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+        return add_query_arg( $query_args, $base_url );
+    }
+
+    /**
+     * App frontend and backend common JS app localization properties.
+     *
+     * @param array $merge Additional data to merge.
+     *
+     * @since 13.4.4
+     * @return array
+     */
+    public static function vite_app_common_l10n( $merge = array() ) {
+
+        global $allowedposttags;
+
+        $allowed_tags  = array_keys( $allowedposttags );
+        $allowed_attrs = array_keys( array_merge( ...array_values( $allowedposttags ) ) );
+
+        $allowed_tags  = apply_filters( 'adt_kses_allowed_tags', $allowed_tags );
+        $allowed_attrs = apply_filters( 'adt_kses_allowed_attrs', $allowed_attrs );
+
+        $defaults = array(
+            'allowedTags'  => $allowed_tags,
+            'allowedAttrs' => $allowed_attrs,
+        );
+
+        return wp_parse_args( $merge, $defaults );
     }
 }

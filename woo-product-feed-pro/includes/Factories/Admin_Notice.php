@@ -8,6 +8,7 @@
 namespace AdTribes\PFP\Factories;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Helpers\Helper;
 
 /**
  * Class Admin_Notice
@@ -220,13 +221,43 @@ class Admin_Notice extends Abstract_Class {
         switch ( $type ) {
             case 'failed_dependency':
                 $failed_dependencies = $this->_failed_dependencies();
-                include WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-failed-dependency-notice.php';
+                Helper::locate_admin_template(
+                    'notices/failed-dependency-notice.php',
+                    true,
+                    true,
+                    array(
+                        'message'             => $message,
+                        'failed_dependencies' => $failed_dependencies,
+                    )
+                );
                 break;
             case 'allow_tracking':
-                include WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-allow-tracking-notice.php';
+                Helper::locate_admin_template(
+                    'notices/allow-tracking-notice.php',
+                    true,
+                    true,
+                    array(
+                        'message_id'     => $message_id,
+                        'message'        => $message,
+                        'type'           => $type,
+                        'message_format' => $message_format,
+                        'is_dismissible' => $is_dismissible,
+                    )
+                );
                 break;
             default:
-                include WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'notices/view-admin-notice.php';
+                Helper::locate_admin_template(
+                    'notices/admin-notice.php',
+                    true,
+                    true,
+                    array(
+                        'message_id'     => $message_id,
+                        'message'        => $message,
+                        'type'           => $type,
+                        'message_format' => $message_format,
+                        'is_dismissible' => $is_dismissible,
+                    )
+                );
                 break;
         }
     }

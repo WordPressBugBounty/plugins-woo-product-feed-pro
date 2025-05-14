@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Product Feed PRO for WooCommerce
- * Version:     13.4.3
+ * Version:     13.4.4
  * Plugin URI:  https://www.adtribes.io/support/?utm_source=wpadmin&utm_medium=plugin&utm_campaign=woosea_product_feed_pro
  * Description: Configure and maintain your WooCommerce product feeds for Google Shopping, Catalog managers, Remarketing, Bing, Skroutz, Yandex, Comparison shopping websites and over a 100 channels more.
  * Author:      AdTribes.io
@@ -11,13 +11,13 @@
  * License:     GPL3
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 5.4
- * Tested up to: 6.7
+ * Tested up to: 6.8
  *
  * Text Domain: woo-product-feed-pro
  * Domain Path: /languages
  *
  * WC requires at least: 4.4
- * WC tested up to: 9.7
+ * WC tested up to: 9.8
  *
  * Product Feed PRO for WooCommerce is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,44 +41,54 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants.
  */
-define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.4.3' );
+define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.4.4' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME', 'woocommerce-product-feed-pro' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME_SHORT', 'woo-product-feed-pro' );
 
-if ( ! defined( 'WOOCOMMERCESEA_FILE' ) ) {
-    define( 'WOOCOMMERCESEA_FILE', __FILE__ );
+if ( ! defined( 'ADT_PFP_PLUGIN_FILE' ) ) {
+    define( 'ADT_PFP_PLUGIN_FILE', __FILE__ );
 }
 
-if ( ! defined( 'WOOCOMMERCESEA_PATH' ) ) {
-    define( 'WOOCOMMERCESEA_PATH', plugin_dir_path( WOOCOMMERCESEA_FILE ) );
+if ( ! defined( 'ADT_PFP_PLUGIN_DIR_PATH' ) ) {
+    define( 'ADT_PFP_PLUGIN_DIR_PATH', plugin_dir_path( ADT_PFP_PLUGIN_FILE ) );
 }
 
-if ( ! defined( 'WOOCOMMERCESEA_BASENAME' ) ) {
-    define( 'WOOCOMMERCESEA_BASENAME', plugin_basename( WOOCOMMERCESEA_FILE ) );
+if ( ! defined( 'ADT_PFP_BASENAME' ) ) {
+    define( 'ADT_PFP_BASENAME', plugin_basename( ADT_PFP_PLUGIN_FILE ) );
 }
 
-if ( ! defined( 'WOOCOMMERCESEA_PLUGIN_URL' ) ) {
-    define( 'WOOCOMMERCESEA_PLUGIN_URL', plugins_url() . '/' . WOOCOMMERCESEA_PLUGIN_NAME_SHORT );
+if ( ! defined( 'ADT_PFP_PLUGIN_URL' ) ) {
+    define( 'ADT_PFP_PLUGIN_URL', plugin_dir_url( ADT_PFP_PLUGIN_FILE ) );
 }
 
 // Define the path to the plugin views.
-if ( ! defined( 'WOOCOMMERCESEA_VIEWS_ROOT_PATH' ) ) {
-    define( 'WOOCOMMERCESEA_VIEWS_ROOT_PATH', WOOCOMMERCESEA_PATH . 'views/' );
+if ( ! defined( 'ADT_PFP_VIEWS_ROOT_PATH' ) ) {
+    define( 'ADT_PFP_VIEWS_ROOT_PATH', ADT_PFP_PLUGIN_DIR_PATH . 'views/' );
 }
 
 // Define the url to the plugin images.
-if ( ! defined( 'WOOCOMMERCESEA_IMAGES_URL' ) ) {
-    define( 'WOOCOMMERCESEA_IMAGES_URL', WOOCOMMERCESEA_PLUGIN_URL . '/images/' );
+if ( ! defined( 'ADT_PFP_IMAGES_URL' ) ) {
+    define( 'ADT_PFP_IMAGES_URL', ADT_PFP_PLUGIN_URL . 'static/images/' );
+}
+
+// Define the url to the plugin js.
+if ( ! defined( 'ADT_PFP_JS_URL' ) ) {
+    define( 'ADT_PFP_JS_URL', ADT_PFP_PLUGIN_URL . 'static/js/' );
+}
+
+// Define the url to the plugin css.
+if ( ! defined( 'ADT_PFP_CSS_URL' ) ) {
+    define( 'ADT_PFP_CSS_URL', ADT_PFP_PLUGIN_URL . 'static/css/' );
 }
 
 // Define the path to the legacy channel classes.
-if ( ! defined( 'WOOCOMMERCESEA_CHANNEL_CLASS_ROOT_PATH' ) ) {
-    define( 'WOOCOMMERCESEA_CHANNEL_CLASS_ROOT_PATH', WOOCOMMERCESEA_PATH . 'classes/channels/' );
+if ( ! defined( 'ADT_PFP_CHANNEL_CLASS_ROOT_PATH' ) ) {
+    define( 'ADT_PFP_CHANNEL_CLASS_ROOT_PATH', ADT_PFP_PLUGIN_DIR_PATH . 'classes/channels/' );
 }
 
 // Define the option name for the installed version.
-if ( ! defined( 'WOOCOMMERCESEA_OPTION_INSTALLED_VERSION' ) ) {
-    define( 'WOOCOMMERCESEA_OPTION_INSTALLED_VERSION', 'woocommercesea_option_installed_version' );
+if ( ! defined( 'ADT_PFP_OPTION_INSTALLED_VERSION' ) ) {
+    define( 'ADT_PFP_OPTION_INSTALLED_VERSION', 'woocommercesea_option_installed_version' );
 }
 
 // Define the option name for temporary feed creation data.
@@ -130,7 +140,7 @@ if ( ! defined( 'ADT_PFP_AS_FETCH_GOOGLE_PRODUCT_TAXONOMY' ) ) {
  *
  * Loads the plugin text domain for translation.
  */
-function woosea_textdomain() {
+function adt_pfp_load_textdomain() {
 
     load_plugin_textdomain(
         'woo-product-feed-pro',
@@ -139,7 +149,7 @@ function woosea_textdomain() {
     );
 }
 
-add_action( 'init', 'woosea_textdomain' );
+add_action( 'init', 'adt_pfp_load_textdomain' );
 
 
 /***************************************************************************

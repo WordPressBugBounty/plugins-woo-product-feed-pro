@@ -12,7 +12,8 @@ use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
 use AdTribes\PFP\Traits\Singleton_Trait;
-use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
+use AdTribes\PFP\Factories\Product_Feed;
+use AdTribes\PFP\Factories\Product_Feed_Query;
 
 /**
  * General wp-admin related functionalities and/or overrides.
@@ -47,56 +48,34 @@ class WP_Admin extends Abstract_Class {
             wp_enqueue_script( 'select2' );
 
             wp_enqueue_style( 'woocommerce_admin_styles' );
-            wp_enqueue_style( 'pfp-admin-css', WOOCOMMERCESEA_PLUGIN_URL . '/css/pfp-admin.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
-            wp_enqueue_style( 'woosea_admin-css', WOOCOMMERCESEA_PLUGIN_URL . '/css/woosea_admin.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
-            wp_enqueue_style( 'woosea_jquery_ui-css', WOOCOMMERCESEA_PLUGIN_URL . '/css/jquery-ui.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
-            wp_enqueue_style( 'woosea_jquery_typeahead-css', WOOCOMMERCESEA_PLUGIN_URL . '/css/jquery.typeahead.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
+            wp_enqueue_style( 'pfp-admin-css', ADT_PFP_CSS_URL . 'pfp-admin.css', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
+            wp_enqueue_style( 'woosea_admin-css', ADT_PFP_CSS_URL . 'woosea_admin.css', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
+            wp_enqueue_style( 'woosea_jquery_ui-css', ADT_PFP_CSS_URL . 'jquery-ui.css', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
+            wp_enqueue_style( 'woosea_jquery_typeahead-css', ADT_PFP_CSS_URL . 'jquery.typeahead.css', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
 
             if ( preg_match( '/woosea_manage_license/i', $hook ) ) {
-                wp_enqueue_style( 'woosea_license_settings-css', WOOCOMMERCESEA_PLUGIN_URL . '/css/license-settings.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
+                wp_enqueue_style( 'woosea_license_settings-css', ADT_PFP_CSS_URL . 'license-settings.css', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
             }
-
-            // JS for adding input field validation.
-            wp_enqueue_script( 'woosea_validation-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/woosea_validation.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
 
             // JS for adding table rows to the rules page.
-            wp_enqueue_script( 'woosea_filters_rules-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/woosea_filters_rules.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_enqueue_script( 'woosea_filters_rules-js', ADT_PFP_JS_URL . 'woosea_filters_rules.js', '', ADT_PFP_OPTION_INSTALLED_VERSION, true );
 
             // JS for adding table rows to the field mappings page.
-            wp_enqueue_script( 'woosea_field_mapping-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/woosea_field_mapping.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_enqueue_script( 'woosea_field_mapping-js', ADT_PFP_JS_URL . 'woosea_field_mapping.js', '', ADT_PFP_OPTION_INSTALLED_VERSION, true );
 
             // JS for getting channels.
-            wp_enqueue_script( 'woosea_channel-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/woosea_channel.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_enqueue_script( 'woosea_channel-js', ADT_PFP_JS_URL . 'woosea_channel.js', '', ADT_PFP_OPTION_INSTALLED_VERSION, true );
 
             // JS for manage projects page.
-            wp_enqueue_script( 'woosea_manage-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/woosea_manage.js?yo=12', array( 'clipboard' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_enqueue_script( 'woosea_manage-js', ADT_PFP_JS_URL . 'woosea_manage.js?yo=12', array( 'clipboard' ), ADT_PFP_OPTION_INSTALLED_VERSION, true );
+            wp_enqueue_script( 'woosea_manage-js', ADT_PFP_JS_URL . 'woosea_manage.js?yo=12', array( 'clipboard' ), ADT_PFP_OPTION_INSTALLED_VERSION, true );
             wp_localize_script( 'woosea_manage-js', 'woosea_manage_params', array( 'total_product_feeds' => Product_Feed_Helper::get_total_product_feed() ) );
 
-            // Load Google Taxonomy JS.
-            switch ( $step ) {
-                case '1':
-                    $google_taxonomy_fetcher = Google_Product_Taxonomy_Fetcher::instance();
-
-                    // Typeahead JS.
-                    wp_enqueue_script( 'pfp-typeahead-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/lib/typeahead.bundle.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
-
-                    wp_enqueue_script( 'pfp-google-taxonomy-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/pfp-google-taxonomy.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
-                    wp_localize_script(
-                        'pfp-google-taxonomy-js',
-                        'pfp_google_taxonomy',
-                        array(
-                            'file_name' => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME,
-                            'file_path' => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_FILE_PATH,
-                            'file_url'  => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_FILE_URL,
-                        )
-                    );
-                    break;
-            }
         }
 
         // Admin wide styles and scripts.
-        wp_enqueue_style( 'pfp-admin-wide-css', WOOCOMMERCESEA_PLUGIN_URL . '/css/pfp-admin-wide.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
-        wp_enqueue_script( 'pfp-admin-wide-js', WOOCOMMERCESEA_PLUGIN_URL . '/js/pfp-admin-wide.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
+        wp_enqueue_style( 'pfp-admin-wide-css', ADT_PFP_CSS_URL . 'pfp-admin-wide.css', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
+        wp_enqueue_script( 'pfp-admin-wide-js', ADT_PFP_JS_URL . 'pfp-admin-wide.js', array( 'jquery' ), ADT_PFP_OPTION_INSTALLED_VERSION, true );
         wp_localize_script(
             'pfp-admin-wide-js',
             'pfp_admin_wide',
@@ -104,106 +83,6 @@ class WP_Admin extends Abstract_Class {
                 'upgradelink' => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'menuprolink' ),
             )
         );
-    }
-
-    /**
-     * Register about page menu
-     *
-     * @since 13.3.4
-     * @access public
-     */
-    public function register_page_menu() {
-        add_menu_page(
-            apply_filters( 'adt_admin_plugin_page_title', __( 'Product Feed Pro for WooCommerce', 'woo-product-feed-pro' ) ),
-            apply_filters( 'adt_admin_plugin_menu_title', __( 'Product Feed Pro', 'woo-product-feed-pro' ) ),
-            apply_filters( 'woosea_user_cap', 'manage_options' ),
-            'woo-product-feed',
-            array( $this, 'view_manage_feed' ),
-            esc_url( WOOCOMMERCESEA_PLUGIN_URL . '/images/icon-16x16.png' ),
-            99
-        );
-
-        $submenus = array(
-            'manage_feed'      => array(
-                'page_title' => __( 'Manage feeds', 'woo-product-feed-pro' ),
-                'menu_title' => __( 'Manage feeds', 'woo-product-feed-pro' ),
-                'menu_slug'  => 'woo-product-feed',
-                'callback'   => array( $this, 'view_manage_feed' ),
-                'position'   => 10,
-            ),
-            'edit_feed'        => array(
-                'page_title' => __( 'Feed configuration', 'woo-product-feed-pro' ),
-                'menu_title' => __( 'Create feed', 'woo-product-feed-pro' ),
-                'menu_slug'  => 'pfp-edit-feed',
-                'callback'   => array( $this, 'view_generate_pages' ),
-                'position'   => 20,
-            ),
-            'manage_settings'  => array(
-                'page_title' => __( 'Settings', 'woo-product-feed-pro' ),
-                'menu_title' => __( 'Settings', 'woo-product-feed-pro' ),
-                'menu_slug'  => 'woosea_manage_settings',
-                'callback'   => array( $this, 'view_manage_settings' ),
-                'position'   => 30,
-            ),
-            'manage_license'   => array(
-                'page_title' => __( 'License', 'woo-product-feed-pro' ),
-                'menu_title' => __( 'License', 'woo-product-feed-pro' ),
-                'menu_slug'  => 'woosea_manage_license',
-                'callback'   => array( $this, 'view_manage_license' ),
-                'position'   => 40,
-            ),
-            'help_page'        => array(
-                'page_title' => __( 'Help', 'woo-product-feed-pro' ),
-                'menu_title' => __( 'Help', 'woo-product-feed-pro' ),
-                'menu_slug'  => 'pfp-help-page',
-                'callback'   => array( $this, 'view_help_page' ),
-                'position'   => 50,
-            ),
-            'about_page'       => array(
-                'page_title' => __( 'About', 'woo-product-feed-pro' ),
-                'menu_title' => __( 'About', 'woo-product-feed-pro' ),
-                'menu_slug'  => 'pfp-about-page',
-                'callback'   => array( $this, 'view_about_page' ),
-                'position'   => 60,
-            ),
-            'upgrade_to_elite' => array(
-                'page_title' => __( 'Upgrade To Elite', 'woo-product-feed-pro' ),
-                'menu_title' => __( 'Upgrade To Elite', 'woo-product-feed-pro' ),
-                'menu_slug'  => 'pfp-upgrade-to-elite-page',
-                'callback'   => '',
-                'position'   => 70,
-            ),
-        );
-
-        $this->register_submenu_pages( $submenus );
-    }
-
-    /**
-     * Register submenu pages.
-     *
-     * @since 13.3.6
-     * @access public
-     *
-     * @param array $submenus Array of submenu pages.
-     */
-    public function register_submenu_pages( $submenus ) {
-        $submenus = apply_filters( 'adt_register_submenu_pages', $submenus );
-
-        if ( empty( $submenus ) ) {
-            return;
-        }
-
-        foreach ( $submenus as $submenu ) {
-            add_submenu_page(
-                'woo-product-feed',
-                $submenu['page_title'],
-                $submenu['menu_title'],
-                apply_filters( 'woosea_user_cap', 'manage_options' ),
-                $submenu['menu_slug'],
-                $submenu['callback'],
-                $submenu['position']
-            );
-        }
     }
 
     /**
@@ -217,56 +96,6 @@ class WP_Admin extends Abstract_Class {
      */
     public function view_generate_pages() {
         do_action( 'adt_view_generate_pages' );
-    }
-
-    /**
-     * View for Manage Feed page.
-     *
-     * @since 13.3.6
-     * @access public
-     */
-    public function view_manage_settings() {
-        require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'view-manage-settings.php';
-    }
-
-    /**
-     * View for Manage License page.
-     *
-     * @since 13.3.6
-     * @access public
-     */
-    public function view_manage_license() {
-        require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'view-manage-license.php';
-    }
-
-    /**
-     * View for Manage Settings page.
-     *
-     * @since 13.3.6
-     * @access public
-     */
-    public function view_manage_feed() {
-        require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'manage-feed/view-manage-feed.php';
-    }
-
-    /**
-     * View for About page.
-     *
-     * @since 13.3.4
-     * @access public
-     */
-    public function view_about_page() {
-        require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'view-about-page.php';
-    }
-
-    /**
-     * View for Help page.
-     *
-     * @since 13.3.4
-     * @access public
-     */
-    public function view_help_page() {
-        require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'view-help-page.php';
     }
 
     /**
@@ -316,7 +145,15 @@ class WP_Admin extends Abstract_Class {
                 )
             );
 
-            require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'view-notice-bar-lite.php';
+            Helper::locate_admin_template(
+                'notices/notice-bar-lite.php',
+                true,
+                true,
+                array(
+                    'message'      => $message,
+                    'upgrade_link' => $upgrade_link,
+                )
+            );
         }
     }
 
@@ -331,7 +168,7 @@ class WP_Admin extends Abstract_Class {
      */
     public function plugin_action_links( $links, $file ) {
         // Check to make sure we are on the correct plugin.
-        if ( WOOCOMMERCESEA_BASENAME === $file ) {
+        if ( ADT_PFP_BASENAME === $file ) {
             $plugin_links[] = '<a href="' . admin_url( 'admin.php?page=woosea_manage_license' ) . '">License</a>';
             $plugin_links[] = '<a href="' . Helper::get_utm_url( 'support', 'pfp', 'pluginpage', 'support' ) . '" target="_blank" rel="noopener noreferrer">Support</a>';
             $plugin_links[] = '<a href="' . Helper::get_utm_url( 'tutorials', 'pfp', 'pluginpage', 'tutorials' ) . '" target="_blank" rel="noopener noreferrer">Tutorials</a>';
@@ -369,6 +206,12 @@ class WP_Admin extends Abstract_Class {
                 'desc'  => __( 'Clear custom attributes product meta keys cache', 'woo-product-feed-pro' ),
                 'id'    => 'adt_clear_custom_attributes_product_meta_keys',
             ),
+            array(
+                'title' => __( 'Convert feed URLs to lowercase', 'woo-product-feed-pro' ),
+                'type'  => 'button',
+                'desc'  => __( 'Standardize all feed file URLs to lowercase format for better compatibility', 'woo-product-feed-pro' ),
+                'id'    => 'adt_update_file_url_to_lower_case',
+            ),
         );
 
         /**
@@ -381,7 +224,7 @@ class WP_Admin extends Abstract_Class {
          */
         $settings = apply_filters( 'adt_settings_other_settings_args', $settings );
 
-        require_once WOOCOMMERCESEA_VIEWS_ROOT_PATH . '/settings/view-settings-other-settings.php';
+        Helper::locate_admin_template( 'settings/other-settings.php', true, true, array( 'settings' => $settings ) );
     }
 
     /**
@@ -495,6 +338,89 @@ class WP_Admin extends Abstract_Class {
     }
 
     /**
+     * Update file URL to lower case.
+     *
+     * @since 13.4.4
+     * @access public
+     */
+    public function ajax_update_file_url_to_lower_case() {
+        if ( ! Helper::is_current_user_allowed() ) {
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
+        }
+
+        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
+            wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
+        }
+
+        $feeds_query = new Product_Feed_Query(
+            array(
+                'post_status' => array( 'draft', 'publish' ),
+            ),
+            'edit'
+        );
+
+        $success_count = 0;
+        $error_count   = 0;
+
+        if ( $feeds_query->have_posts() ) {
+            foreach ( $feeds_query->get_posts() as $feed ) {
+                // Get the old file path.
+                $old_file_path = $feed->get_file_path();
+
+                // Skip if file doesn't exist.
+                if ( ! file_exists( $old_file_path ) ) {
+                    continue;
+                }
+
+                // Get the directory path.
+                $dir_path = dirname( $old_file_path );
+
+                // Create new lowercase filename with extension.
+                $new_file_name = strtolower( $feed->file_name );
+
+                // Only process if the filenames are different (case sensitive comparison).
+                if ( $feed->file_name !== $new_file_name ) {
+                    // Create the new file path using the same directory structure as the old file.
+                    $new_file_path = $dir_path . '/' . $new_file_name . '.' . $feed->file_format;
+
+                    // Update the database entry regardless of file operation success.
+                    $feed->file_name           = $new_file_name;
+                    $feed->legacy_project_hash = $new_file_name;
+
+                    // Save the feed to update all database entries.
+                    $feed->save();
+
+                    /**
+                     * Try to rename the file using a safer method than copy+delete.
+                     * Using wp_filesystem->move() is not working as expected, due to the same file name (Uppsercase to Lowercase).
+                     * So we use rename() instead, which is more reliable.
+                     */
+                    $renamed = @rename( $old_file_path, $new_file_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+
+                    // Track success or failure for reporting.
+                    if ( $renamed ) {
+                        ++$success_count;
+                    } else {
+                        ++$error_count;
+                    }
+                }
+            }
+        }
+
+        if ( $error_count > 0 ) {
+            wp_send_json_success(
+                array(
+                    'message'       => __( 'Feed URLs updated to lowercase in database. Some files could not be renamed due to permission issues.', 'woo-product-feed-pro' ),
+                    'success_count' => $success_count,
+                    'error_count'   => $error_count,
+                )
+            );
+        } else {
+            wp_send_json_success( array( 'message' => __( 'Feed URLs and files successfully updated to lowercase.', 'woo-product-feed-pro' ) ) );
+        }
+    }
+
+    /**
      * Dismiss the get Elite notification.
      *
      * @since 13.3.6
@@ -531,9 +457,6 @@ class WP_Admin extends Abstract_Class {
         // Enqueue admin styles and scripts.
         add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 
-        // Add a new submenus.
-        add_action( 'admin_menu', array( $this, 'register_page_menu' ), 99 );
-
         // Add WC navigation bar to page.
         add_action( 'init', array( $this, 'wc_navigation_bar' ) );
 
@@ -554,5 +477,6 @@ class WP_Admin extends Abstract_Class {
         add_action( 'wp_ajax_woosea_getelite_notification', array( $this, 'ajax_dismiss_get_elite_notice' ) );
         add_action( 'wp_ajax_adt_migrate_to_custom_post_type', array( $this, 'ajax_migrate_to_custom_post_type' ) );
         add_action( 'wp_ajax_adt_clear_custom_attributes_product_meta_keys', array( $this, 'ajax_adt_clear_custom_attributes_product_meta_keys' ) );
+        add_action( 'wp_ajax_adt_update_file_url_to_lower_case', array( $this, 'ajax_update_file_url_to_lower_case' ) );
     }
 }

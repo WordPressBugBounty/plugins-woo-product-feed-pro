@@ -23,7 +23,7 @@ function get_class_file_path( $class ) { // phpcs:ignore Universal.NamingConvent
     $class = str_replace( '\\', DIRECTORY_SEPARATOR, $class );
     $class = mb_substr( $class, 13 );
 
-    return WOOCOMMERCESEA_PATH . "includes/$class.php";
+    return ADT_PFP_PLUGIN_DIR_PATH . "includes/$class.php";
 }
 
 /**

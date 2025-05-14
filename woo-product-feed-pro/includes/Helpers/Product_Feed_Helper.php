@@ -8,6 +8,7 @@
 namespace AdTribes\PFP\Helpers;
 
 use AdTribes\PFP\Factories\Product_Feed;
+use AdTribes\PFP\Factories\Product_Feed_Query;
 
 /**
  * Helper methods class.
@@ -39,14 +40,21 @@ class Product_Feed_Helper {
      *
      * @param int|string|WP_Post $feed    Feed ID, project hash (legacy) or WP_Post object.
      * @param string             $context The context of the product feed.
-     * @return Product_Feed
+     * @return Product_Feed|false Returns the product feed object if valid, otherwise false.
      */
     public static function get_product_feed( $feed = 0, $context = 'view' ) {
         if ( class_exists( 'AdTribes\PFE\Factories\Product_Feed' ) ) {
-            return new \AdTribes\PFE\Factories\Product_Feed( $feed, $context );
+            $feed_object = new \AdTribes\PFE\Factories\Product_Feed( $feed, $context );
         } else {
-            return new Product_Feed( $feed, $context );
+            $feed_object = new Product_Feed( $feed, $context );
         }
+
+        // If the feed is 0 or null, it means we are creating a new feed object.
+        if ( 0 === $feed || null === $feed ) {
+            return $feed_object;
+        }
+
+        return $feed_object->id > 0 ? $feed_object : false;
     }
 
     /**
@@ -62,7 +70,7 @@ class Product_Feed_Helper {
      * @return string
      */
     public static function get_code_from_legacy_country_name( $country_name ) {
-        $legacy_countries = include WOOCOMMERCESEA_PATH . 'includes/I18n/legacy_countries.php';
+        $legacy_countries = include ADT_PFP_PLUGIN_DIR_PATH . 'includes/I18n/legacy_countries.php';
         return array_search( $country_name, $legacy_countries ); // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
     }
 
@@ -79,7 +87,7 @@ class Product_Feed_Helper {
      * @return string
      */
     public static function get_legacy_country_from_code( $country_code ) {
-        $legacy_countries = include WOOCOMMERCESEA_PATH . 'includes/I18n/legacy_countries.php';
+        $legacy_countries = include ADT_PFP_PLUGIN_DIR_PATH . 'includes/I18n/legacy_countries.php';
         return $legacy_countries[ $country_code ] ?? '';
     }
 
@@ -95,7 +103,7 @@ class Product_Feed_Helper {
      * @return array|null
      */
     public static function get_channel_from_legacy_channel_hash( $channel_hash ) {
-        $legacy_channel_statics = include WOOCOMMERCESEA_PATH . 'includes/I18n/legacy_channel_statics.php';
+        $legacy_channel_statics = include ADT_PFP_PLUGIN_DIR_PATH . 'includes/I18n/legacy_channel_statics.php';
 
         // Search for the channel hash in the legacy channel statics.
         foreach ( $legacy_channel_statics as $country ) {
@@ -121,7 +129,7 @@ class Product_Feed_Helper {
      */
     public static function generate_legacy_project_hash() {
         // New code to create the project hash so dependency on openSSL is removed.
-        $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $keyspace = apply_filters( 'adt_product_feed_legacy_project_hash_keyspace', '0123456789abcdefghijklmnopqrstuvwxyz' );
         $pieces   = array();
         $length   = 32;
         $max      = mb_strlen( $keyspace, '8bit' ) - 1;
@@ -372,7 +380,7 @@ class Product_Feed_Helper {
 
         ob_start();
         foreach ( $parent_terms as $category ) {
-            self::print_hierarchical_categories_mapping_view( $category, $mapped_category_ids );
+            self::print_hierarchical_categories_mapping_view( $category, $mapped_category_ids, 0, $feed );
         }
         $html = ob_get_clean();
 
@@ -388,30 +396,73 @@ class Product_Feed_Helper {
      * @param object $category            The category object.
      * @param array  $mapped_category_ids The mapped category IDs.
      * @param int    $child_number        The child number, to print the dash character.
+     * @param object $feed                The feed object.
      * @return void
      */
-    public static function print_hierarchical_categories_mapping_view( $category, $mapped_category_ids = array(), $child_number = 0 ) {
+    public static function print_hierarchical_categories_mapping_view( $category, $mapped_category_ids = array(), $child_number = 0, $feed = null ) {
         // Check if this category is already mapped.
         $mapped_category = $mapped_category_ids[ $category->term_id ] ?? '';
 
-        // Get the children of the current category.
-        $childrens = get_terms(
+        /**
+         * Get the children of the current category.
+         * Filters the arguments for fetching children categories in hierarchical categories mapping.
+         *
+         * @since 13.4.4
+         * @param array  $children_args The arguments for fetching children categories.
+         * @param object $category      The parent category object.
+         * @param int    $child_number  The child number, indicating the depth level.
+         * @return array
+         */
+        $children_args = apply_filters(
+            'adt_product_feed_hierarchical_categories_children_args',
             array(
                 'taxonomy'   => 'product_cat',
                 'hide_empty' => false,
                 'parent'     => $category->term_id,
                 'orderby'    => 'name',
                 'order'      => 'ASC',
-            )
+            ),
+            $category,
+            $child_number
+        );
+
+        /**
+         * Filters the children categories in hierarchical categories mapping.
+         *
+         * @since 13.4.4
+         * @param array  $childrens    The children categories.
+         * @param array  $children_args The arguments used for fetching children categories.
+         * @param int    $feed_id       The feed id.
+         * @param object $category      The parent category object.
+         * @param int    $child_number  The child number, indicating the depth level.
+         * @return array
+         */
+        $childrens = apply_filters(
+            'adt_product_feed_hierarchical_categories_children_mapping',
+            get_terms( $children_args ),
+            $children_args,
+            $feed->id ?? 0,
+            $category,
+            $child_number
         );
 
         // Include the view for the current category.
-        include WOOCOMMERCESEA_VIEWS_ROOT_PATH . 'manage-feed/view-google-shopping-category-mapping.php';
+        Helper::locate_admin_template(
+            'components/google-shopping-category-mapping.php',
+            true,
+            false,
+            array(
+                'category'        => $category,
+                'mapped_category' => $mapped_category,
+                'childrens'       => $childrens,
+                'child_number'    => $child_number,
+            )
+        );
 
         // Process each child category recursively.
         if ( ! empty( $childrens ) ) {
             foreach ( $childrens as $children ) {
-                self::print_hierarchical_categories_mapping_view( $children, $mapped_category_ids, $child_number + 1 );
+                self::print_hierarchical_categories_mapping_view( $children, $mapped_category_ids, $child_number + 1, $feed );
             }
         }
     }
@@ -607,7 +658,7 @@ class Product_Feed_Helper {
             echo '<optgroup label="' . esc_attr( $type ) . '">';
 
             foreach ( $type_channels as $key => $val ) {
-                $selected = $default_channel === $key ? ' selected' : '';
+                $selected = $default_channel === $val['name'] ? ' selected' : '';
                 echo '<option value="' . esc_attr( $val['channel_hash'] ) . '"' . esc_attr( $selected ) . '>' . esc_html( $val['name'] ) . '</option>';
             }
 
@@ -615,6 +666,58 @@ class Product_Feed_Helper {
         }
 
         // Get the buffered content and return it.
+        return ob_get_clean();
+    }
+
+    /**
+     * Get total count of product feeds.
+     *
+     * @since 13.4.4
+     * @access public
+     *
+     * @return int Total number of feeds.
+     */
+    public static function get_total_feeds_count() {
+        global $wpdb;
+
+        // Direct SQL count query for better performance.
+        $total_count = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->posts} 
+                WHERE post_type = %s 
+                AND post_status IN ('publish', 'draft')",
+                'adt_product_feed'
+            )
+        );
+
+        return $total_count;
+    }
+
+    /**
+     * Generate HTML for the feed URL column.
+     *
+     * This method generates the appropriate HTML for the feed URL column based on
+     * the feed's status and whether the feed file exists.
+     *
+     * @since 13.4.5
+     * @access public
+     *
+     * @param object $feed The feed object.
+     * @return string HTML for the feed URL column.
+     */
+    public static function get_feed_url_html( $feed ) {
+        ob_start();
+
+        // Load the template with the feed variable.
+        Helper::locate_admin_template(
+            'components/feed-url.php',
+            true,
+            false,
+            array(
+                'feed' => $feed,
+            )
+        );
+
         return ob_get_clean();
     }
 }

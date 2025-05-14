@@ -49,7 +49,7 @@ class Deactivation extends Abstract_Class {
      */
     private function _deactivate_plugin( $blog_id ) {
         delete_option( 'adt_pfp_activation_code_triggered' );
-        delete_site_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION );
+        delete_site_option( ADT_PFP_OPTION_INSTALLED_VERSION );
 
         $this->cleanup_cron();
         $this->cleanup_options();

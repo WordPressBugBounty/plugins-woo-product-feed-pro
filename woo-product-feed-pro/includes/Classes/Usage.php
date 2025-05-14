@@ -598,7 +598,7 @@ class Usage extends Abstract_Class {
                 'httpversion' => '1.1',
                 'blocking'    => false,
                 'body'        => $this->_get_data(),
-                'user-agent'  => 'PFP/' . WOOCOMMERCESEA_PLUGIN_VERSION . '; ' . get_bloginfo( 'url' ),
+                'user-agent'  => 'PFP/' . ADT_PFP_OPTION_INSTALLED_VERSION . '; ' . get_bloginfo( 'url' ),
             )
         );
 
@@ -714,7 +714,7 @@ class Usage extends Abstract_Class {
             )
         ) {
             // Enqueue the notice scripts.
-            wp_enqueue_script( 'adt-pfp-allow-usage-tracking-notice', WOOCOMMERCESEA_PLUGIN_URL . '/js/usage-tracking-notice.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_enqueue_script( 'adt-pfp-allow-usage-tracking-notice', ADT_PFP_JS_URL . 'usage-tracking-notice.js', array( 'jquery' ), ADT_PFP_OPTION_INSTALLED_VERSION, true );
             wp_localize_script(
                 'adt-pfp-allow-usage-tracking-notice',
                 'adt_pfp_allow_tracking_notice',

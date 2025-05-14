@@ -61,10 +61,10 @@ class Activation extends Abstract_Class {
          * via get/add/update_site_option functions.
          */
         if ( is_multisite() ) {
-            $installed_version = get_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION );
+            $installed_version = get_option( ADT_PFP_OPTION_INSTALLED_VERSION );
             if ( $installed_version ) {
-                update_site_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION, $installed_version );
-                delete_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION );
+                update_site_option( ADT_PFP_OPTION_INSTALLED_VERSION, $installed_version );
+                delete_option( ADT_PFP_OPTION_INSTALLED_VERSION );
             }
         }
 
@@ -77,7 +77,7 @@ class Activation extends Abstract_Class {
         ( new Version_13_3_5_Update() )->run();
 
         // Update current installed plugin version.
-        update_site_option( WOOCOMMERCESEA_OPTION_INSTALLED_VERSION, Helper::get_plugin_version() );
+        update_site_option( ADT_PFP_OPTION_INSTALLED_VERSION, Helper::get_plugin_version() );
 
         // Unschedule the legacy cron job if it exists.
         if ( wp_next_scheduled( 'woosea_cron_hook' ) ) {

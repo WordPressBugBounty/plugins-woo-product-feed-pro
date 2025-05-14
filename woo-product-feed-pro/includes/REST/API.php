@@ -36,7 +36,7 @@ class API extends Abstract_REST {
      * @return WP_REST_Response
      */
     public function version() {
-        $version = defined( 'WOOCOMMERCESEA_PLUGIN_VERSION' ) ? WOOCOMMERCESEA_PLUGIN_VERSION : '';
+        $version = defined( 'ADT_PFP_OPTION_INSTALLED_VERSION' ) ? ADT_PFP_OPTION_INSTALLED_VERSION : '';
         return new WP_REST_Response( array( 'version' => $version ), 200 );
     }
 }
