@@ -52,6 +52,11 @@ class Rules extends Abstract_Class {
 
             $value = $data[ $rule['attribute'] ] ?? '';
 
+            $value = $this->maybe_get_category_hierarchy( $value, $rule['attribute'], $data );
+
+            // Backward compatibility for category slug, for previous versions we used to use the category name.
+            $rule = $this->maybe_get_category_slug( $rule, $rule['attribute'] );
+
             // For some reason, the calculation rules conditions doesn't show the than_attribute in the frontend.
             // So instead of altering the then_attribute, it will alter the attribute.
             $calculation_rules = array(
@@ -157,7 +162,7 @@ class Rules extends Abstract_Class {
                 }
                 break;
             case '<=':
-            case '=<':
+            case '=<': // Backward compatibility for <=. Old version used =<.
                 if ( $value <= $rule_value ) {
                     $rule_met = true;
                 }

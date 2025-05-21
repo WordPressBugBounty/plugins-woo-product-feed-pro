@@ -1,3 +1,8 @@
+= 13.4.4.1 (2025-05-21) =
+* Bug Fix: Rules And Filter Not Working If Product Category Name Has Spacing
+* Bug Fix: The  "Number of variations in stock"  filter is not functioning as expected during feed creation.
+* Improvement: Go to edit feed when clicking on feed name
+
 = 13.4.4 (2025-05-07) =
 * Bug Fix: Allow Adding Of Fields On Google Review Template
 * Bug Fix: Notice: Function _load_textdomain_just_in_time Is printed out in pages

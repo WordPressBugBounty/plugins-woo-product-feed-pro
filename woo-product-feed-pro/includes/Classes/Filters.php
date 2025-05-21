@@ -50,6 +50,11 @@ class Filters extends Abstract_Class {
             $attribute = $filter['attribute'];
             $value     = isset( $data[ $attribute ] ) ? $data[ $attribute ] : '';
 
+            $value = $this->maybe_get_category_hierarchy( $value, $attribute, $data );
+
+            // Backward compatibility for category slug, for previous versions we used to use the category name.
+            $filter = $this->maybe_get_category_slug( $filter, $attribute );
+
             // Process the filter based on whether the value is an array or not.
             $filter_passed = $this->process_filter_value( $value, $filter, $feed );
 
@@ -243,6 +248,7 @@ class Filters extends Abstract_Class {
                 return $this->evaluate_condition( $match, $then );
 
             case '<=':
+            case '=<': // Backward compatibility for <=. Old version used =<.
                 $match = $value <= $filter_value;
                 return $this->evaluate_condition( $match, $then );
 

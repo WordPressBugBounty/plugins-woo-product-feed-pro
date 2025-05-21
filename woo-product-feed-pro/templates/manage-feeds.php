@@ -97,7 +97,7 @@ $feeds_query = new Product_Feed_Query(
                         </div>
                         <div class="adt-manage-feeds-table-row-item adt-manage-feeds-table-row-name" data-label="Feed Name">
                             <div>
-                                <a href="#" class="adt-manage-feeds-table-row-name-link">
+                                <a href="<?php echo esc_url( Manage_Feeds_Page::get_product_feed_setting_url( $feed->id ) ); ?>" class="adt-manage-feeds-table-row-name-link">
                                     <?php echo esc_html( $feed->title ); ?>
                                 </a>
                                 <span class="adt-tooltip">

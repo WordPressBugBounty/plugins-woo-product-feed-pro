@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-14T01:24:09+00:00\n"
+"POT-Creation-Date: 2025-05-21T03:19:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: woo-product-feed-pro\n"
@@ -221,8 +221,8 @@ msgstr ""
 msgid "Upgrade To Elite"
 msgstr ""
 
-#: includes/Classes/Filters.php:290
-#: includes/Classes/Rules.php:245
+#: includes/Classes/Filters.php:296
+#: includes/Classes/Rules.php:250
 msgid "You are not allowed to perform this action."
 msgstr ""
 
@@ -663,75 +663,75 @@ msgstr ""
 msgid "Product Feed CPT"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:122
+#: includes/Traits/Filters_Rules_Trait.php:127
 msgid "contains"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:123
+#: includes/Traits/Filters_Rules_Trait.php:128
 msgid "doesn't contain"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:124
+#: includes/Traits/Filters_Rules_Trait.php:129
 msgid "is equal to"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:125
+#: includes/Traits/Filters_Rules_Trait.php:130
 msgid "is not equal to"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:126
+#: includes/Traits/Filters_Rules_Trait.php:131
 msgid "is greater than"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:127
+#: includes/Traits/Filters_Rules_Trait.php:132
 msgid "is greater or equal to"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:128
+#: includes/Traits/Filters_Rules_Trait.php:133
 msgid "is less than"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:129
+#: includes/Traits/Filters_Rules_Trait.php:134
 msgid "is less or equal to"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:130
+#: includes/Traits/Filters_Rules_Trait.php:135
 msgid "is empty"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:131
+#: includes/Traits/Filters_Rules_Trait.php:136
 msgid "is not empty"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:137
+#: includes/Traits/Filters_Rules_Trait.php:142
 msgid "multiply"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:138
+#: includes/Traits/Filters_Rules_Trait.php:143
 msgid "divide"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:139
+#: includes/Traits/Filters_Rules_Trait.php:144
 msgid "plus"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:140
+#: includes/Traits/Filters_Rules_Trait.php:145
 msgid "minus"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:141
+#: includes/Traits/Filters_Rules_Trait.php:146
 msgid "find and replace"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:158
+#: includes/Traits/Filters_Rules_Trait.php:163
 msgid "Exclude"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:159
+#: includes/Traits/Filters_Rules_Trait.php:164
 msgid "Include only"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:162
+#: includes/Traits/Filters_Rules_Trait.php:167
 msgid "Action"
 msgstr ""
 

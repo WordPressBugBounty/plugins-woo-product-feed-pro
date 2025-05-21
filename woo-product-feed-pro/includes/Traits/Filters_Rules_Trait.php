@@ -104,6 +104,11 @@ trait Filters_Rules_Trait {
         $conditions = self::get_condition_list( $type );
         $html       = '';
 
+        // Backward compatibility for <=. Old version used =<.
+        if ( '=<' === $selected ) {
+            $selected = '<=';
+        }
+
         foreach ( $conditions as $value => $label ) {
             $html .= '<option value="' . esc_attr( $value ) . '"' . selected( $selected, $value, false ) . '>' . esc_html( $label ) . '</option>';
         }
@@ -126,7 +131,7 @@ trait Filters_Rules_Trait {
             '>'           => __( 'is greater than', 'woo-product-feed-pro' ),
             '>='          => __( 'is greater or equal to', 'woo-product-feed-pro' ),
             '<'           => __( 'is less than', 'woo-product-feed-pro' ),
-            '=<'          => __( 'is less or equal to', 'woo-product-feed-pro' ),
+            '<='          => __( 'is less or equal to', 'woo-product-feed-pro' ),
             'empty'       => __( 'is empty', 'woo-product-feed-pro' ),
             'notempty'    => __( 'is not empty', 'woo-product-feed-pro' ),
         );
@@ -168,5 +173,85 @@ trait Filters_Rules_Trait {
         $html .= '</optgroup>';
 
         return $html;
+    }
+
+        /**
+         * Get the category hierarchy.
+         *
+         * @since 13.4.4.1
+         * @access private
+         *
+         * @param string $value The value to get the category hierarchy for.
+         * @param string $attribute The attribute to get the category hierarchy for.
+         * @param array  $data The data to get the category hierarchy for.
+         * @return string The category hierarchy.
+         */
+    public function maybe_get_category_hierarchy( $value, $attribute, $data ) {
+        $categories_attributes = array( 'categories', 'raw_categories' );
+        if ( in_array( $attribute, $categories_attributes, true ) ) {
+            $value = $this->get_category_hierarchy( $value, $data );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get the category hierarchy.
+     *
+     * @since 13.4.4.1
+     * @access private
+     *
+     * @param string $value The value to get the category hierarchy for.
+     * @param array  $data The data to get the category hierarchy for.
+     * @return string The category hierarchy.
+     */
+    public function get_category_hierarchy( $value, $data ) {
+        $product_id = $data['id'] ?? 0;
+        if ( ! $product_id ) {
+            return $value;
+        }
+
+        $product = wc_get_product( $product_id );
+        if ( ! $product ) {
+            return $value;
+        }
+
+        $categories = $product->get_category_ids();
+        if ( empty( $categories ) ) {
+            return $value;
+        }
+
+        $category_hierarchy = array();
+        foreach ( $categories as $category ) {
+            $category_hierarchy[] = get_term( $category, 'product_cat' )->slug;
+        }
+        return $category_hierarchy;
+    }
+
+    /**
+     * Get the category slug.
+     * Backward compatibility for category slug, for previous versions we used to use the category name.
+     *
+     * @since 13.4.4.1
+     * @access private
+     *
+     * @param array  $filter_or_rule The filter or rule to get the category slug for.
+     * @param string $attribute The attribute to get the category slug for.
+     * @return array The filter with the category slug.
+     */
+    public function maybe_get_category_slug( $filter_or_rule, $attribute ) {
+        $categories_attributes = array( 'categories', 'raw_categories' );
+        if ( in_array( $attribute, $categories_attributes, true ) ) {
+            $criteria = $filter_or_rule['criteria'] ?? '';
+
+            // If the value is a category name, convert it to a slug.
+            if ( is_string( $criteria ) && ! empty( $criteria ) ) {
+                $term = get_term_by( 'name', $criteria, 'product_cat' );
+                if ( $term && ! is_wp_error( $term ) ) {
+                    $filter_or_rule['criteria'] = $term->slug;
+                }
+            }
+        }
+        return $filter_or_rule;
     }
 }
