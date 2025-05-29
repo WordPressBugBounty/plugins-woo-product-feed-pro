@@ -315,6 +315,7 @@ class Product_Feed {
     private function _filter_meta_value( $value, $key ) {
         switch ( $key ) {
             case 'filters':
+            case 'rules':
                 $value = $this->_filter_feed_filters_mapping_meta_value( $value );
         }
         return $value;

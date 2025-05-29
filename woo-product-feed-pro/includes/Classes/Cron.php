@@ -136,7 +136,7 @@ class Cron extends Abstract_Class {
      */
     public function as_generate_product_feed_callback( $feed_id ) {
         $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( ! $feed->id ) {
+        if ( ! $feed ) {
             return;
         }
 
@@ -157,19 +157,21 @@ class Cron extends Abstract_Class {
      */
     public function as_generate_product_feed_batch_callback( $feed_id, $offset = 0, $batch_size = 0 ) {
         $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( $feed->id ) {
-            /**
-             * Check if the feed is stopped.
-             *
-             * If in the middle of processing a feed and the feed is stopped by the user.
-             * This is to avoid the feed from continuing to process when the user has stopped it.
-             */
-            if ( 'stopped' === $feed->status ) {
-                return;
-            }
-
-            $feed->run_batch_event( $offset, $batch_size, 'cron' );
+        if ( ! $feed ) {
+            return;
         }
+
+        /**
+         * Check if the feed is stopped.
+         *
+         * If in the middle of processing a feed and the feed is stopped by the user.
+         * This is to avoid the feed from continuing to process when the user has stopped it.
+         */
+        if ( 'stopped' === $feed->status ) {
+            return;
+        }
+
+        $feed->run_batch_event( $offset, $batch_size, 'cron' );
     }
 
     /**

@@ -56,6 +56,18 @@
     "src": "src/vanilla/manage-feeds/style.scss",
     "isEntry": true
   },
+  "src/vanilla/notices/index-legacy.ts": {
+    "file": "vanilla\\notices/index-legacy.Dtxv5FgP.js",
+    "name": "vanilla\\notices/index",
+    "src": "src/vanilla/notices/index-legacy.ts",
+    "isEntry": true
+  },
+  "src/vanilla/notices/index.ts": {
+    "file": "vanilla\\notices/index._wB3h0w1.js",
+    "name": "vanilla\\notices/index",
+    "src": "src/vanilla/notices/index.ts",
+    "isEntry": true
+  },
   "vite/legacy-polyfills-legacy": {
     "file": "polyfills-legacy.1YHuT6CT.js",
     "name": "polyfills",

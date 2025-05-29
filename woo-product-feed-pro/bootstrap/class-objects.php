@@ -7,6 +7,7 @@
  */
 
 use AdTribes\PFP\Classes\WP_Admin;
+use AdTribes\PFP\Classes\Notices;
 use AdTribes\PFP\Classes\Product_Feed_Admin;
 use AdTribes\PFP\Classes\Product_Feed_Attributes;
 use AdTribes\PFP\Classes\Product_Data;
@@ -32,6 +33,7 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
     Product_Feed_Admin::instance(),
+    Notices::instance(),
     Product_Feed_Attributes::instance(),
     Product_Data::instance(),
     Shipping_Data::instance(),

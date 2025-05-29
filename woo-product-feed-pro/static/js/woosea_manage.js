@@ -15,21 +15,6 @@ jQuery(function ($) {
     }
   });
 
-  $('.dismiss-review-notification, .review-notification .notice-dismiss').on('click', function () {
-    var nonce = $('#_wpnonce').val();
-
-    $('.review-notification').remove();
-
-    jQuery.ajax({
-      method: 'POST',
-      url: ajaxurl,
-      data: {
-        action: 'woosea_review_notification',
-        security: nonce,
-      },
-    });
-  });
-
   $('.get_elite .notice-dismiss').on('click', function (e) {
     var nonce = $('#_wpnonce').val();
 

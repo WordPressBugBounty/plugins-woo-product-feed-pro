@@ -84,26 +84,6 @@ if ( isset( $_GET['tab'] ) ) {
                 <h1 class="title"><?php echo esc_html( $header_text ); ?></h1>
             </div>
 
-            <?php
-            /**
-             * Request our plugin users to write a review
-             */
-            if ( $total_projects > 0 ) {
-                $first_activation         = get_option( 'woosea_first_activation' );
-                $notification_interaction = get_option( 'woosea_review_interaction' );
-                $current_time             = time();
-                $show_after               = 604800; // Show only after one week
-                $is_active                = $current_time - $first_activation;
-                $page                     = sanitize_text_field( basename( $_SERVER['REQUEST_URI'] ) );
-
-                if ( ( $is_active > $show_after ) && ( $notification_interaction != 'yes' ) ) {
-                    echo '<div class="notice notice-info review-notification">';
-                    echo '<table><tr><td></td><td><font color="green" style="font-weight:normal";><p>Hey, I noticed you have been using our plugin, <u>Product Feed PRO for WooCommerce by AdTribes.io</u>, for over a week now and have created product feed projects with it - that\'s awesome! Could you please do our support volunteers and me a BIG favor and give it a <strong>5-star rating</strong> on WordPress? Just to help us spread the word and boost our motivation. We would greatly appreciate if you would do so :)<br/>~ Adtribes.io support team<br><ul><li><span class="ui-icon ui-icon-caret-1-e" style="display: inline-block;"></span><a href="https://wordpress.org/support/plugin/woo-product-feed-pro/reviews?rate=5#new-post" target="_blank" class="dismiss-review-notification">Ok, you deserve it</a></li><li><span class="ui-icon ui-icon-caret-1-e" style="display: inline-block;"></span><a href="#" class="dismiss-review-notification">Nope, maybe later</a></li><li><span class="ui-icon ui-icon-caret-1-e" style="display: inline-block;"></span><a href="#" class="dismiss-review-notification">I already did</a></li></ul></p></font></td></tr></table>';
-                    echo '</div>';
-                }
-            }
-            ?>
-
             <!-- WordPress provides the styling for tabs. -->
             <h2 class="nav-tab-wrapper woo-product-feed-pro-nav-tab-wrapper">
                 <!-- when tab buttons are clicked we jump back to the same page but with a new parameter that represents the clicked tab. accordingly we make it active -->

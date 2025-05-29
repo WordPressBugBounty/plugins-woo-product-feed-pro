@@ -178,9 +178,9 @@ class Formatting {
      */
     public static function format_refresh_interval( $interval ) {
         $intervals = array(
-            'daily'   => __( 'Daily', 'woo-product-feed-pro' ),
-            'weekly'  => __( 'Weekly', 'woo-product-feed-pro' ),
-            'monthly' => __( 'Monthly', 'woo-product-feed-pro' ),
+            'hourly'     => __( 'Hourly', 'woo-product-feed-pro' ),
+            'twicedaily' => __( 'Twice Daily', 'woo-product-feed-pro' ),
+            'daily'      => __( 'Daily', 'woo-product-feed-pro' ),
         );
 
         return $intervals[ $interval ] ?? __( 'No Refresh', 'woo-product-feed-pro' );

@@ -40,7 +40,8 @@ class Heartbeat extends Abstract_Class {
      * @return void
      */
     public function ajax_get_product_feed_processing_status() {
-        if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'adt_nonce' ) ) {
+        $nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'adt_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -52,13 +53,12 @@ class Heartbeat extends Abstract_Class {
             wp_send_json_error( __( 'Invalid request.', 'woo-product-feed-pro' ) );
         }
 
-        $feed_ids = array_map( 'sanitize_text_field', $_POST['feed_ids'] );
+        $feed_ids = array_map( 'sanitize_text_field', wp_unslash( $_POST['feed_ids'] ) );
         $response = array();
 
         foreach ( $feed_ids as $feed_id ) {
             $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-
-            if ( ! $feed->id ) {
+            if ( ! $feed ) {
                 continue;
             }
 
@@ -154,16 +154,17 @@ class Heartbeat extends Abstract_Class {
      * @access public
      */
     public function ajax_generate_product_feed() {
-        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
+        $security = isset( $_REQUEST['security'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ) : '';
+        if ( ! wp_verify_nonce( $security, 'woosea_ajax_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
-        $feed_id    = sanitize_text_field( $_POST['feed_id'] );
-        $offset     = sanitize_text_field( $_POST['offset'] );
-        $batch_size = sanitize_text_field( $_POST['batch_size'] );
+        $feed_id    = sanitize_text_field( wp_unslash( $_POST['feed_id'] ?? '' ) );
+        $offset     = sanitize_text_field( wp_unslash( $_POST['offset'] ?? '' ) );
+        $batch_size = sanitize_text_field( wp_unslash( $_POST['batch_size'] ?? '' ) );
 
         $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( ! $feed->id ) {
+        if ( ! $feed ) {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }
 

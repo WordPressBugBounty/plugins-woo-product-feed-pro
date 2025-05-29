@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.8
-Stable tag: 13.4.4.1
+Stable tag: 13.4.4.2
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -385,6 +385,11 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.4.4.2 (2025-05-28) =
+* Bug Fix: Manage Feed Dashboard is not showing the refresh interval info for "Hourly" and "Twice Daily"
+* Bug Fix: Rules are not Saved when the condition is set to "iss less than" or "is greater than"
+* Improvement: refactor and fix review request notification
 
 = 13.4.4.1 (2025-05-21) =
 * Bug Fix: Rules And Filter Not Working If Product Category Name Has Spacing

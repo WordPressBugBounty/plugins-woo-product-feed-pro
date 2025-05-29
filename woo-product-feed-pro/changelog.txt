@@ -1,3 +1,8 @@
+= 13.4.4.2 (2025-05-28) =
+* Bug Fix: Manage Feed Dashboard is not showing the refresh interval info for "Hourly" and "Twice Daily"
+* Bug Fix: Rules are not Saved when the condition is set to "iss less than" or "is greater than"
+* Improvement: refactor and fix review request notification
+
 = 13.4.4.1 (2025-05-21) =
 * Bug Fix: Rules And Filter Not Working If Product Category Name Has Spacing
 * Bug Fix: The  "Number of variations in stock"  filter is not functioning as expected during feed creation.

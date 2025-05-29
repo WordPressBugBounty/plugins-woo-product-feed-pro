@@ -36,7 +36,8 @@ class Product_Feed_Admin extends Abstract_Class {
      * @access public
      */
     public function ajax_update_product_feed_status() {
-        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
+        $security = isset( $_REQUEST['security'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ) : '';
+        if ( ! wp_verify_nonce( $security, 'woosea_ajax_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -44,11 +45,11 @@ class Product_Feed_Admin extends Abstract_Class {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
-        $project_hash = sanitize_text_field( $_POST['project_hash'] );
-        $is_publish   = sanitize_text_field( $_POST['active'] );
+        $project_hash = sanitize_text_field( wp_unslash( $_POST['project_hash'] ?? '' ) );
+        $is_publish   = sanitize_text_field( wp_unslash( $_POST['active'] ?? '' ) );
 
         $feed = Product_Feed_Helper::get_product_feed( $project_hash );
-        if ( ! $feed->id ) {
+        if ( ! $feed ) {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }
 
@@ -91,7 +92,8 @@ class Product_Feed_Admin extends Abstract_Class {
      * @return void
      */
     public function ajax_clone_product_feed() {
-        if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'adt_nonce' ) ) {
+        $nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'adt_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -99,8 +101,8 @@ class Product_Feed_Admin extends Abstract_Class {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
-        $original_feed = Product_Feed_Helper::get_product_feed( sanitize_text_field( $_POST['id'] ) );
-        if ( ! $original_feed->id ) {
+        $original_feed = Product_Feed_Helper::get_product_feed( sanitize_text_field( wp_unslash( $_POST['id'] ?? '' ) ) );
+        if ( ! $original_feed ) {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }
 
@@ -248,7 +250,8 @@ class Product_Feed_Admin extends Abstract_Class {
      * @access public
      */
     public function ajax_refresh_product_feed() {
-        if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'adt_nonce' ) ) {
+        $nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'adt_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -256,10 +259,10 @@ class Product_Feed_Admin extends Abstract_Class {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
-        $feed_id = sanitize_text_field( $_POST['id'] );
+        $feed_id = sanitize_text_field( wp_unslash( $_POST['id'] ?? '' ) );
 
         $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( ! $feed->id ) {
+        if ( ! $feed ) {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }
 
@@ -287,7 +290,8 @@ class Product_Feed_Admin extends Abstract_Class {
      * @return void
      */
     public function ajax_delete_product_feed() {
-        if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'adt_nonce' ) ) {
+        $nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'adt_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -295,10 +299,10 @@ class Product_Feed_Admin extends Abstract_Class {
             wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
-        $feed_id = sanitize_text_field( $_POST['id'] );
+        $feed_id = sanitize_text_field( wp_unslash( $_POST['id'] ?? '' ) );
 
         $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( ! $feed->id ) {
+        if ( ! $feed ) {
             wp_send_json_error( __( 'Product feed not found.', 'woo-product-feed-pro' ) );
         }
 
@@ -318,11 +322,12 @@ class Product_Feed_Admin extends Abstract_Class {
      * @access public
      */
     public function ajax_print_channels() {
-        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
+        $security = isset( $_REQUEST['security'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ) : '';
+        if ( ! wp_verify_nonce( $security, 'woosea_ajax_nonce' ) ) {
             wp_send_json_error( __( 'Nonce verification failed', 'woo-product-feed-pro' ) );
         }
 
-        $country  = sanitize_text_field( $_POST['country'] );
+        $country  = sanitize_text_field( wp_unslash( $_POST['country'] ?? '' ) );
         $channels = Product_Feed_Attributes::get_channels( $country );
         $data     = Product_Feed_Helper::print_channel_options( $channels );
         wp_send_json_success( $data );
@@ -337,7 +342,8 @@ class Product_Feed_Admin extends Abstract_Class {
      * @return void
      */
     public function ajax_process_bulk_feed_actions() {
-        if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'adt_nonce' ) ) {
+        $nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'adt_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -346,7 +352,7 @@ class Product_Feed_Admin extends Abstract_Class {
         }
 
         $feed_ids = isset( $_POST['feed_ids'] ) ? array_map( 'intval', (array) $_POST['feed_ids'] ) : array();
-        $action   = isset( $_POST['bulk_action'] ) ? sanitize_text_field( $_POST['bulk_action'] ) : '';
+        $action   = isset( $_POST['bulk_action'] ) ? sanitize_text_field( wp_unslash( $_POST['bulk_action'] ) ) : '';
 
         if ( empty( $feed_ids ) || empty( $action ) ) {
             wp_send_json_error( __( 'Invalid request. Feed IDs or action missing.', 'woo-product-feed-pro' ) );
@@ -359,7 +365,7 @@ class Product_Feed_Admin extends Abstract_Class {
         foreach ( $feed_ids as $feed_id ) {
             $feed = Product_Feed_Helper::get_product_feed( $feed_id );
 
-            if ( ! $feed->id ) {
+            if ( ! $feed ) {
                 // translators: %s is the feed ID.
                 $errors[] = sprintf( __( 'Feed with ID %d not found.', 'woo-product-feed-pro' ), $feed_id );
                 continue;
@@ -626,7 +632,7 @@ class Product_Feed_Admin extends Abstract_Class {
         }
 
         $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( ! $feed->id ) {
+        if ( ! $feed ) {
             wp_send_json_error(
                 array(
                     'message' => __( 'Feed not found.', 'woo-product-feed-pro' ),
@@ -687,7 +693,7 @@ class Product_Feed_Admin extends Abstract_Class {
         }
 
         $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-        if ( ! $feed->id ) {
+        if ( ! $feed ) {
             wp_send_json_error(
                 array(
                     'message' => __( 'Feed not found.', 'woo-product-feed-pro' ),

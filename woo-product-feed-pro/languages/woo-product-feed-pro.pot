@@ -2,16 +2,16 @@
 # This file is distributed under the GPL3.
 msgid ""
 msgstr ""
-"Project-Id-Version: Product Feed PRO for WooCommerce 13.4.4\n"
+"Project-Id-Version: Product Feed PRO for WooCommerce 13.4.4.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woo-product-feed-pro\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-21T03:19:18+00:00\n"
+"POT-Creation-Date: 2025-05-28T23:39:35+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.11.0\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woo-product-feed-pro\n"
 
 #. Plugin Name of the plugin
@@ -40,14 +40,14 @@ msgid "https://www.adtribes.io"
 msgstr ""
 
 #: bootstrap-old.php:633
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:643
-#: includes/Classes/Heartbeat.php:44
-#: includes/Classes/Heartbeat.php:158
-#: includes/Classes/Product_Feed_Admin.php:40
-#: includes/Classes/Product_Feed_Admin.php:95
-#: includes/Classes/Product_Feed_Admin.php:252
-#: includes/Classes/Product_Feed_Admin.php:291
-#: includes/Classes/Product_Feed_Admin.php:341
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:644
+#: includes/Classes/Heartbeat.php:45
+#: includes/Classes/Heartbeat.php:159
+#: includes/Classes/Product_Feed_Admin.php:41
+#: includes/Classes/Product_Feed_Admin.php:97
+#: includes/Classes/Product_Feed_Admin.php:255
+#: includes/Classes/Product_Feed_Admin.php:295
+#: includes/Classes/Product_Feed_Admin.php:347
 #: includes/Classes/Usage.php:760
 #: includes/Classes/Usage.php:790
 #: includes/Classes/WP_Admin.php:263
@@ -64,6 +64,7 @@ msgstr ""
 
 #. translators: %1$s = opening <strong> tag; %2$s = closing </strong> tag; %3$s = opening <p> tag; %4$s = closing </p> tag
 #: bootstrap/app.php:210
+#, php-format
 msgid "%3$s%1$sProduct Feed Pro for WooCommerce %2$splugin missing dependency.%4$s"
 msgstr ""
 
@@ -110,6 +111,7 @@ msgstr ""
 #. translators: %s: WooCommerce Product Feed PRO plugin rating link
 #: includes/Classes/Admin_Pages/Edit_Feed_Page.php:274
 #: templates/settings-page.php:45
+#, php-format
 msgid "If you like our %1$s plugin please leave us a %2$s rating. Thanks in advance!"
 msgstr ""
 
@@ -121,17 +123,17 @@ msgstr ""
 msgid "Feed not found"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:647
-#: includes/Classes/Heartbeat.php:48
-#: includes/Classes/Product_Feed_Admin.php:44
-#: includes/Classes/Product_Feed_Admin.php:99
-#: includes/Classes/Product_Feed_Admin.php:256
-#: includes/Classes/Product_Feed_Admin.php:295
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:648
+#: includes/Classes/Heartbeat.php:49
+#: includes/Classes/Product_Feed_Admin.php:45
+#: includes/Classes/Product_Feed_Admin.php:101
+#: includes/Classes/Product_Feed_Admin.php:259
+#: includes/Classes/Product_Feed_Admin.php:299
 #: includes/Classes/Product_Feed_Attributes.php:585
 msgid "You do not have permission to manage product feed."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:760
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:761
 #: includes/Classes/Usage.php:756
 #: includes/Classes/Usage.php:786
 #: includes/Classes/WP_Admin.php:259
@@ -141,27 +143,27 @@ msgstr ""
 msgid "You do not have permission to perform this action."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:761
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:762
 msgid "Permission denied."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:772
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:773
 msgid "Feed title is required."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:777
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:778
 msgid "Channel field is required."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:782
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:783
 msgid "Field mapping is empty or you haven't saved the field mapping. Go to the Field Mapping tab and save the field mapping."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:789
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:790
 msgid "Required feed configuration fields are missing."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:798
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:799
 msgid "All required fields are filled."
 msgstr ""
 
@@ -226,7 +228,7 @@ msgstr ""
 msgid "You are not allowed to perform this action."
 msgstr ""
 
-#: includes/Classes/Heartbeat.php:52
+#: includes/Classes/Heartbeat.php:53
 #: includes/Classes/WP_Admin.php:271
 msgid "Invalid request."
 msgstr ""
@@ -239,17 +241,29 @@ msgstr ""
 msgid "Product Feed: heartbeat"
 msgstr ""
 
-#: includes/Classes/Heartbeat.php:167
-#: includes/Classes/Product_Feed_Admin.php:52
-#: includes/Classes/Product_Feed_Admin.php:104
-#: includes/Classes/Product_Feed_Admin.php:263
-#: includes/Classes/Product_Feed_Admin.php:302
+#: includes/Classes/Heartbeat.php:168
+#: includes/Classes/Product_Feed_Admin.php:53
+#: includes/Classes/Product_Feed_Admin.php:106
+#: includes/Classes/Product_Feed_Admin.php:266
+#: includes/Classes/Product_Feed_Admin.php:306
 msgid "Product feed not found."
 msgstr ""
 
 #: includes/Classes/Marketing.php:51
 #: templates/about-page.php:41
 msgid "Advanced Coupons"
+msgstr ""
+
+#: includes/Classes/Notices.php:246
+msgid "Ok, you deserve it"
+msgstr ""
+
+#: includes/Classes/Notices.php:252
+msgid "Nope, maybe later"
+msgstr ""
+
+#: includes/Classes/Notices.php:258
+msgid "I already did"
 msgstr ""
 
 #: includes/Classes/Plugin_Installer.php:95
@@ -264,140 +278,150 @@ msgstr ""
 msgid "The plugin is already installed."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:189
+#: includes/Classes/Product_Feed_Admin.php:191
 msgid "You do not have permission to cancel feeds."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:200
-#: includes/Classes/Product_Feed_Admin.php:622
-#: includes/Classes/Product_Feed_Admin.php:683
+#: includes/Classes/Product_Feed_Admin.php:202
+#: includes/Classes/Product_Feed_Admin.php:628
+#: includes/Classes/Product_Feed_Admin.php:689
 msgid "No feed ID provided."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:211
-#: includes/Classes/Product_Feed_Admin.php:632
-#: includes/Classes/Product_Feed_Admin.php:693
+#: includes/Classes/Product_Feed_Admin.php:213
+#: includes/Classes/Product_Feed_Admin.php:638
+#: includes/Classes/Product_Feed_Admin.php:699
 #: templates/edit-feed/edit-feed.php:58
 msgid "Feed not found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:239
+#: includes/Classes/Product_Feed_Admin.php:241
 msgid "Feed processing has been cancelled."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:311
+#: includes/Classes/Product_Feed_Admin.php:315
 msgid "Product feed has been deleted."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:322
+#: includes/Classes/Product_Feed_Admin.php:327
 msgid "Nonce verification failed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:345
+#: includes/Classes/Product_Feed_Admin.php:351
 msgid "You do not have permission to manage product feeds."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:352
+#: includes/Classes/Product_Feed_Admin.php:358
 msgid "Invalid request. Feed IDs or action missing."
 msgstr ""
 
 #. translators: %s is the feed ID.
-#: includes/Classes/Product_Feed_Admin.php:364
+#: includes/Classes/Product_Feed_Admin.php:370
+#, php-format
 msgid "Feed with ID %d not found."
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:377
+#: includes/Classes/Product_Feed_Admin.php:383
+#, php-format
 msgid "Error deleting feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the feed title.
-#: includes/Classes/Product_Feed_Admin.php:391
+#: includes/Classes/Product_Feed_Admin.php:397
+#, php-format
 msgid "Copy of %s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:418
+#: includes/Classes/Product_Feed_Admin.php:424
+#, php-format
 msgid "Error duplicating feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:430
+#: includes/Classes/Product_Feed_Admin.php:436
+#, php-format
 msgid "Error setting feed ID %1$d as ready: %2$s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:442
+#: includes/Classes/Product_Feed_Admin.php:448
+#, php-format
 msgid "Error deactivating feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:459
+#: includes/Classes/Product_Feed_Admin.php:465
+#, php-format
 msgid "Error refreshing feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:485
+#: includes/Classes/Product_Feed_Admin.php:491
+#, php-format
 msgid "Error canceling feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the action name.
-#: includes/Classes/Product_Feed_Admin.php:491
+#: includes/Classes/Product_Feed_Admin.php:497
+#, php-format
 msgid "Unknown action: %s"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:501
+#: includes/Classes/Product_Feed_Admin.php:507
 msgid "deleted"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:504
+#: includes/Classes/Product_Feed_Admin.php:510
 msgid "duplicated"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:507
+#: includes/Classes/Product_Feed_Admin.php:513
 msgid "activated"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:510
+#: includes/Classes/Product_Feed_Admin.php:516
 msgid "deactivated"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:513
+#: includes/Classes/Product_Feed_Admin.php:519
 msgid "refreshed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:516
+#: includes/Classes/Product_Feed_Admin.php:522
 msgid "cancelled"
 msgstr ""
 
 #. translators: %1$d is the number of feeds processed, %2$s is the action name.
-#: includes/Classes/Product_Feed_Admin.php:522
+#: includes/Classes/Product_Feed_Admin.php:528
+#, php-format
 msgid "%1$d feed was successfully %2$s."
 msgid_plural "%1$d feeds were successfully %2$s."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Classes/Product_Feed_Admin.php:533
+#: includes/Classes/Product_Feed_Admin.php:539
 msgid "However, some errors occurred:"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:590
+#: includes/Classes/Product_Feed_Admin.php:596
 msgid "Failed to process any feeds."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:611
+#: includes/Classes/Product_Feed_Admin.php:617
 msgid "You do not have permission to activate feeds."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:646
+#: includes/Classes/Product_Feed_Admin.php:652
 msgid "Feed activated successfully."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:672
+#: includes/Classes/Product_Feed_Admin.php:678
 msgid "You do not have permission to deactivate feeds."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:707
+#: includes/Classes/Product_Feed_Admin.php:713
 msgid "Feed deactivated successfully."
 msgstr ""
 
@@ -423,11 +447,13 @@ msgstr ""
 
 #. Translators: %1$s: Line break, %2$s: Link to usage tracking documentation, %3$s: Closing anchor tag.
 #: includes/Classes/Usage.php:644
+#, php-format
 msgid "By allowing us to track usage data we can better help you because we know with which WordPress configurations, themes and plugins we should test.%1$sComplete documentation on usage tracking is available %2$shere%3$s."
 msgstr ""
 
 #. translators: %1$s = opening <p> tag; %2$s = closing </p> tag; %3$s = opening <a> tag; %4$s = closing </a> tag
 #: includes/Classes/Usage.php:685
+#, php-format
 msgid ""
 "%1$sAllow Product Feed Pro for WooCommerce to track plugin usage? Opt-in to let us track usage data so we know with which WordPress configurations, themes and plugins we should test with.%2$s\n"
 "                        %1$sComplete documentation on usage tracking is available %3$shere%4$s.%2$s"
@@ -458,6 +484,7 @@ msgstr ""
 
 #. translators: %1$s and %2$s are placeholders for html tags.
 #: includes/Classes/WP_Admin.php:142
+#, php-format
 msgid "You're using Product Feed Pro FREE VERSION. To unlock more features consider %1$supgrading to Elite%2$s."
 msgstr ""
 
@@ -523,6 +550,7 @@ msgstr ""
 
 #. translators: %1$s = opening <a> tag; %2$s = closing </a> tag
 #: includes/Factories/Admin_Notice.php:121
+#, php-format
 msgid "%1$sPlease ensure you have the %3$s plugin installed and activated.%2$s%4$sClick here to activate &rarr;%5$s"
 msgstr ""
 
@@ -532,11 +560,13 @@ msgstr ""
 
 #. translators: %1$s = opening <p> tag; %2$s = closing </p> tag; %3$s = Product Feed Pro for WooCommerce
 #: includes/Factories/Admin_Notice.php:144
+#, php-format
 msgid "%1$sUnable to activate %3$s plugin. Please install and activate WooCoomerce plugin first.%2$s"
 msgstr ""
 
 #. translators: %1$s = opening <p> tag; %2$s = closing </p> tag; %3$s = Product Feed Pro for WooCommerce
 #: includes/Factories/Admin_Notice.php:155
+#, php-format
 msgid "%1$s%3$sClick here to install %5$s plugin &rarr;%4$s%2$s"
 msgstr ""
 
@@ -546,6 +576,7 @@ msgstr ""
 
 #. translators: %1$s = opening <a> tag; %2$s = closing </a> tag
 #: includes/Factories/Admin_Notice.php:182
+#, php-format
 msgid "%1$s%3$s version needs to be on at least version %4$s to work properly with Product Feed Pro Pro. %2$s%1$sPlease update by clicking below.%2$s%5$sUpdate plugin &rarr;%6$s"
 msgstr ""
 
@@ -562,16 +593,18 @@ msgid "Sample Blocks"
 msgstr ""
 
 #: includes/Helpers/Formatting.php:181
-#: includes/Helpers/Product_Feed_Helper.php:313
-msgid "Daily"
+#: includes/Helpers/Product_Feed_Helper.php:311
+msgid "Hourly"
 msgstr ""
 
 #: includes/Helpers/Formatting.php:182
-msgid "Weekly"
+#: includes/Helpers/Product_Feed_Helper.php:312
+msgid "Twice Daily"
 msgstr ""
 
 #: includes/Helpers/Formatting.php:183
-msgid "Monthly"
+#: includes/Helpers/Product_Feed_Helper.php:313
+msgid "Daily"
 msgstr ""
 
 #: includes/Helpers/Formatting.php:186
@@ -601,14 +634,6 @@ msgstr ""
 
 #: includes/Helpers/Formatting.php:213
 msgid "Unknown"
-msgstr ""
-
-#: includes/Helpers/Product_Feed_Helper.php:311
-msgid "Hourly"
-msgstr ""
-
-#: includes/Helpers/Product_Feed_Helper.php:312
-msgid "Twice Daily"
 msgstr ""
 
 #: includes/Post_Types/Product_Feed_Post_Type.php:32
@@ -1006,6 +1031,7 @@ msgstr ""
 
 #. translators: %s = link to learn static values.
 #: templates/edit-feed/tabs/field-mapping-tab.php:90
+#, php-format
 msgid ""
 "<p>For the selected channel the attributes shown below are mandatory, please map them to your product attributes. \n"
 "                We've already pre-filled a lot of mappings so all you have to do is check those and map the ones that are left blank or add new ones by hitting the 'Add field mapping' button.</p>\n"
@@ -1412,36 +1438,43 @@ msgstr ""
 
 #. translators: %1$s: Opening anchor tag, %2$s: Closing anchor tag.
 #: templates/manage-feeds.php:341
+#, php-format
 msgid "<strong>Need help?</strong> Check out our %1$sGetting Started%2$s guide for step-by-step instructions and tips!"
 msgstr ""
 
 #. translators: %1$s: br and span tag, %2$s: span tag
 #: templates/marketing/acfw-marketing-page.php:21
+#, php-format
 msgid "Get Better Results With %1$s Better WooCommerce Coupons %2$s"
 msgstr ""
 
 #. translators: %s: line break.
 #: templates/marketing/acfw-marketing-page.php:45
+#, php-format
 msgid "Advanced Coupon%sCapabilities"
 msgstr ""
 
 #. translators: %s: line break.
 #: templates/marketing/acfw-marketing-page.php:62
+#, php-format
 msgid "Store Credit%sSystem"
 msgstr ""
 
 #. translators: %s: line break.
 #: templates/marketing/acfw-marketing-page.php:79
+#, php-format
 msgid "Loyalty%sProgram"
 msgstr ""
 
 #. translators: %s: line break.
 #: templates/marketing/acfw-marketing-page.php:96
+#, php-format
 msgid "BOGO%sPromotions"
 msgstr ""
 
 #. translators: %s: line break.
 #: templates/marketing/acfw-marketing-page.php:113
+#, php-format
 msgid "Versatile Gift%sCard Solutions"
 msgstr ""
 
@@ -1533,6 +1566,15 @@ msgstr ""
 msgid "Order of execution: the filters and rules will be executed in the order of creation."
 msgstr ""
 
+#: templates/notices/generic-notice.php:44
+msgid "Dismiss"
+msgstr ""
+
+#: templates/notices/generic-notice.php:49
+#: templates/notices/review-request.php:34
+msgid "Dismiss this notice..."
+msgstr ""
+
 #: templates/notices/upgrade-to-elite-notice.php:13
 msgid "Would you like to get more out of your product feeds? Upgrade to the Elite version of the plugin and you will get:"
 msgstr ""
@@ -1581,12 +1623,12 @@ msgstr ""
 
 #: templates/settings-page.php:57
 #: templates/settings-page.php:61
-#: templates/settings-page.php:111
+#: templates/settings-page.php:91
 msgid "Plugin settings"
 msgstr ""
 
 #: templates/settings-page.php:64
-#: templates/settings-page.php:114
+#: templates/settings-page.php:94
 msgid "Plugin systems check"
 msgstr ""
 
@@ -1594,88 +1636,88 @@ msgstr ""
 msgid "Attribute settings"
 msgstr ""
 
-#: templates/settings-page.php:125
+#: templates/settings-page.php:105
 msgid "Plugin setting"
 msgstr ""
 
-#: templates/settings-page.php:126
+#: templates/settings-page.php:106
 msgid "Off / On"
 msgstr ""
 
-#: templates/settings-page.php:134
+#: templates/settings-page.php:114
 msgid "Use parent variable product image for variations"
 msgstr ""
 
-#: templates/settings-page.php:145
+#: templates/settings-page.php:125
 msgid "Add shipping costs for all countries to your feed (Google Shopping / Facebook only)"
 msgstr ""
 
-#: templates/settings-page.php:156
+#: templates/settings-page.php:136
 msgid "Remove all other shipping classes when free shipping criteria are met (Google Shopping / Facebook only)"
 msgstr ""
 
-#: templates/settings-page.php:167
+#: templates/settings-page.php:147
 msgid "Remove the free shipping zone from your feed (Google Shopping / Facebook only)"
 msgstr ""
 
-#: templates/settings-page.php:178
+#: templates/settings-page.php:158
 msgid "Remove the local pickup shipping zone from your feed (Google Shopping / Facebook only)"
 msgstr ""
 
-#: templates/settings-page.php:189
+#: templates/settings-page.php:169
 msgid "Show only basis attributes in field mapping and filter/rule drop-downs"
 msgstr ""
 
-#: templates/settings-page.php:200
+#: templates/settings-page.php:180
 msgid "Enable logging"
 msgstr ""
 
-#: templates/settings-page.php:212
+#: templates/settings-page.php:192
 msgid "Add Facebook Pixel"
 msgstr ""
 
-#: templates/settings-page.php:214
-#: templates/settings-page.php:267
+#: templates/settings-page.php:194
+#: templates/settings-page.php:247
 msgid "Read more about this"
 msgstr ""
 
-#: templates/settings-page.php:227
+#: templates/settings-page.php:207
 msgid "Insert your Facebook Pixel ID"
 msgstr ""
 
-#: templates/settings-page.php:235
+#: templates/settings-page.php:215
 msgid "Content IDS variable products Facebook Pixel"
 msgstr ""
 
-#: templates/settings-page.php:238
+#: templates/settings-page.php:218
 msgid "Variation product ID's"
 msgstr ""
 
-#: templates/settings-page.php:239
+#: templates/settings-page.php:219
 msgid "Variable product ID"
 msgstr ""
 
-#: templates/settings-page.php:245
+#: templates/settings-page.php:225
 msgid "Add Google Dynamic Remarketing Pixel:"
 msgstr ""
 
-#: templates/settings-page.php:256
+#: templates/settings-page.php:236
 msgid "Insert your Dynamic Remarketing Conversion tracking ID:"
 msgstr ""
 
-#: templates/settings-page.php:265
+#: templates/settings-page.php:245
 msgid "Change products per batch number"
 msgstr ""
 
-#: templates/settings-page.php:280
+#: templates/settings-page.php:260
 msgid "Insert batch size:"
 msgstr ""
 
-#: templates/settings-page.php:407
+#: templates/settings-page.php:387
 msgid "System Report"
 msgstr ""
 
-#: templates/settings-page.php:412
+#: templates/settings-page.php:392
 msgid "Copy the below text and paste to the support team when requested to help us debug any systems issues with your feeds."
 msgstr ""
 

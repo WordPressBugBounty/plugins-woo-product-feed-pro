@@ -808,20 +808,6 @@ function woosea_shipping_zones() {
 add_action( 'wp_ajax_woosea_shipping_zones', 'woosea_shipping_zones' );
 
 /**
- * Register interaction with the review request notification.
- * We do not want to keep bothering our users with the notification.
- */
-function woosea_review_notification() {
-    // Update review notification status.
-    check_ajax_referer( 'woosea_ajax_nonce', 'security' );
-
-    if ( Helper::is_current_user_allowed() ) {
-        update_option( 'woosea_review_interaction', 'yes', false );
-    }
-}
-add_action( 'wp_ajax_woosea_review_notification', 'woosea_review_notification' );
-
-/**
  * Get the attribute mapping helptexts.
  */
 function woosea_fieldmapping_dialog_helptext() {

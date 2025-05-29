@@ -74,7 +74,7 @@ class Edit_Feed_Page extends Admin_Page {
      * @since 13.4.4
      */
     public function enqueue_scripts() {
-        $tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         // Load Google Taxonomy JS.
         switch ( $tab ) {
@@ -296,13 +296,13 @@ class Edit_Feed_Page extends Admin_Page {
         }
 
         // Get the active tab to determine which form we're processing.
-        $active_tab = isset( $_POST['active_tab'] ) ? sanitize_text_field( $_POST['active_tab'] ) : 'general';
+        $active_tab = isset( $_POST['active_tab'] ) ? sanitize_text_field( wp_unslash( $_POST['active_tab'] ) ) : 'general';
         $feed_id    = isset( $_POST['feed_id'] ) ? intval( $_POST['feed_id'] ) : 0;
 
         if ( 0 !== $feed_id ) {
             // Existing feed - process normally.
             $feed = Product_Feed_Helper::get_product_feed( $feed_id );
-            if ( ! $feed->id ) {
+            if ( ! $feed ) {
                 wp_die( esc_html__( 'Feed not found', 'woo-product-feed-pro' ) );
             }
 
@@ -416,10 +416,10 @@ class Edit_Feed_Page extends Admin_Page {
 
         // Process form data.
         $props_to_update = array(
-            'title'                                  => isset( $_POST['projectname'] ) ? sanitize_text_field( $_POST['projectname'] ) : '',
-            'file_format'                            => isset( $_POST['fileformat'] ) ? sanitize_text_field( $_POST['fileformat'] ) : '',
-            'delimiter'                              => isset( $_POST['delimiter'] ) ? sanitize_text_field( $_POST['delimiter'] ) : '',
-            'refresh_interval'                       => isset( $_POST['cron'] ) ? sanitize_text_field( $_POST['cron'] ) : '',
+            'title'                                  => isset( $_POST['projectname'] ) ? sanitize_text_field( wp_unslash( $_POST['projectname'] ) ) : '',
+            'file_format'                            => isset( $_POST['fileformat'] ) ? sanitize_text_field( wp_unslash( $_POST['fileformat'] ) ) : '',
+            'delimiter'                              => isset( $_POST['delimiter'] ) ? sanitize_text_field( wp_unslash( $_POST['delimiter'] ) ) : '',
+            'refresh_interval'                       => isset( $_POST['cron'] ) ? sanitize_text_field( wp_unslash( $_POST['cron'] ) ) : '',
             'include_product_variations'             => isset( $_POST['product_variations'] ) ? 'yes' : 'no',
             'only_include_default_product_variation' => isset( $_POST['default_variations'] ) ? 'yes' : 'no',
             'only_include_lowest_product_variation'  => isset( $_POST['lowest_price_variations'] ) ? 'yes' : 'no',
@@ -470,7 +470,7 @@ class Edit_Feed_Page extends Admin_Page {
         // phpcs:disable WordPress.Security.NonceVerification
 
         // Process field mapping data.
-        $attributes = isset( $_POST['attributes'] ) ? Helper::sanitize_array( $_POST['attributes'] ) : array();
+        $attributes = isset( $_POST['attributes'] ) ? Helper::sanitize_array( $_POST['attributes'] ) : array(); // phpcs:ignore
 
         $props_to_update = array(
             'attributes' => $attributes,
@@ -511,7 +511,7 @@ class Edit_Feed_Page extends Admin_Page {
         // phpcs:disable WordPress.Security.NonceVerification
 
         // Process category mapping data.
-        $mappings = isset( $_POST['mappings'] ) ? Helper::sanitize_array( $_POST['mappings'] ) : array();
+        $mappings = isset( $_POST['mappings'] ) ? Helper::sanitize_array( $_POST['mappings'] ) : array(); // phpcs:ignore
 
         $props_to_update = array(
             'mappings' => $mappings,
@@ -552,8 +552,8 @@ class Edit_Feed_Page extends Admin_Page {
         // phpcs:disable WordPress.Security.NonceVerification
 
         // Process filters and rules data.
-        $filters = isset( $_POST['rules'] ) ? Helper::sanitize_array( $_POST['rules'] ) : array();
-        $rules   = isset( $_POST['rules2'] ) ? Helper::sanitize_array( $_POST['rules2'] ) : array();
+        $filters = isset( $_POST['rules'] ) ? Helper::sanitize_array( $_POST['rules'] ) : array(); // phpcs:ignore
+        $rules   = isset( $_POST['rules2'] ) ? Helper::sanitize_array( $_POST['rules2'] ) : array(); // phpcs:ignore
 
         $props_to_update = array(
             'filters' => $filters,
@@ -597,11 +597,11 @@ class Edit_Feed_Page extends Admin_Page {
         // Process conversion and analytics data.
         $props_to_update = array(
             'utm_enabled'  => isset( $_POST['utm_on'] ) ? true : false,
-            'utm_source'   => isset( $_POST['utm_source'] ) ? sanitize_text_field( $_POST['utm_source'] ) : '',
-            'utm_medium'   => isset( $_POST['utm_medium'] ) ? sanitize_text_field( $_POST['utm_medium'] ) : '',
-            'utm_campaign' => isset( $_POST['utm_campaign'] ) ? sanitize_text_field( $_POST['utm_campaign'] ) : '',
-            'utm_term'     => isset( $_POST['utm_term'] ) ? sanitize_text_field( $_POST['utm_term'] ) : '',
-            'utm_content'  => isset( $_POST['utm_content'] ) ? sanitize_text_field( $_POST['utm_content'] ) : '',
+            'utm_source'   => isset( $_POST['utm_source'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_source'] ) ) : '',
+            'utm_medium'   => isset( $_POST['utm_medium'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_medium'] ) ) : '',
+            'utm_campaign' => isset( $_POST['utm_campaign'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_campaign'] ) ) : '',
+            'utm_term'     => isset( $_POST['utm_term'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_term'] ) ) : '',
+            'utm_content'  => isset( $_POST['utm_content'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_content'] ) ) : '',
         );
 
         /**
@@ -639,7 +639,8 @@ class Edit_Feed_Page extends Admin_Page {
      * @param array $feed_data Project data from the legacy code base.
      */
     private function create_product_feed( $feed_data ) {
-        if ( ! wp_verify_nonce( $_POST['_wpnonce'], 'woosea_ajax_nonce' ) ) {
+        $nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'woosea_ajax_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 

@@ -138,7 +138,7 @@ class Helper {
         );
 
         // Get the post type parameter from the URL.
-        $post_type = sanitize_text_field( $_GET['post_type'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $post_type = sanitize_text_field( wp_unslash( $_GET['post_type'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         $post_types = array(
             'shop_coupon',
@@ -523,7 +523,7 @@ class Helper {
         // Add any other query parameters from the current URL.
         // phpcs:disable WordPress.Security.NonceVerification.Recommended
         if ( isset( $_GET['subpage'] ) ) {
-            $query_args['subpage'] = $_GET['subpage'];
+            $query_args['subpage'] = esc_attr( sanitize_text_field( wp_unslash( $_GET['subpage'] ) ) );
         }
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
 

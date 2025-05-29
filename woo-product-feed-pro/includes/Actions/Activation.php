@@ -12,6 +12,7 @@ use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Factories\Product_Feed_Query;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
+use AdTribes\PFP\Classes\Notices;
 
 // Updates.
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
@@ -117,6 +118,10 @@ class Activation extends Abstract_Class {
         if ( file_exists( $debug_file ) ) {
             unlink($debug_file); // phpcs:ignore
         }
+
+        // Schedule cron notices.
+        $notices = Notices::instance();
+        $notices->schedule_cron_notices();
 
         update_option( 'adt_pfp_activation_code_triggered', 'yes' );
     }
