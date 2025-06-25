@@ -14,6 +14,7 @@ jQuery(document).ready(function ($) {
   $('.add-filter').on('click', function () {
     const nonce = $('#_wpnonce').val();
     const rowCount = Math.round(new Date().getTime() + Math.random() * 100);
+    const feedType = $('input[name="feed_type"]').val();
 
     $.ajax({
       method: 'POST',
@@ -22,6 +23,7 @@ jQuery(document).ready(function ($) {
         action: 'woosea_ajax_add_filter',
         security: nonce,
         rowCount: rowCount,
+        feed_type: feedType,
       },
       beforeSend: function () {
         // Add loading indicator if needed
@@ -34,11 +36,7 @@ jQuery(document).ready(function ($) {
         }
 
         // Insert the new row before the buttons row
-        if ($('#woosea-ajax-table tbody tr.filter-row, #woosea-ajax-table tbody tr.rule-row').length === 0) {
-          $('#woosea-ajax-table').find('tbody:first').append(response.data.html);
-        } else {
-          $(response.data.html).insertBefore('.rules-buttons');
-        }
+        $('table.woo-product-feed-pro-table .woo-product-feed-pro-body').append(response.data.html);
 
         // Initialize select2 for the new row
         $(document.body).trigger('init_woosea_select2');
@@ -55,6 +53,7 @@ jQuery(document).ready(function ($) {
   $('.add-rule').on('click', function () {
     const nonce = $('#_wpnonce').val();
     const rowCount = Math.round(new Date().getTime() + Math.random() * 100);
+    const feedType = $('input[name="feed_type"]').val();
 
     $.ajax({
       method: 'POST',
@@ -63,6 +62,7 @@ jQuery(document).ready(function ($) {
         action: 'woosea_ajax_add_rule',
         security: nonce,
         rowCount: rowCount,
+        feed_type: feedType,
       },
       beforeSend: function () {
         // Add loading indicator if needed
@@ -75,11 +75,7 @@ jQuery(document).ready(function ($) {
         }
 
         // Insert the new row before the buttons row
-        if ($('#woosea-ajax-table tbody tr.filter-row, #woosea-ajax-table tbody tr.rule-row').length === 0) {
-          $('#woosea-ajax-table').find('tbody:first').append(response.data.html);
-        } else {
-          $(response.data.html).insertBefore('.rules-buttons');
-        }
+        $('table.woo-product-feed-pro-table .woo-product-feed-pro-body').append(response.data.html);
 
         // Initialize select2 for the new row
         $(document.body).trigger('init_woosea_select2');

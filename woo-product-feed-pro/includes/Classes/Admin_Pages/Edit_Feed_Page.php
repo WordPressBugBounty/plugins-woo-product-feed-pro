@@ -11,6 +11,7 @@ use AdTribes\PFP\Abstracts\Admin_Page;
 use AdTribes\PFP\Factories\Vite_App;
 use AdTribes\PFP\Traits\Singleton_Trait;
 use AdTribes\PFP\Helpers\Helper;
+use AdTribes\PFP\Helpers\Sanitization;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
 use AdTribes\PFP\Classes\Admin_Pages\Manage_Feeds_Page;
@@ -230,7 +231,7 @@ class Edit_Feed_Page extends Admin_Page {
      */
     public function update_temp_product_feed( $form_data, $clear = false ) {
         // Sanitize the form data.
-        $form_data = Helper::array_walk_recursive_with_callback( $form_data, array( Helper::class, 'custom_product_feeds_data_sanitize_text_field' ) );
+        $form_data = Helper::array_walk_recursive_with_callback( $form_data, array( Sanitization::class, 'sanitize_text_field' ) );
 
         $project_temp     = get_option( ADT_OPTION_TEMP_PRODUCT_FEED, array() );
         $new_project_hash = empty( $form_data['project_hash'] ) ? Product_Feed_Helper::generate_legacy_project_hash() : '';
@@ -470,7 +471,7 @@ class Edit_Feed_Page extends Admin_Page {
         // phpcs:disable WordPress.Security.NonceVerification
 
         // Process field mapping data.
-        $attributes = isset( $_POST['attributes'] ) ? Helper::sanitize_array( $_POST['attributes'] ) : array(); // phpcs:ignore
+        $attributes = isset( $_POST['attributes'] ) ? Sanitization::sanitize_array( $_POST['attributes'] ) : array(); // phpcs:ignore
 
         $props_to_update = array(
             'attributes' => $attributes,
@@ -511,7 +512,7 @@ class Edit_Feed_Page extends Admin_Page {
         // phpcs:disable WordPress.Security.NonceVerification
 
         // Process category mapping data.
-        $mappings = isset( $_POST['mappings'] ) ? Helper::sanitize_array( $_POST['mappings'] ) : array(); // phpcs:ignore
+        $mappings = isset( $_POST['mappings'] ) ? Sanitization::sanitize_array( $_POST['mappings'] ) : array(); // phpcs:ignore
 
         $props_to_update = array(
             'mappings' => $mappings,
@@ -552,8 +553,8 @@ class Edit_Feed_Page extends Admin_Page {
         // phpcs:disable WordPress.Security.NonceVerification
 
         // Process filters and rules data.
-        $filters = isset( $_POST['rules'] ) ? Helper::sanitize_array( $_POST['rules'] ) : array(); // phpcs:ignore
-        $rules   = isset( $_POST['rules2'] ) ? Helper::sanitize_array( $_POST['rules2'] ) : array(); // phpcs:ignore
+        $filters = isset( $_POST['rules'] ) ? Sanitization::sanitize_array( $_POST['rules'] ) : array(); // phpcs:ignore
+        $rules   = isset( $_POST['rules2'] ) ? Sanitization::sanitize_array( $_POST['rules2'] ) : array(); // phpcs:ignore
 
         $props_to_update = array(
             'filters' => $filters,

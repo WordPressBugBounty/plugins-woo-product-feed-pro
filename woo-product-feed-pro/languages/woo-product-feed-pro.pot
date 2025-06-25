@@ -2,14 +2,14 @@
 # This file is distributed under the GPL3.
 msgid ""
 msgstr ""
-"Project-Id-Version: Product Feed PRO for WooCommerce 13.4.4.1\n"
+"Project-Id-Version: Product Feed PRO for WooCommerce 13.4.5\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woo-product-feed-pro\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-28T23:39:35+00:00\n"
+"POT-Creation-Date: 2025-06-25T04:42:41+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woo-product-feed-pro\n"
@@ -40,7 +40,7 @@ msgid "https://www.adtribes.io"
 msgstr ""
 
 #: bootstrap-old.php:633
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:644
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:645
 #: includes/Classes/Heartbeat.php:45
 #: includes/Classes/Heartbeat.php:159
 #: includes/Classes/Product_Feed_Admin.php:41
@@ -78,62 +78,62 @@ msgstr ""
 msgid "About"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:52
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:53
 msgid "Feed configuration"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:53
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:54
 msgid "Create feed"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:128
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:129
 msgid "General"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:129
-msgid "Field Mapping"
-msgstr ""
-
 #: includes/Classes/Admin_Pages/Edit_Feed_Page.php:130
-#: templates/edit-feed/tabs/field-mapping-tab.php:297
-msgid "Category Mapping"
+msgid "Field Mapping"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Edit_Feed_Page.php:131
 #: templates/edit-feed/tabs/field-mapping-tab.php:297
-msgid "Filters & Rules"
+msgid "Category Mapping"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Edit_Feed_Page.php:132
+#: templates/edit-feed/tabs/field-mapping-tab.php:297
+msgid "Filters & Rules"
+msgstr ""
+
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:133
 msgid "Conversion & Google Analytics"
 msgstr ""
 
 #. translators: %s: WooCommerce Product Feed PRO plugin rating link
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:274
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:275
 #: templates/settings-page.php:45
 #, php-format
 msgid "If you like our %1$s plugin please leave us a %2$s rating. Thanks in advance!"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:295
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:296
 msgid "You do not have permission to edit feeds"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:306
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:307
 msgid "Feed not found"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:648
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:649
 #: includes/Classes/Heartbeat.php:49
 #: includes/Classes/Product_Feed_Admin.php:45
 #: includes/Classes/Product_Feed_Admin.php:101
 #: includes/Classes/Product_Feed_Admin.php:259
 #: includes/Classes/Product_Feed_Admin.php:299
-#: includes/Classes/Product_Feed_Attributes.php:585
+#: includes/Classes/Product_Feed_Attributes.php:592
 msgid "You do not have permission to manage product feed."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:761
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:762
 #: includes/Classes/Usage.php:756
 #: includes/Classes/Usage.php:786
 #: includes/Classes/WP_Admin.php:259
@@ -143,27 +143,27 @@ msgstr ""
 msgid "You do not have permission to perform this action."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:762
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:763
 msgid "Permission denied."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:773
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:774
 msgid "Feed title is required."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:778
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:779
 msgid "Channel field is required."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:783
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:784
 msgid "Field mapping is empty or you haven't saved the field mapping. Go to the Field Mapping tab and save the field mapping."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:790
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:791
 msgid "Required feed configuration fields are missing."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:799
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:800
 msgid "All required fields are filled."
 msgstr ""
 
@@ -223,8 +223,44 @@ msgstr ""
 msgid "Upgrade To Elite"
 msgstr ""
 
-#: includes/Classes/Filters.php:296
-#: includes/Classes/Rules.php:250
+#: includes/Classes/Feeds/Google_Product_Review.php:76
+msgid "Review ID"
+msgstr ""
+
+#: includes/Classes/Feeds/Google_Product_Review.php:77
+msgid "Reviewer ID"
+msgstr ""
+
+#: includes/Classes/Feeds/Google_Product_Review.php:78
+msgid "Review rating"
+msgstr ""
+
+#: includes/Classes/Feeds/Google_Product_Review.php:79
+msgid "Reviewer name"
+msgstr ""
+
+#: includes/Classes/Feeds/Google_Product_Review.php:80
+msgid "Review content"
+msgstr ""
+
+#: includes/Classes/Feeds/Google_Product_Review.php:81
+msgid "Reviewer image"
+msgstr ""
+
+#: includes/Classes/Feeds/Google_Product_Review.php:82
+msgid "Review URL"
+msgstr ""
+
+#: includes/Classes/Feeds/Google_Product_Review.php:83
+msgid "Product title"
+msgstr ""
+
+#: includes/Classes/Feeds/Google_Product_Review.php:84
+msgid "Product URL"
+msgstr ""
+
+#: includes/Classes/Filters.php:319
+#: includes/Classes/Rules.php:255
 msgid "You are not allowed to perform this action."
 msgstr ""
 
@@ -425,15 +461,15 @@ msgstr ""
 msgid "Feed deactivated successfully."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:591
+#: includes/Classes/Product_Feed_Attributes.php:598
 msgid "No attributes found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:599
+#: includes/Classes/Product_Feed_Attributes.php:606
 msgid "No channel data found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:605
+#: includes/Classes/Product_Feed_Attributes.php:612
 msgid "Channel file not found."
 msgstr ""
 
@@ -592,47 +628,47 @@ msgstr ""
 msgid "Sample Blocks"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:181
+#: includes/Helpers/Formatting.php:186
 #: includes/Helpers/Product_Feed_Helper.php:311
 msgid "Hourly"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:182
+#: includes/Helpers/Formatting.php:187
 #: includes/Helpers/Product_Feed_Helper.php:312
 msgid "Twice Daily"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:183
+#: includes/Helpers/Formatting.php:188
 #: includes/Helpers/Product_Feed_Helper.php:313
 msgid "Daily"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:186
+#: includes/Helpers/Formatting.php:191
 #: includes/Helpers/Product_Feed_Helper.php:316
 msgid "No Refresh"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:200
+#: includes/Helpers/Formatting.php:205
 msgid "Inactive"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:205
+#: includes/Helpers/Formatting.php:210
 msgid "Ready"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:207
+#: includes/Helpers/Formatting.php:212
 msgid "Processing"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:209
+#: includes/Helpers/Formatting.php:214
 msgid "Error"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:211
+#: includes/Helpers/Formatting.php:216
 msgid "Stopped"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:213
+#: includes/Helpers/Formatting.php:218
 msgid "Unknown"
 msgstr ""
 
@@ -688,75 +724,75 @@ msgstr ""
 msgid "Product Feed CPT"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:127
+#: includes/Traits/Filters_Rules_Trait.php:125
 msgid "contains"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:128
+#: includes/Traits/Filters_Rules_Trait.php:126
 msgid "doesn't contain"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:129
+#: includes/Traits/Filters_Rules_Trait.php:127
 msgid "is equal to"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:130
+#: includes/Traits/Filters_Rules_Trait.php:128
 msgid "is not equal to"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:131
+#: includes/Traits/Filters_Rules_Trait.php:129
 msgid "is greater than"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:132
+#: includes/Traits/Filters_Rules_Trait.php:130
 msgid "is greater or equal to"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:133
+#: includes/Traits/Filters_Rules_Trait.php:131
 msgid "is less than"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:134
+#: includes/Traits/Filters_Rules_Trait.php:132
 msgid "is less or equal to"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:135
+#: includes/Traits/Filters_Rules_Trait.php:133
 msgid "is empty"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:136
+#: includes/Traits/Filters_Rules_Trait.php:134
 msgid "is not empty"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:142
+#: includes/Traits/Filters_Rules_Trait.php:140
 msgid "multiply"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:143
+#: includes/Traits/Filters_Rules_Trait.php:141
 msgid "divide"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:144
+#: includes/Traits/Filters_Rules_Trait.php:142
 msgid "plus"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:145
+#: includes/Traits/Filters_Rules_Trait.php:143
 msgid "minus"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:146
+#: includes/Traits/Filters_Rules_Trait.php:144
 msgid "find and replace"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:163
+#: includes/Traits/Filters_Rules_Trait.php:161
 msgid "Exclude"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:164
+#: includes/Traits/Filters_Rules_Trait.php:162
 msgid "Include only"
 msgstr ""
 
-#: includes/Traits/Filters_Rules_Trait.php:167
+#: includes/Traits/Filters_Rules_Trait.php:165
 msgid "Action"
 msgstr ""
 
@@ -982,7 +1018,7 @@ msgstr ""
 
 #: templates/edit-feed/tabs/category-mapping-tab.php:117
 #: templates/edit-feed/tabs/field-mapping-tab.php:299
-#: templates/edit-feed/tabs/filters-rules-tab.php:194
+#: templates/edit-feed/tabs/filters-rules-tab.php:196
 #: templates/edit-feed/tabs/general-tab.php:283
 msgid "Save & Continue"
 msgstr ""
@@ -1021,7 +1057,7 @@ msgstr ""
 
 #: templates/edit-feed/tabs/conversion-analytics-tab.php:116
 #: templates/edit-feed/tabs/field-mapping-tab.php:287
-#: templates/edit-feed/tabs/filters-rules-tab.php:188
+#: templates/edit-feed/tabs/filters-rules-tab.php:190
 msgid "Save"
 msgstr ""
 
@@ -1043,7 +1079,7 @@ msgid "Prefix"
 msgstr ""
 
 #: templates/edit-feed/tabs/field-mapping-tab.php:116
-#: templates/edit-feed/tabs/filters-rules-tab.php:114
+#: templates/edit-feed/tabs/filters-rules-tab.php:116
 msgid "Value"
 msgstr ""
 
@@ -1055,51 +1091,51 @@ msgstr ""
 msgid "You haven't selected a channel for this feed yet."
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:89
+#: templates/edit-feed/tabs/filters-rules-tab.php:91
 msgid "Type"
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:92
+#: templates/edit-feed/tabs/filters-rules-tab.php:94
 msgid "IF"
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:94
+#: templates/edit-feed/tabs/filters-rules-tab.php:96
 msgid "Specify the condition under which this filter or rule will be applied. Choose an attribute or condition that will trigger this rule."
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:103
+#: templates/edit-feed/tabs/filters-rules-tab.php:105
 msgid "Condition"
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:105
+#: templates/edit-feed/tabs/filters-rules-tab.php:107
 msgid "Define the specific condition to be met. Options include equals, not equals, greater than, less than, etc., depending on the selected attribute."
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:116
+#: templates/edit-feed/tabs/filters-rules-tab.php:118
 msgid "Enter the value that the condition should match. This value will be compared against the attribute chosen in the IF field."
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:125
+#: templates/edit-feed/tabs/filters-rules-tab.php:127
 msgid "CS"
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:127
+#: templates/edit-feed/tabs/filters-rules-tab.php:129
 msgid "Enable this option if the condition should be case-sensitive. This means that 'Product' and 'product' will be treated as different values."
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:136
+#: templates/edit-feed/tabs/filters-rules-tab.php:138
 msgid "Then"
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:138
+#: templates/edit-feed/tabs/filters-rules-tab.php:140
 msgid "Specify the action to be taken if the condition is met. This could be including, excluding, or modifying a product attribute."
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:147
+#: templates/edit-feed/tabs/filters-rules-tab.php:149
 msgid "IS"
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-rules-tab.php:149
+#: templates/edit-feed/tabs/filters-rules-tab.php:151
 msgid "Define the result or value to be applied when the condition is met. This complements the action specified in the THEN field."
 msgstr ""
 

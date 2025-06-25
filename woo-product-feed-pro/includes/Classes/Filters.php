@@ -7,17 +7,16 @@
 
 namespace AdTribes\PFP\Classes;
 
-use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Abstracts\Abstract_Filters_Rules;
 use AdTribes\PFP\Traits\Singleton_Trait;
 use AdTribes\PFP\Traits\Filters_Rules_Trait;
-use AdTribes\PFP\Classes\Product_Feed_Attributes;
 
 /**
  * Filters class.
  *
  * @since 13.3.4.1
  */
-class Filters extends Abstract_Class {
+class Filters extends Abstract_Filters_Rules {
 
     use Singleton_Trait;
     use Filters_Rules_Trait;
@@ -47,6 +46,21 @@ class Filters extends Abstract_Class {
                 continue;
             }
 
+            /**
+             * Filter to skip a filter.
+             *
+             * @since 13.4.1
+             *
+             * @param bool   $skipped The skipped value.
+             * @param array  $filter  The filter criteria.
+             * @param array  $data    The data to filter.
+             * @param object $feed    The feed object.
+             * @return bool
+             */
+            if ( apply_filters( 'adt_pfp_maybe_skip_filter', false, $filter, $data, $feed ) ) {
+                continue;
+            }
+
             $attribute = $filter['attribute'];
             $value     = isset( $data[ $attribute ] ) ? $data[ $attribute ] : '';
 
@@ -66,7 +80,7 @@ class Filters extends Abstract_Class {
         }
 
         /**
-         * Filter the data.
+         * Filter passed product feed.
          *
          * @since 13.4.1
          *
@@ -75,13 +89,22 @@ class Filters extends Abstract_Class {
          * @param object $feed   The feed object.
          * @return bool
          */
-        $passed = apply_filters( 'adt_pfp_filter_product_feed_data', $passed, $filters, $feed );
+        $passed = apply_filters( 'adt_pfp_filter_passed_product_feed', $passed, $filters, $feed );
 
         if ( ! $passed ) {
             $data = array();
         }
 
-        return $data;
+        /**
+         * Filter the product feed data after filtering.
+         *
+         * @since 13.4.5
+         *
+         * @param array  $data The product feed data.
+         * @param array  $filters The filters.
+         * @param object $feed The feed.
+         */
+        return apply_filters( 'adt_pfp_filter_product_feed_data', $data, $filters, $feed );
     }
 
     /**
@@ -112,7 +135,7 @@ class Filters extends Abstract_Class {
      * @param object $feed The feed object.
      * @return bool Whether the filter passed.
      */
-    private function process_filter_value( $value, $filter, $feed ) {
+    public function process_filter_value( $value, $filter, $feed ) {
         if ( ! is_array( $value ) ) {
             return $this->filter_data( $value, $filter, $feed );
         }
@@ -296,15 +319,17 @@ class Filters extends Abstract_Class {
             wp_send_json_error( __( 'You are not allowed to perform this action.', 'woo-product-feed-pro' ) );
         }
 
+        // Get the channel type.
+        $this->feed_type = sanitize_text_field( wp_unslash( $_POST['feed_type'] ?? '' ) );
+
+        // Initialize attributes.
+        $this->init_attributes();
+
         // Generate a unique row ID.
         $row_count = isset( $_POST['rowCount'] ) ? absint( $_POST['rowCount'] ) : round( microtime( true ) * 1000 );
 
-        // Get attributes for the dropdown.
-        $product_feed_attributes = new Product_Feed_Attributes();
-        $attributes              = $product_feed_attributes->get_attributes();
-
         // Generate the HTML template.
-        $html = $this->get_filter_template( $row_count, $attributes );
+        $html = $this->get_filter_template( $row_count );
 
         wp_send_json_success(
             array(

@@ -8,10 +8,6 @@ use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Classes\Filters;
 use AdTribes\PFP\Classes\Rules;
 
-// Instantiate the classes.
-$filters_instance = new Filters();
-$rules_instance   = new Rules();
-
 /**
  * Create product attribute object
  */
@@ -27,8 +23,8 @@ if ( $feed_id ) {
         $feed_rules     = $feed->rules;
         $feed_filters   = $feed->filters;
         $channel_data   = $feed->channel;
+        $feed_type   = $channel_data['fields'] ?? '';
 
-        $channel_hash = $feed->channel_hash;
         $project_hash = $feed->legacy_project_hash;
 
         $count_rules = 0;
@@ -48,9 +44,14 @@ if ( $feed_id ) {
     $channel_hash = $feed['channel_hash'] ?? '';
     $project_hash = $feed['project_hash'] ?? '';
     $channel_data = '' !== $channel_hash ? Product_Feed_Helper::get_channel_from_legacy_channel_hash( $channel_hash ) : array();
+    $feed_type   = $channel_data['fields'] ?? '';
     $count_rules  = 0;
     $count_rules2 = 0;
 }
+
+// Instantiate the classes.
+$filters_instance = new Filters( $feed_type ?? '' );
+$rules_instance   = new Rules( $feed_type ?? '');
 
 /**
  * Action hook to add content before the product feed manage page.
@@ -82,6 +83,7 @@ do_action( 'adt_before_product_feed_manage_page', 4, $project_hash, $feed );
         <input type="hidden" id="feed_id" name="feed_id" value="<?php echo esc_attr( $feed->id ?? 0 ); ?>">
         <input type="hidden" name="action" value="edit_feed_form_process" />
         <input type="hidden" name="active_tab" value="filters_rules" />
+        <input type="hidden" name="feed_type" value="<?php echo esc_attr( $feed_type ?? '' ); ?>">
         <table class="woo-product-feed-pro-table" id="woosea-ajax-table" border="1">
             <thead>
                 <tr>
@@ -162,7 +164,7 @@ do_action( 'adt_before_product_feed_manage_page', 4, $project_hash, $feed );
             if ( isset( $feed_filters ) && is_array( $feed_filters ) ) {
                 foreach ( $feed_filters as $rule_key => $filter_data ) {
                     // Use the template method to generate the filter row HTML
-                    echo $filters_instance->get_filter_template( $rule_key, $attributes, $filter_data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                    echo $filters_instance->get_filter_template( $rule_key, $filter_data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 }
             }
 
@@ -170,7 +172,7 @@ do_action( 'adt_before_product_feed_manage_page', 4, $project_hash, $feed );
             if ( isset( $feed_rules ) && is_array( $feed_rules ) ) {
                 foreach ( $feed_rules as $rule2_key => $rule_data ) {
                     // Use the template method to generate the rule row HTML
-                    echo $rules_instance->get_rule_template( $rule2_key, $attributes, $rule_data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                    echo $rules_instance->get_rule_template( $rule2_key, $rule_data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 }
             }
             ?>
@@ -178,7 +180,7 @@ do_action( 'adt_before_product_feed_manage_page', 4, $project_hash, $feed );
             <tbody>
             <tr class="rules-buttons">
                 <td colspan="8">
-                    <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
+                    <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ?? '' ); ?>">
                     <?php if ( $edit_feed ) : ?>
                         <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
                         <input type="hidden" name="woosea_page" value="filters_rules">

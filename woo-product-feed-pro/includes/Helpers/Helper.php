@@ -323,29 +323,6 @@ class Helper {
     }
 
     /**
-     * Sanitize an array recursively.
-     *
-     * @since 13.4.4
-     * @param array $array_data The array to sanitize.
-     * @return array
-     */
-    public static function sanitize_array( $array_data ) {
-        if ( ! is_array( $array_data ) ) {
-            return sanitize_text_field( $array_data );
-        }
-
-        foreach ( $array_data as $key => $value ) {
-            if ( is_array( $value ) ) {
-                $array_data[ $key ] = self::sanitize_array( $value );
-            } else {
-                $array_data[ $key ] = sanitize_text_field( $value );
-            }
-        }
-
-        return $array_data;
-    }
-
-    /**
      * Custom recursive function using array_walk_recursive to access keys and sanitize values.
      *
      * @since 13.3.9
@@ -363,63 +340,6 @@ class Helper {
         };
         array_walk_recursive( $input_array, $func );
         return $input_array;
-    }
-
-    /**
-     * Custom sanitize callback that preserves whitespace.
-     *
-     * @since 13.3.9
-     * @access public
-     *
-     * @param string $str     The value to sanitize.
-     * @param string $key     The key of the value being sanitized.
-     * @param mixed  ...$args Additional arguments to pass to the callback.
-     *
-     * @return string
-     */
-    public static function custom_product_feeds_data_sanitize_text_field( $str, $key = null, ...$args ) { // phpcs:ignore
-        if ( is_object( $str ) || is_array( $str ) ) {
-            return '';
-        }
-
-        $str = (string) $str;
-
-        $filtered = wp_check_invalid_utf8( $str );
-
-        if ( str_contains( $filtered, '<' ) ) {
-            $filtered = wp_pre_kses_less_than( $filtered );
-            // This will strip extra whitespace for us.
-            $filtered = wp_strip_all_tags( $filtered, false );
-
-            /*
-             * Use HTML entities in a special case to make sure that
-             * later newline stripping stages cannot lead to a functional tag.
-             */
-            $filtered = str_replace( "<\n", "&lt;\n", $filtered );
-        }
-
-        $filtered = preg_replace( '/[\r\n\t ]+/', ' ', $filtered );
-
-        if ( ! is_null( $key ) && ! in_array( $key, array( 'prefix', 'suffix' ), true ) ) {
-            $filtered = trim( $filtered );
-        }
-
-        // Remove percent-encoded characters.
-        $found = false;
-        while ( preg_match( '/%[a-f0-9]{2}/i', $filtered, $match ) ) {
-            $filtered = str_replace( $match[0], '', $filtered );
-            $found    = true;
-        }
-
-        if ( $found ) {
-            // Strip out the whitespace that may now exist after removing percent-encoded characters.
-            $filtered = preg_replace( '/ +/', ' ', $filtered );
-            if ( ! is_null( $key ) && ! in_array( $key, array( 'prefix', 'suffix' ), true ) ) {
-                $filtered = trim( $filtered );
-            }
-        }
-
-        return $filtered;
     }
 
     /**

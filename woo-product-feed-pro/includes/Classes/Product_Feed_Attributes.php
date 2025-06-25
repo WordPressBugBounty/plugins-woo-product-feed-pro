@@ -167,6 +167,10 @@ class Product_Feed_Attributes extends Abstract_Class {
             'amount_sales'                    => 'Amount of sales',
             'product_creation_date'           => 'Product creation date',
             'days_back_created'               => 'Product days back created',
+            'cost_of_goods_sold'              => 'Cost of goods sold (cogs)',
+            'cost_of_goods_value'             => 'Cost of goods value',
+            'cost_of_goods_total_value'       => 'Cost of goods total value',
+
         ),
         'Image attributes'         => array(
             'image'              => 'Main image',
@@ -295,6 +299,9 @@ class Product_Feed_Attributes extends Abstract_Class {
         'mm_min_regular_price',
         'mm_max_price',
         'mm_max_regular_price',
+        'cost_of_goods_sold',
+        'cost_of_goods_value',
+        'cost_of_goods_total_value',
     );
 
     /**
@@ -592,7 +599,7 @@ class Product_Feed_Attributes extends Abstract_Class {
         }
 
         if ( isset( $_POST['channel_hash'] ) ) {
-            $channel_hash = sanitize_text_field( $_POST['channel_hash'] );
+            $channel_hash = sanitize_text_field( wp_unslash( $_POST['channel_hash'] ) );
             $channel_data = Product_Feed_Helper::get_channel_from_legacy_channel_hash( $channel_hash );
 
             if ( empty( $channel_data ) ) {
@@ -616,8 +623,7 @@ class Product_Feed_Attributes extends Abstract_Class {
                 'field_options'     => $channel_attributes,
                 'attribute_options' => $attributes,
             );
-
-            if ( 'html' === $_REQUEST['type'] ) {
+            if ( isset( $_REQUEST['type'] ) && 'html' === $_REQUEST['type'] ) {
                 foreach ( $response as $key => $attributes ) {
                     ob_start();
                     Helper::locate_admin_template( 'components/attributes-dropdown.php', true, false, array( 'attributes' => $attributes ) );
@@ -627,7 +633,7 @@ class Product_Feed_Attributes extends Abstract_Class {
         } else {
             $response = $attributes;
 
-            if ( 'html' === $_REQUEST['type'] ) {
+            if ( isset( $_REQUEST['type'] ) && 'html' === $_REQUEST['type'] ) {
                 ob_start();
                 Helper::locate_admin_template( 'components/attributes-dropdown.php', true, false, array( 'attributes' => $attributes ) );
                 $response = ob_get_clean();

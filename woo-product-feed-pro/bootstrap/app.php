@@ -302,6 +302,7 @@ App::instance()->register_objects(
         require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/class-objects.php',
         require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/integration-objects.php',
         require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/rest-objects.php',
+        require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/feeds-objects.php',
     )
 );
 

@@ -1,3 +1,17 @@
+= 13.4.5 (2025-06-25) =
+* Bug Fix: Feed Update Time Is Not Following Site's Timezone
+* Bug Fix: Filter and Rules by category not working for variations product
+* Bug Fix: Product `sale_price_start_date` and `sale_price_end_date` is not showing the value on the generated feed
+* Bug Fix: Review Rating Filter Returns Empty Feed
+* Bug Fix: Rule "Case Sensitive" disabled is not working
+* Bug Fix: Space Is Missing in Pricing
+* Bug Fix: Tax Calculation Ignores “Shop Base Address” Setting
+* Bug Fix: Uncaught Error: Call to a member function addChild() on null for Skroutz Feed
+* Bug Fix: `Remove products that did not have sales in the last days` causing php memory exhaustion for sites with a lot of orders
+* Bug Fix: product catalog visibility is not showing the valid value for the `exclude_from_catalog,  exclude_from_search, exclude_from_all`
+* Feature: add support for Cost of Goods Sold (COGS)
+* Improvement: Handle Text Formatting in Description For Google Feeds
+
 = 13.4.4.2 (2025-05-28) =
 * Bug Fix: Manage Feed Dashboard is not showing the refresh interval info for "Hourly" and "Twice Daily"
 * Bug Fix: Rules are not Saved when the condition is set to "iss less than" or "is greater than"

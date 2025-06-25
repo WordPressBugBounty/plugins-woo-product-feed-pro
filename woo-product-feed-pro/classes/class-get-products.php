@@ -4,6 +4,7 @@ use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Classes\Shipping_Data;
 use AdTribes\PFP\Helpers\Formatting;
+use AdTribes\PFP\Helpers\Sanitization;
 
 /**
  * Class for generating the actual feeds
@@ -30,6 +31,9 @@ class WooSEA_Get_Products {
      *
      * @access public
      * @since 13.3.5.4
+     * 
+     * @deprecated Use AdTribes\PFP\Helpers\Sanitization::sanitize_html_content() instead.
+     *             Keeping this function for backwards compatibility for Elite plugin.
      *
      * @param string $string The string to sanitize.
      * @return string The sanitized string.
@@ -67,7 +71,7 @@ class WooSEA_Get_Products {
     /**
      * Get all approved product review comments for Google's Product Review Feeds
      */
-    public function woosea_get_reviews( $product_data, $product ) {
+    public function woosea_get_reviews( $product_data, $product, $feed ) {
         // Reviews for the parent variable product itself can be skipped, the review is added for the variation
         if ( $product_data['product_type'] == 'variable' ) {
             return;
@@ -127,28 +131,25 @@ class WooSEA_Get_Products {
             $author = ! empty( $author ) ? ucfirst( $author ) : $author;
 
             // Remove strange charachters from reviewer name
-            $review['reviewer_name'] = $this->woosea_sanitize_html( $author );
+            $review['reviewer_name'] = Sanitization::sanitize_html_content( $author, $feed );
             $review['reviewer_name'] = preg_replace( '/\[(.*?)\]/', ' ', $review['reviewer_name'] );
             $review['reviewer_name'] = str_replace( '&#xa0;', '', $review['reviewer_name'] );
             $review['reviewer_name'] = str_replace( ':', '', $review['reviewer_name'] );
-            $review['reviewer_name'] = $this->woosea_utf8_for_xml( $review['reviewer_name'] );
 
             $review['reviewer_id']      = $review_raw->user_id;
             $review['review_timestamp'] = $review_raw->comment_date;
 
             // Remove strange characters from review title
             $review['title'] = empty( $product_data['title'] ) ? '' : $product_data['title'];
-            $review['title'] = $this->woosea_sanitize_html( $review['title'] );
+            $review['title'] = Sanitization::sanitize_html_content( $review['title'], $feed );
             $review['title'] = preg_replace( '/\[(.*?)\]/', ' ', $review['title'] );
             $review['title'] = str_replace( '&#xa0;', '', $review['title'] );
-            $review['title'] = $this->woosea_utf8_for_xml( $review['title'] );
 
             // Remove strange charchters from review content
             $review['content'] = $review_raw->comment_content;
-            $review['content'] = $this->woosea_sanitize_html( $review['content'] );
+            $review['content'] = Sanitization::sanitize_html_content( $review['content'], $feed );
             $review['content'] = preg_replace( '/\[(.*?)\]/', ' ', $review['content'] );
             $review['content'] = str_replace( '&#xa0;', '', $review['content'] );
-            $review['content'] = $this->woosea_utf8_for_xml( $review['content'] );
 
             $review['review_product_name'] = $product_data['title'];
             $review['review_url']          = $product_data['link'] . '#tab-reviews';
@@ -158,13 +159,6 @@ class WooSEA_Get_Products {
         $review_count   = $product->get_review_count();
         $review_average = $product->get_average_rating();
         return $approved_reviews;
-    }
-
-    /**
-     * Strip unwanted UTF chars from string
-     */
-    public function woosea_utf8_for_xml( $string ) {
-        return preg_replace( '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $string );
     }
 
     /**
@@ -323,64 +317,6 @@ class WooSEA_Get_Products {
             return $list;
         }
         return false;
-    }
-
-    /**
-     * Get orders for given time period used in filters
-     */
-    public function woosea_get_orders( $project_config ) {
-
-        $allowed_products = array();
-
-        $total_product_orders_lookback = $project_config->utm_total_product_orders_lookback;
-        if ( $total_product_orders_lookback > 0 ) {
-            $today       = date( 'Y-m-d' );
-            $today_limit = date( 'Y-m-d', strtotime( '-' . $total_product_orders_lookback . ' days', strtotime( $today ) ) );
-
-            /**
-             * Filter to get orders for given time period by total product orders lookback.
-             * 
-             * @since 13.3.7
-             * @return array
-             */
-            $order_query_args = apply_filters(
-                'adt_product_feed_total_product_orders_lookback_order_query_args',
-                array(
-                    'limit' => -1,
-                    'date_created' => '>=' . $today_limit,
-                ),
-                $project_config
-            );
-            $orders_query = new WC_Order_Query( $order_query_args );
-            $orders = $orders_query->get_orders();
-            
-            if ( ! empty( $orders ) ) {
-                foreach ( $orders as $order ) {
-                    $order_items = $order->get_items();
-
-                    if ( ! empty( $order_items ) ) {
-                        foreach ( $order->get_items() as $item_key => $item_values ) {
-                            $order_product_id   = $item_values->get_product_id();
-                            $order_variation_id = $item_values->get_variation_id();
-    
-                            // When a variation was sold, add the variation
-                            if ( $order_variation_id > 0 ) {
-                                $order_product_id = $order_variation_id;
-                            }
-    
-                            // Only for existing products
-                            if ( $order_product_id > 0 ) {
-                                // Only add products that are not in the array yet
-                                if ( ! in_array( $order_product_id, $allowed_products ) ) {
-                                    $allowed_products[] = $order_product_id;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return $allowed_products;
     }
 
     /**
@@ -1362,6 +1298,11 @@ class WooSEA_Get_Products {
                                 }
                             }
 
+                            // Skip processing if product child node is null.
+                            if ( ! isset( $product ) || is_null( $product ) ) {
+                                continue;
+                            }
+
                             foreach ( $value as $k => $v ) {
                                 $v = trim( $v );
                                 $k = trim( $k );
@@ -2008,7 +1949,7 @@ class WooSEA_Get_Products {
 
         // Get Orders
         if ( $feed->utm_total_product_orders_lookback > 0 ) {
-            $allowed_product_orders = $this->woosea_get_orders( $feed );
+            $allowed_product_orders = \AdTribes\PFP\Classes\Orders::get_orders( $feed );
         }
 
         unset( $prods );
@@ -2036,14 +1977,6 @@ class WooSEA_Get_Products {
             'suppress_filters'       => false,
             'custom_query'           => 'adt_published_products_and_variations', // Custom flag to trigger the filter
             'post_password'          => '',
-            'tax_query' => array(
-				array(
-					'taxonomy' => 'product_visibility',
-                    'field'    => 'name',
-                    'terms'    => array( 'exclude-from-catalog' ),
-                    'operator' => 'NOT IN',
-				),
-			),
         );
 
         /**
@@ -2099,8 +2032,39 @@ class WooSEA_Get_Products {
                 }
             }
 
-            $product_data['title']                 = $this->woosea_sanitize_html( $product->get_title() );
-            $product_data['title']                 = $this->woosea_utf8_for_xml( $product_data['title'] );
+            // Only products that are visible in the catalog are allowed to go through.
+            $catalog_visibility = $product->get_catalog_visibility();
+
+            /**
+             * Filter the catalog visibility.
+             * 
+             * @since 13.4.5
+             * 
+             * @param array        $catalog_visibility The catalog visibility.
+             * @param Product_Feed $feed             The product feed instance.
+             * @return array The catalog visibility.
+             */
+            if ( in_array( $catalog_visibility, apply_filters( 'adt_product_feed_filter_catalog_visibility', array(), $feed ) ) ) {
+                continue;
+            }
+
+            // Only products that are visible in the catalog are allowed to go through.
+            $catalog_visibility = $product->get_catalog_visibility();
+
+            /**
+             * Filter the catalog visibility.
+             * 
+             * @since 13.4.5
+             * 
+             * @param array        $catalog_visibility The catalog visibility.
+             * @param Product_Feed $feed             The product feed instance.
+             * @return array The catalog visibility.
+             */
+            if ( in_array( $catalog_visibility, apply_filters( 'adt_product_feed_filter_catalog_visibility', array(), $feed ) ) ) {
+                continue;
+            }
+
+            $product_data['title']                 = Sanitization::sanitize_html_content( $product->get_title(), $feed );
             $product_data['mother_title']          = $product_data['title'];
             $product_data['title_hyphen']          = $product_data['title'];
             $product_data['title_slug']            = $product->get_slug();
@@ -2110,6 +2074,7 @@ class WooSEA_Get_Products {
             $product_data['publication_date']      = date( 'F j, Y, G:i a' );
             $product_data['add_to_cart_link']      = trailingslashit( wc_get_page_permalink( 'shop' ) ) . '?add-to-cart=' . $product_data['id'];
             $product_data['cart_link']             = trailingslashit( wc_get_cart_url() ) . '?add-to-cart=' . $product_data['id'];
+            $product_data['visibility']            = $catalog_visibility;
 
             // Get product creation date
             if ( ! empty( $product->get_date_created() ) ) {
@@ -2122,11 +2087,28 @@ class WooSEA_Get_Products {
                 $product_data['product_creation_date'] = $datetime_created;
             }
 
-            // Start product visibility logic
+            // Start product visibility default value.
             $product_data['exclude_from_catalog'] = 'no';
             $product_data['exclude_from_search']  = 'no';
             $product_data['exclude_from_all']     = 'no';
             $product_data['featured']             = 'no';
+
+            switch ( $catalog_visibility ) {
+                case 'catalog':
+                    $product_data['exclude_from_search'] = 'yes';
+                    break;
+                case 'search':
+                    $product_data['exclude_from_catalog'] = 'yes';
+                    break;
+                case 'hidden':
+                    $product_data['exclude_from_catalog'] = 'yes';
+                    $product_data['exclude_from_search'] = 'yes';
+                    $product_data['exclude_from_all'] = 'yes';
+                    break;
+                case 'visible':
+                default:
+                    break;
+            }
 
             // Get product tax details
             $product_data['tax_status'] = $product->get_tax_status();
@@ -2138,29 +2120,6 @@ class WooSEA_Get_Products {
             // Get number of orders for this product
             $product_data['total_product_orders'] = 0;
             $product_data['total_product_orders'] = get_post_meta( $product_data['id'], 'total_sales', true );
-
-            if ( $product_data['item_group_id'] > 0 ) {
-                $visibility_list = wp_get_post_terms( $product_data['item_group_id'], 'product_visibility', array( 'fields' => 'all' ) );
-            } else {
-                $visibility_list = wp_get_post_terms( get_the_ID(), 'product_visibility', array( 'fields' => 'all' ) );
-            }
-
-            foreach ( $visibility_list as $visibility_single ) {
-                if ( $visibility_single->slug == 'exclude-from-catalog' ) {
-                    $product_data['exclude_from_catalog'] = 'yes';
-                }
-                if ( $visibility_single->slug == 'exclude-from-search' ) {
-                    $product_data['exclude_from_search'] = 'yes';
-                }
-                if ( $visibility_single->slug == 'featured' ) {
-                    $product_data['featured'] = 'yes';
-                }
-            }
-            // unset($visibility_list);
-
-            if ( ( $product_data['exclude_from_search'] == 'yes' ) && ( $product_data['exclude_from_catalog'] == 'yes' ) ) {
-                $product_data['exclude_from_all'] = 'yes';
-            }
 
             if ( ! empty( $product_data['sku'] ) ) {
                 $product_data['sku_id'] = $product_data['sku'] . '_' . $product_data['id'];
@@ -2344,28 +2303,20 @@ class WooSEA_Get_Products {
             }
 
             // Raw descriptions, unfiltered
-            $product_data['raw_description']       = do_shortcode( wpautop( $combined_description ) );
-            $product_data['raw_short_description'] = do_shortcode( wpautop( $combined_short_description ) );
-            $product_data['raw_parent_description'] = do_shortcode( wpautop( $parent_product_description ) );
-            $product_data['raw_parent_short_description'] = do_shortcode( wpautop( $parent_product_short_description ) );
-            $product_data['raw_variation_description'] = do_shortcode( wpautop( $product_description ) );
-            $product_data['raw_variation_short_description'] = do_shortcode( wpautop( $product_short_description ) );
+            $product_data['raw_description']       = Sanitization::sanitize_raw_html_content( $combined_description, $feed );
+            $product_data['raw_short_description'] = Sanitization::sanitize_raw_html_content( $combined_short_description, $feed );
+            $product_data['raw_parent_description'] = Sanitization::sanitize_raw_html_content( $parent_product_description, $feed );
+            $product_data['raw_parent_short_description'] = Sanitization::sanitize_raw_html_content( $parent_product_short_description, $feed );
+            $product_data['raw_variation_description'] = Sanitization::sanitize_raw_html_content( $product_description, $feed );
+            $product_data['raw_variation_short_description'] = Sanitization::sanitize_raw_html_content( $product_short_description, $feed );
 
             // Sanitize descriptions
-            $product_data['description']              = $this->woosea_sanitize_html( $combined_description );
-            $product_data['short_description']        = $this->woosea_sanitize_html( $combined_short_description );
-            $product_data['mother_description']       = $this->woosea_sanitize_html( $parent_product_description );
-            $product_data['mother_short_description'] = $this->woosea_sanitize_html( $parent_product_short_description );
-            $product_data['variation_description']    = $this->woosea_sanitize_html( $product_description );
-            $product_data['variation_short_description'] = $this->woosea_sanitize_html( $product_short_description );
-
-            // Strip strange UTF chars
-            $product_data['description']       = trim( $this->woosea_utf8_for_xml( $product_data['description'] ) );
-            $product_data['short_description'] = trim( $this->woosea_utf8_for_xml( $product_data['short_description'] ) );
-            $product_data['mother_description'] = trim( $this->woosea_utf8_for_xml( $product_data['mother_description'] ) );
-            $product_data['mother_short_description'] = trim( $this->woosea_utf8_for_xml( $product_data['mother_short_description'] ) );
-            $product_data['variation_description'] = trim( $this->woosea_utf8_for_xml( $product_data['variation_description'] ) );
-            $product_data['variation_short_description'] = trim( $this->woosea_utf8_for_xml( $product_data['variation_short_description'] ) );
+            $product_data['description']              = Sanitization::sanitize_html_content( $combined_description, $feed );
+            $product_data['short_description']        = Sanitization::sanitize_html_content( $combined_short_description, $feed );
+            $product_data['mother_description']       = Sanitization::sanitize_html_content( $parent_product_description, $feed );
+            $product_data['mother_short_description'] = Sanitization::sanitize_html_content( $parent_product_short_description, $feed );
+            $product_data['variation_description']    = Sanitization::sanitize_html_content( $product_description, $feed );
+            $product_data['variation_short_description'] = Sanitization::sanitize_html_content( $product_short_description, $feed );
 
             // Truncate description on 5000 characters for Google Shopping
             if ( $feed_channel['fields'] == 'google_shopping' ) {
@@ -2494,9 +2445,6 @@ class WooSEA_Get_Products {
 
             $product_data['author']   = get_the_author();
             $product_data['quantity'] = $product->get_stock_quantity();
-            if ( is_object( $product ) ) {
-                $product_data['visibility'] = $product->get_catalog_visibility();
-            }
             $download = $product->is_downloadable();
 
             if ( $download == 1 ) {
@@ -2524,6 +2472,9 @@ class WooSEA_Get_Products {
             } else {
                 $product_data['sale_price_effective_date'] = '';
             }
+
+            $product_data['sale_price_start_date'] = $product->get_date_on_sale_from() ? Formatting::format_date( $product->get_date_on_sale_from(), $feed ) : '';
+            $product_data['sale_price_end_date']   = $product->get_date_on_sale_to() ? Formatting::format_date( $product->get_date_on_sale_to(), $feed ) : '';
 
             $product_data['image'] = wp_get_attachment_url( $product->get_image_id() );
             $non_local_image       = wp_get_attachment_image_src( get_post_thumbnail_id( $product_data['id'] ), 'single-post-thumbnail' );
@@ -2665,6 +2616,25 @@ class WooSEA_Get_Products {
                 $product_data['system_sale_price']        = Product_Feed_Helper::get_price_including_tax( $product->get_sale_price(), $base_tax_rates, $feed, $product );
                 $product_data['system_sale_price_forced'] = Product_Feed_Helper::get_price_excluding_tax( $product->get_sale_price(), $base_tax_rates, $feed, $product );
                 $product_data['system_net_sale_price']    = Product_Feed_Helper::get_price_including_tax( $product->get_sale_price(), $base_tax_rates, $feed, $product );
+            }
+
+            // WooCommerce Cost of Goods Sold
+            if ( wc_get_container()->get(Automattic\WooCommerce\Internal\Features\FeaturesController::class)->feature_is_enabled('cost_of_goods_sold') ) {
+                $cogs_effective_value = $product->get_cogs_effective_value();
+                $cogs_value = $product->get_cogs_value();
+                $cogs_total_value = $product->get_cogs_total_value();
+                
+                // For cost_of_goods_sold, use effective value, but for variations that inherit, use total value
+                if ( $product->is_type( 'variation' ) && is_null( $cogs_value ) && $cogs_total_value > 0 ) {
+                    $product_data['cost_of_goods_sold'] = $cogs_total_value;
+                } else {
+                    $product_data['cost_of_goods_sold'] = $cogs_effective_value > 0 ? $cogs_effective_value : '';
+                }
+                
+                // For inherited values, use the total value instead of null
+                $product_data['cost_of_goods_value'] = ! is_null( $cogs_value ) && $cogs_value > 0 ? $cogs_value : ($cogs_total_value > 0 ? $cogs_total_value : '');
+                
+                $product_data['cost_of_goods_total_value'] = $cogs_total_value > 0 ? $cogs_total_value : '';
             }
 
             $args = array(
@@ -3680,7 +3650,7 @@ class WooSEA_Get_Products {
             /**
              * Get product reviews for Google Product Review Feeds
              */
-            $product_data['reviews'] = $this->woosea_get_reviews( $product_data, $product );
+            $product_data['reviews'] = $this->woosea_get_reviews( $product_data, $product, $feed );
 
             /**
              * Filter out reviews that do not have text
@@ -3798,10 +3768,11 @@ class WooSEA_Get_Products {
                                 foreach ( $variations_id as $var_id_s ) {
                                     $taxonomy        = 'pa_size';
                                     $sizez_variation = get_post_meta( $var_id_s, 'attribute_' . $taxonomy, true );
-                                    $sizez_term      = get_term_by( 'slug', $sizez_variation, $taxonomy );
-
-                                    if ( ! in_array( $sizez_term->name, $sizez ) ) {
-                                        array_push( $sizez, $sizez_term->name );
+                                    if ( $sizez_variation ) {
+                                        $sizez_term = get_term_by( 'slug', $sizez_variation, $taxonomy );
+                                        if ( ! in_array( $sizez_term->name, $sizez ) ) {
+                                            array_push( $sizez, $sizez_term->name );
+                                        }
                                     }
                                 }
 
@@ -3939,20 +3910,6 @@ class WooSEA_Get_Products {
 
             if ( isset( $product_data['title_lcw'] ) ) {
                 $product_data['title_lcw'] = ucwords( $product_data['title_lcw'] );
-            }
-
-            // Check if the sale price is effective
-            if ( isset( $product_data['sale_price_start_date'] ) ) {
-                if ( ( strtotime( $product_data['sale_price_start_date'] ) ) && ( strtotime( $product_data['sale_price_end_date'] ) ) ) {
-                    $current_date = date( 'Y-m-d' );
-                    if ( ( $current_date < $product_data['sale_price_start_date'] ) ) {
-                        unset( $product_data['sale_price'] );
-                    }
-
-                    if ( ( $current_date > $product_data['sale_price_end_date'] ) ) {
-                        unset( $product_data['sale_price'] );
-                    }
-                }
             }
 
             /**

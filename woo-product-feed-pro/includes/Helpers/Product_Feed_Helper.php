@@ -583,6 +583,7 @@ class Product_Feed_Helper {
      * This method is used to find the tax rates for the given arguments.
      *
      * @since 13.4.0
+     * @since 13.4.5 Added support for base tax rates based on the WooCommerce "Calculate tax based on" settings.
      * @access public
      *
      * @param array  $args    The arguments for finding tax rates.
@@ -591,6 +592,15 @@ class Product_Feed_Helper {
      * @return array
      */
     public static function find_tax_rates( $args, $feed = null, $product = null ) {
+        if ( 'base' === get_option( 'woocommerce_tax_based_on' ) ) {
+            $args = array(
+                'country'  => WC()->countries->get_base_country(),
+                'state'    => WC()->countries->get_base_state(),
+                'postcode' => WC()->countries->get_base_postcode(),
+                'city'     => WC()->countries->get_base_city(),
+            );
+        }
+
         return \WC_Tax::find_rates(
             /**
              * Filters the arguments for finding tax rates.

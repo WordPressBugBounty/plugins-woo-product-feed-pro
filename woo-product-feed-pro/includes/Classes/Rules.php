@@ -7,17 +7,16 @@
 
 namespace AdTribes\PFP\Classes;
 
-use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Abstracts\Abstract_Filters_Rules;
 use AdTribes\PFP\Traits\Singleton_Trait;
 use AdTribes\PFP\Traits\Filters_Rules_Trait;
-use AdTribes\PFP\Classes\Product_Feed_Attributes;
 
 /**
  * Rules class.
  *
  * @since 13.3.4.1
  */
-class Rules extends Abstract_Class {
+class Rules extends Abstract_Filters_Rules {
 
     use Singleton_Trait;
     use Filters_Rules_Trait;
@@ -124,6 +123,12 @@ class Rules extends Abstract_Class {
 
         $condition  = $rule['condition'] ?? '';
         $rule_value = $rule['criteria'] ?? '';
+
+        // If not case sensitive then convert the value to lower case for comparison.
+        if ( ! isset( $rule['cs'] ) || 'on' !== $rule['cs'] ) {
+            $value      = strtolower( $value );
+            $rule_value = strtolower( $rule_value );
+        }
 
         switch ( $condition ) {
             case 'contains':
@@ -253,12 +258,8 @@ class Rules extends Abstract_Class {
         // Generate a unique row ID.
         $row_count = isset( $_POST['rowCount'] ) ? absint( $_POST['rowCount'] ) : round( microtime( true ) * 1000 );
 
-        // Get attributes for the dropdown.
-        $product_feed_attributes = new Product_Feed_Attributes();
-        $attributes              = $product_feed_attributes->get_attributes();
-
         // Generate the HTML template.
-        $html = $this->get_rule_template( $row_count, $attributes );
+        $html = $this->get_rule_template( $row_count );
 
         wp_send_json_success(
             array(

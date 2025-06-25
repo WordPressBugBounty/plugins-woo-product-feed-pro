@@ -21,11 +21,10 @@ trait Filters_Rules_Trait {
      * Get template for filter row.
      *
      * @param int   $row_count     Row count for the filter.
-     * @param array $attributes    Array of available attributes.
      * @param array $filter_data   Optional. Filter data for existing filter.
      * @return string HTML markup for filter row.
      */
-    public function get_filter_template( $row_count, $attributes, $filter_data = array() ) {
+    public function get_filter_template( $row_count, $filter_data = array() ) {
         // Extract needed variables for the template.
         $criteria           = isset( $filter_data['criteria'] ) ? $filter_data['criteria'] : '';
         $condition          = isset( $filter_data['condition'] ) ? $filter_data['condition'] : '';
@@ -42,7 +41,7 @@ trait Filters_Rules_Trait {
             false,
             array(
                 'row_count'          => $row_count,
-                'attributes'         => $attributes,
+                'attributes'         => $this->attributes,
                 'filter_data'        => $filter_data,
                 'criteria'           => $criteria,
                 'condition'          => $condition,
@@ -58,11 +57,10 @@ trait Filters_Rules_Trait {
      * Get template for rule row.
      *
      * @param int   $row_count     Row count for the rule.
-     * @param array $attributes    Array of available attributes.
      * @param array $rule_data     Optional. Rule data for existing rule.
      * @return string HTML markup for rule row.
      */
-    public function get_rule_template( $row_count, $attributes, $rule_data = array() ) {
+    public function get_rule_template( $row_count, $rule_data = array() ) {
         // Extract needed variables for the template.
         $criteria           = isset( $rule_data['criteria'] ) ? $rule_data['criteria'] : '';
         $condition          = isset( $rule_data['condition'] ) ? $rule_data['condition'] : '';
@@ -80,7 +78,7 @@ trait Filters_Rules_Trait {
             false,
             array(
                 'row_count'          => $row_count,
-                'attributes'         => $attributes,
+                'attributes'         => $this->attributes,
                 'rule_data'          => $rule_data,
                 'criteria'           => $criteria,
                 'condition'          => $condition,
@@ -216,7 +214,15 @@ trait Filters_Rules_Trait {
             return $value;
         }
 
-        $categories = $product->get_category_ids();
+        if ( $product->is_type( 'variation' ) ) {
+            $parent_product = wc_get_product( $product->get_parent_id() );
+            if ( $parent_product ) {
+                $categories = $parent_product->get_category_ids();
+            }
+        } else {
+            $categories = $product->get_category_ids();
+        }
+
         if ( empty( $categories ) ) {
             return $value;
         }

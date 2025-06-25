@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.8
-Stable tag: 13.4.4.2
+Stable tag: 13.4.5
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -371,6 +371,9 @@ Yes, you can set enhanced filters and rules for all your products so only the pr
 = Does this plugin support Google Analytics tagging? =
 Yes, you can add all Google Analytics UTM parameters to the landingpage URL's that are in your product feed.
 
+= How can I report security bugs? =
+You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team helps validate, triage and handle any security vulnerabilities. [Report a security vulnerability.](https://patchstack.com/database/vdp/9e5fb6a4-bb22-4ead-978c-a492a98be26e)
+
 Questions left or unanswered? Please do not hesitate to contact us at support@adtribes.io for all your questions.
 
 == Screenshots ==
@@ -385,6 +388,20 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.4.5 (2025-06-25) =
+* Bug Fix: Feed Update Time Is Not Following Site's Timezone
+* Bug Fix: Filter and Rules by category not working for variations product
+* Bug Fix: Product `sale_price_start_date` and `sale_price_end_date` is not showing the value on the generated feed
+* Bug Fix: Review Rating Filter Returns Empty Feed
+* Bug Fix: Rule "Case Sensitive" disabled is not working
+* Bug Fix: Space Is Missing in Pricing
+* Bug Fix: Tax Calculation Ignores “Shop Base Address” Setting
+* Bug Fix: Uncaught Error: Call to a member function addChild() on null for Skroutz Feed
+* Bug Fix: `Remove products that did not have sales in the last days` causing php memory exhaustion for sites with a lot of orders
+* Bug Fix: product catalog visibility is not showing the valid value for the `exclude_from_catalog,  exclude_from_search, exclude_from_all`
+* Feature: add support for Cost of Goods Sold (COGS)
+* Improvement: Handle Text Formatting in Description For Google Feeds
 
 = 13.4.4.2 (2025-05-28) =
 * Bug Fix: Manage Feed Dashboard is not showing the refresh interval info for "Hourly" and "Twice Daily"

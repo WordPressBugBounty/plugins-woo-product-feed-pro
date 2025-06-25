@@ -111,6 +111,12 @@ class Formatting {
             return '';
         }
 
+        // Convert to site timezone for proper formatting.
+        $site_timezone = wc_timezone_string();
+        if ( $site_timezone ) {
+            $date->setTimezone( new \DateTimeZone( $site_timezone ) );
+        }
+
         $formatted_date = $date->date_i18n( wc_date_format() . ' ' . wc_time_format() );
 
         // Format date to ISO8601 for specific feeds.
@@ -150,18 +156,17 @@ class Formatting {
      */
     public static function date_iso8601( $date ) {
         if ( is_string( $date ) ) {
-            $date = new \DateTime( $date, new \DateTimeZone( 'UTC' ) );
+            $date = new \WC_DateTime( $date, new \DateTimeZone( 'UTC' ) );
         }
 
         if ( ! is_a( $date, 'WC_DateTime' ) ) {
             return '';
         }
 
-        // Set local timezone or offset.
-        if ( get_option( 'timezone_string' ) ) {
-            $date->setTimezone( new \DateTimeZone( wc_timezone_string() ) );
-        } else {
-            $date->set_utc_offset( wc_timezone_offset() );
+        // Convert to site timezone for proper formatting.
+        $site_timezone = wc_timezone_string();
+        if ( $site_timezone ) {
+            $date->setTimezone( new \DateTimeZone( $site_timezone ) );
         }
 
         return $date->__toString();
