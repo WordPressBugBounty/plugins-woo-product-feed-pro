@@ -125,12 +125,12 @@ class Marketing extends Abstract_Class {
 
         foreach ( $this->marketing_submenus as $submenu ) {
             if ( strpos( $screen->id, $submenu['slug'] ) !== false ) {
-                wp_enqueue_style( 'pfp-admin-marketing', ADT_PFP_CSS_URL . 'pfp-admin-marketing.css', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
-                wp_enqueue_script( 'pfp-admin-marketing', ADT_PFP_JS_URL . 'pfp-admin-marketing.js', array( 'jquery' ), ADT_PFP_OPTION_INSTALLED_VERSION, true );
+                wp_enqueue_style( 'pfp-admin-marketing', ADT_PFP_CSS_URL . 'pfp-admin-marketing.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
+                wp_enqueue_script( 'pfp-admin-marketing', ADT_PFP_JS_URL . 'pfp-admin-marketing.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
                 wp_localize_script( 'pfp-admin-marketing', 'pfp_admin_marketing', array( 'nonce' => wp_create_nonce( 'pfp-admin-marketing' ) ) );
 
                 // Load Poppins font from Google Fonts.
-                wp_enqueue_style( 'pfp-admin-marketing--font-poppins', 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap', array(), ADT_PFP_OPTION_INSTALLED_VERSION );
+                wp_enqueue_style( 'pfp-admin-marketing--font-poppins', 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
             }
         }
     }
@@ -224,7 +224,7 @@ class Marketing extends Abstract_Class {
     public function close_marketing_page() {
         check_ajax_referer( 'pfp-admin-marketing', 'nonce' );
 
-        $plugin_key = sanitize_text_field( $_POST['plugin_key'] );
+        $plugin_key = isset( $_POST['plugin_key'] ) ? sanitize_text_field( wp_unslash( $_POST['plugin_key'] ) ) : '';
 
         update_option( 'pfp_' . $plugin_key . '_marketing_page_closed', 'yes', false );
 

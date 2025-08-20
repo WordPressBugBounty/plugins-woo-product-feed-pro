@@ -4,6 +4,7 @@ declare var $: any;
 
 import '@/tailwind.css';
 import '@/scss/style.scss';
+import './style.scss';
 
 (function (w, d, $) {
   const { __, _x, sprintf } = w.wp.i18n;

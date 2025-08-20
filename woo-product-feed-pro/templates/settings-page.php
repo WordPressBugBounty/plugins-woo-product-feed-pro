@@ -27,7 +27,7 @@ $versions = array(
     'PHP'                          => (float) phpversion(),
     'Wordpress'                    => get_bloginfo( 'version' ),
     'WooCommerce'                  => WC()->version,
-    'WooCommerce Product Feed PRO' => ADT_PFP_OPTION_INSTALLED_VERSION,
+    'WooCommerce Product Feed PRO' => WOOCOMMERCESEA_PLUGIN_VERSION,
 );
 
 $order_rows = '';
@@ -366,11 +366,23 @@ if ( isset( $_GET['tab'] ) ) {
                         }
 
                         // Check if the cron is enabled
-                        $cron_enabled = ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) ? 'False' : 'True';
+                        $action_scheduler_version = null;
+                        $action_scheduler_path    = '';
+                        // Check if Action Scheduler is installed
+                        if ( class_exists( 'ActionScheduler_Versions' ) && class_exists( 'ActionScheduler' ) ) {
+                            $action_scheduler_version = ActionScheduler_Versions::instance()->latest_version();
+                            $action_scheduler_path    = ActionScheduler::plugin_path( '' ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+                        }
 
                         print '<table class="woo-product-feed-pro-table">';
                         print '<tr><td><strong>System check</strong></td><td><strong>Status</strong></td></tr>';
-                        echo "<tr><td>WP-Cron enabled</td><td><strong>$cron_enabled</strong></td></tr>";
+                        echo "<tr><td>Action Scheduler</td><td>";
+                        if ( ! is_null( $action_scheduler_version ) ) {
+                            echo '<span class="dashicons dashicons-yes" style="line-height: 16px;"></span> ' . esc_html( $action_scheduler_version ) . '<br/><code class="private">' . esc_html( $action_scheduler_path ) . '</code>';
+                        } else {
+                            echo '<span class="dashicons dashicons-warning" style="line-height: 16px;"></span> ' . esc_html__( 'Unable to detect the Action Scheduler package.', 'woo-product-feed-pro' );
+                        }
+                        echo "</td></tr>";
                         echo "<tr><td>PHP-version</td><td>($versions[PHP])</td></tr>";
                         echo "<tr><td>Product feed directory writable</td><td>$directory_perm</td></tr>";
                         echo "<tr><td>Product feed XML directory writable</td><td>$directory_perm_xml</td></tr>";

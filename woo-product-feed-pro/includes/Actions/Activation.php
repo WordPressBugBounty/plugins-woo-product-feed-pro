@@ -110,6 +110,9 @@ class Activation extends Abstract_Class {
             update_option( 'woosea_count_activation', $new_activation, false );
         }
 
+        // Delete the transient for custom attributes.
+        delete_transient( ADT_TRANSIENT_CUSTOM_ATTRIBUTES );
+
         /**
          * Delete the debug.log file from the uploads directory if it exists.
          */

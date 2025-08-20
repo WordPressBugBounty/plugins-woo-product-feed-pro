@@ -8,9 +8,9 @@
 
 defined( 'ABSPATH' ) || exit;
 
-use AdTribes\PFP\Classes\Filters;
+use AdTribes\PFP\Classes\Legacy\Filters_Legacy;
 
-$filters = Filters::instance();
+$filters = Filters_Legacy::instance();
 
 ?>
 <tr class="rowCount filter-row">

@@ -203,16 +203,6 @@ class Product_Feed_Attributes extends Abstract_Class {
             'author'            => 'Author',
             'installment'       => 'Installment',
             'calculated'        => 'Plugin calculation',
-            'product_detail 1'  => 'Product detail 1',
-            'product_detail 2'  => 'Product detail 2',
-            'product_detail 3'  => 'Product detail 3',
-            'product_detail 4'  => 'Product detail 4',
-            'product_detail 5'  => 'Product detail 5',
-            'product_detail 6'  => 'Product detail 6',
-            'product_detail 7'  => 'Product detail 7',
-            'product_detail 8'  => 'Product detail 8',
-            'product_detail 9'  => 'Product detail 9',
-            'product_detail 10' => 'Product detail 10',
             'product_highlight' => 'Product highlight',
             'consumer_notice_1' => 'Consumer notice 1',
             'consumer_notice_2' => 'Consumer notice 2',
@@ -466,6 +456,7 @@ class Product_Feed_Attributes extends Abstract_Class {
                 $limit_clause
             ) AS p ON pm.post_id = p.ID
             WHERE pm.meta_key NOT IN ('_product_attributes')
+                AND pm.meta_key NOT LIKE '_woosea_%'
         ";
 
         $custom_attributes = $wpdb->get_col( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared

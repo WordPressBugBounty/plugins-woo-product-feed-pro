@@ -53,6 +53,7 @@ class Deactivation extends Abstract_Class {
 
         $this->cleanup_cron();
         $this->cleanup_options();
+        $this->cleanup_transients();
     }
 
     /**
@@ -78,6 +79,16 @@ class Deactivation extends Abstract_Class {
     protected function cleanup_options() {
         delete_option( 'woosea_getelite_notification' );
         delete_option( 'woosea_license_notification_closed' );
+    }
+
+    /**
+     * Cleanup transients.
+     *
+     * @since 13.4.7
+     * @access public
+     */
+    protected function cleanup_transients() {
+        delete_transient( ADT_TRANSIENT_CUSTOM_ATTRIBUTES );
     }
 
     /**

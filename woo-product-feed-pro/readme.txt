@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.8
-Stable tag: 13.4.5
+Stable tag: 13.4.6
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -388,6 +388,29 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Set the basic configurations for your product feed
 
 === Changelog ===
+
+= 13.4.6 (2025-08-14) =
+* Bug Fix: Duplicating a feed doesn't transfer the filters and rules from the original feed to the duplicate
+* Bug Fix: Empty values cannot be saved for the find and replace rule
+* Bug Fix: Featured products cannot be included in the feed
+* Bug Fix: Field-mapping changes do not persist when navigating back before feed generation
+* Bug Fix: The field mapping for 'Featured' products is always exported as 'no' in product feeds
+* Bug Fix: Filters using OR logic do not work properly—products are not excluded
+* Bug Fix: 'Is Empty Then' rules prevent rules from being saved
+* Bug Fix: PHP fatal error 'Call to undefined function wc_get_product()' occurs before WooCommerce is fully initialized
+* Bug Fix: The 'Product_Detail_1' to 'Product_Detail_10' mappable fields are identical
+* Bug Fix: HTML characters are now replaced with alphabetic characters in Pinterest feeds
+* Bug Fix: Shipping field does not generate properly when the zone is set to 'Everywhere'
+* Bug Fix: The Skroutz template does not follow the variation structure
+* Bug Fix: The 'product_highlight' mappable field overrides instead of creating a new instance in XML
+* Improvement: 'Abstract_Filters_Rules' retrieves the attribute field mapping on each page load
+* Improvement: Added a button to fix duplicated feed issues caused by abnormalities when updating from older versions
+* Improvement: Added support for changing the feed country after duplication
+* Improvement: Enabled a logging option to record feed generation details
+* Improvement: Option to add or remove the 'created_at' tag in a feed
+* Improvement: Removed 'WP cron enabled' from the system check
+* Improvement: Added a filter to change the `<link>` in the XML for the Google Shopping feed
+* Feature: Separated the Filters and Rules pages and implemented a new UI form
 
 = 13.4.5 (2025-06-25) =
 * Bug Fix: Feed Update Time Is Not Following Site's Timezone

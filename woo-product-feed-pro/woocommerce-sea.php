@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Product Feed PRO for WooCommerce
- * Version:     13.4.5
+ * Version:     13.4.6
  * Plugin URI:  https://www.adtribes.io/support/?utm_source=wpadmin&utm_medium=plugin&utm_campaign=woosea_product_feed_pro
  * Description: Configure and maintain your WooCommerce product feeds for Google Shopping, Catalog managers, Remarketing, Bing, Skroutz, Yandex, Comparison shopping websites and over a 100 channels more.
  * Author:      AdTribes.io
@@ -17,7 +17,7 @@
  * Domain Path: /languages
  *
  * WC requires at least: 4.4
- * WC tested up to: 9.9
+ * WC tested up to: 10.1
  *
  * Product Feed PRO for WooCommerce is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants.
  */
-define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.4.5' );
+define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.4.6' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME', 'woocommerce-product-feed-pro' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME_SHORT', 'woo-product-feed-pro' );
 

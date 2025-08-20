@@ -92,6 +92,7 @@ class Product_Feed {
         'include_product_variations'             => false,
         'only_include_default_product_variation' => false,
         'only_include_lowest_product_variation'  => false,
+        'include_all_shipping_countries'         => false,
         'utm_enabled'                            => true,
         'utm_source'                             => '',
         'utm_medium'                             => '',
@@ -103,10 +104,13 @@ class Product_Feed {
         'mappings'                               => array(),
         'rules'                                  => array(),
         'filters'                                => array(),
+        'feed_filters'                           => array(),
+        'feed_rules'                             => array(),
         'history_products'                       => array(),
         'ship_suffix'                            => false,
         'last_updated'                           => '',
         'legacy_project_hash'                    => '', // Backward compatibility.
+        'data_version'                           => array(),
     );
 
     /**
@@ -317,6 +321,7 @@ class Product_Feed {
             case 'filters':
             case 'rules':
                 $value = $this->_filter_feed_filters_mapping_meta_value( $value );
+                break;
         }
         return $value;
     }
@@ -619,6 +624,28 @@ class Product_Feed {
      * @param string $context The context of the generation. 'ajax' or 'cron'.
      */
     public function generate( $context = '' ) {
+        // Log when feed generation starts.
+        $logging = get_option( 'add_woosea_logging', 'no' );
+        if ( 'yes' === $logging ) {
+            $start_info  = array(
+                'feed_id'        => $this->id,
+                'feed_title'     => $this->title,
+                'execution_date' => current_time( 'Y-m-d H:i:s' ),
+                'context'        => 'ajax' === $context ? 'ajax' : 'cron',
+                'channel'        => $this->channel,
+                'file_format'    => $this->file_format,
+                'action'         => 'Feed generation started',
+            );
+            $log_message = 'Product Feed Generation Started: ' . print_r( $start_info, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+
+            $logger = new \WC_Logger();
+            $logger->add( 'Product Feed Pro by AdTribes.io', $log_message, 'info' );
+
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            }
+        }
+
         // Get the total number of products.
         $published_products = Product_Feed_Helper::get_feed_total_published_products( $this );
         $batch_size         = Product_Feed_Helper::get_batch_size( $this, $published_products );
@@ -692,6 +719,31 @@ class Product_Feed {
             $this->save();
 
             if ( 'ready' === $this->status ) {
+                // Log when feed generation ends.
+                $logging = get_option( 'add_woosea_logging', 'no' );
+                if ( 'yes' === $logging ) {
+                    $end_info    = array(
+                        'feed_id'         => $this->id,
+                        'feed_title'      => $this->title,
+                        'execution_date'  => current_time( 'Y-m-d H:i:s' ),
+                        'context'         => $context,
+                        'products_count'  => $this->products_count,
+                        'processed_count' => $this->products_count, // All products processed when status is ready.
+                        'channel'         => $this->channel,
+                        'file_format'     => $this->file_format,
+                        'file_url'        => $this->file_url,
+                        'action'          => 'Feed generation completed',
+                    );
+                    $log_message = 'Product Feed Generation Completed: ' . print_r( $end_info, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+
+                    $logger = new \WC_Logger();
+                    $logger->add( 'Product Feed Pro by AdTribes.io', $log_message, 'info' );
+
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                    }
+                }
+
                 $this->move_feed_file_to_final();
 
                 // Check the amount of products in the feed and update the history count.
@@ -862,6 +914,19 @@ class Product_Feed {
         as_unschedule_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED, array( 'feed_id' => $this->id ) );
     }
 
+    /**
+     * Set the data version for the product feed.
+     *
+     * @since 13.4.6
+     * @access public
+     *
+     * @param string $key The key of the data version.
+     * @param string $data_version The data version.
+     */
+    public function set_data_version( $key, $data_version ) {
+        $this->data['data_version'][ $key ] = $data_version;
+    }
+
     /***************************************************************************
      * Legacy methods.
      * **************************************************************************
@@ -881,37 +946,38 @@ class Product_Feed {
         $feed_data     = array();
         $data          = array();
 
-        $data['projectname']                   = $this->title;
-        $data['active']                        = 'publish' === $this->post_status ? 'true' : 'false';
-        $data['running']                       = $this->data['status'] ?? '';
-        $data['countries']                     = Product_Feed_Helper::get_legacy_country_from_code( $this->country );
-        $data['channel_hash']                  = $this->data['channel_hash'] ?? '';
-        $data['filename']                      = $this->data['file_name'] ?? '';
-        $data['fileformat']                    = $this->data['file_format'] ?? '';
-        $data['delimiter']                     = $this->data['delimiter'] ?? '';
-        $data['cron']                          = $this->data['refresh_interval'] ?? '';
-        $data['product_variations']            = $this->data['include_product_variations'] ? 'on' : '';
-        $data['default_variations']            = $this->data['only_include_default_product_variation'] ? 'on' : '';
-        $data['lowest_price_variations']       = $this->data['only_include_lowest_product_variation'] ? 'on' : '';
-        $data['preview_feed']                  = $this->data['create_preview'] ? 'on' : '';
-        $data['products_changed']              = $this->data['refresh_only_when_product_changed'] ? 'on' : '';
-        $data['attributes']                    = $this->data['attributes'] ?? array();
-        $data['mappings']                      = $this->data['mappings'] ?? array();
-        $data['rules']                         = $this->data['filters'] ?? array();
-        $data['rules2']                        = $this->data['rules'] ?? array();
-        $data['nr_products']                   = $this->data['products_count'] ?? 0;
-        $data['nr_products_processed']         = $this->data['total_products_processed'] ?? 0;
-        $data['utm_on']                        = $this->data['utm_enabled'] ? 'on' : '';
-        $data['utm_source']                    = $this->data['utm_source'] ?? '';
-        $data['utm_medium']                    = $this->data['utm_medium'] ?? '';
-        $data['utm_campaign']                  = $this->data['utm_campaign'] ?? '';
-        $data['utm_term']                      = $this->data['utm_term'] ?? '';
-        $data['utm_content']                   = $this->data['utm_content'] ?? '';
-        $data['total_product_orders_lookback'] = $this->data['utm_total_product_orders_lookback'] ?? '';
-        $data['project_hash']                  = $this->data['legacy_project_hash'] ?? '';
-        $data['history_products']              = $this->data['history_products'] ?? array();
-        $data['last_updated']                  = $this->data['last_updated'] ?? '';
-        $data['external_file']                 = $this->get_file_url();
+        $data['projectname']                    = $this->title;
+        $data['active']                         = 'publish' === $this->post_status ? 'true' : 'false';
+        $data['running']                        = $this->data['status'] ?? '';
+        $data['countries']                      = Product_Feed_Helper::get_legacy_country_from_code( $this->country );
+        $data['channel_hash']                   = $this->data['channel_hash'] ?? '';
+        $data['filename']                       = $this->data['file_name'] ?? '';
+        $data['fileformat']                     = $this->data['file_format'] ?? '';
+        $data['delimiter']                      = $this->data['delimiter'] ?? '';
+        $data['cron']                           = $this->data['refresh_interval'] ?? '';
+        $data['product_variations']             = $this->data['include_product_variations'] ? 'on' : '';
+        $data['default_variations']             = $this->data['only_include_default_product_variation'] ? 'on' : '';
+        $data['lowest_price_variations']        = $this->data['only_include_lowest_product_variation'] ? 'on' : '';
+        $data['include_all_shipping_countries'] = $this->data['include_all_shipping_countries'] ? 'on' : '';
+        $data['preview_feed']                   = $this->data['create_preview'] ? 'on' : '';
+        $data['products_changed']               = $this->data['refresh_only_when_product_changed'] ? 'on' : '';
+        $data['attributes']                     = $this->data['attributes'] ?? array();
+        $data['mappings']                       = $this->data['mappings'] ?? array();
+        $data['rules']                          = $this->data['filters'] ?? array();
+        $data['rules2']                         = $this->data['rules'] ?? array();
+        $data['nr_products']                    = $this->data['products_count'] ?? 0;
+        $data['nr_products_processed']          = $this->data['total_products_processed'] ?? 0;
+        $data['utm_on']                         = $this->data['utm_enabled'] ? 'on' : '';
+        $data['utm_source']                     = $this->data['utm_source'] ?? '';
+        $data['utm_medium']                     = $this->data['utm_medium'] ?? '';
+        $data['utm_campaign']                   = $this->data['utm_campaign'] ?? '';
+        $data['utm_term']                       = $this->data['utm_term'] ?? '';
+        $data['utm_content']                    = $this->data['utm_content'] ?? '';
+        $data['total_product_orders_lookback']  = $this->data['utm_total_product_orders_lookback'] ?? '';
+        $data['project_hash']                   = $this->data['legacy_project_hash'] ?? '';
+        $data['history_products']               = $this->data['history_products'] ?? array();
+        $data['last_updated']                   = $this->data['last_updated'] ?? '';
+        $data['external_file']                  = $this->get_file_url();
 
         // Get the channel data from the legacy channel hash.
         if ( $data['channel_hash'] ) {

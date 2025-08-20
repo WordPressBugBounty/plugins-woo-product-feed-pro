@@ -598,7 +598,7 @@ class Usage extends Abstract_Class {
                 'httpversion' => '1.1',
                 'blocking'    => false,
                 'body'        => $this->_get_data(),
-                'user-agent'  => 'PFP/' . ADT_PFP_OPTION_INSTALLED_VERSION . '; ' . get_bloginfo( 'url' ),
+                'user-agent'  => 'PFP/' . WOOCOMMERCESEA_PLUGIN_VERSION . '; ' . get_bloginfo( 'url' ),
             )
         );
 
@@ -714,7 +714,7 @@ class Usage extends Abstract_Class {
             )
         ) {
             // Enqueue the notice scripts.
-            wp_enqueue_script( 'adt-pfp-allow-usage-tracking-notice', ADT_PFP_JS_URL . 'usage-tracking-notice.js', array( 'jquery' ), ADT_PFP_OPTION_INSTALLED_VERSION, true );
+            wp_enqueue_script( 'adt-pfp-allow-usage-tracking-notice', ADT_PFP_JS_URL . 'usage-tracking-notice.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
             wp_localize_script(
                 'adt-pfp-allow-usage-tracking-notice',
                 'adt_pfp_allow_tracking_notice',
@@ -756,11 +756,11 @@ class Usage extends Abstract_Class {
             wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
         }
 
-        if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
+        if ( isset( $_REQUEST['security'] ) && ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'woosea_ajax_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
-        $value = sanitize_text_field( $_REQUEST['value'] ?? '' );
+        $value = isset( $_REQUEST['value'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['value'] ) ) : '';
         $value = 'true' === $value ? 'yes' : 'no';
 
         // Update the option.
@@ -786,11 +786,11 @@ class Usage extends Abstract_Class {
             wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
         }
 
-        if ( ! wp_verify_nonce( $_REQUEST['security'], 'adt_pfp_allow_tracking_nonce' ) ) {
+        if ( isset( $_REQUEST['security'] ) && ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'adt_pfp_allow_tracking_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
-        $value = sanitize_text_field( $_REQUEST['value'] ?? '' );
+        $value = isset( $_REQUEST['value'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['value'] ) ) : '';
         $value = '1' === $value ? 'yes' : 'no';
 
         // Update the option.

@@ -5,8 +5,8 @@ use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Factories\Admin_Notice;
 use AdTribes\PFP\Classes\Product_Feed_Attributes;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
-use AdTribes\PFP\Classes\Filters;
-use AdTribes\PFP\Classes\Rules;
+use AdTribes\PFP\Classes\Legacy\Filters_Legacy;
+use AdTribes\PFP\Classes\Legacy\Rules_Legacy;
 
 /**
  * Create product attribute object
@@ -28,12 +28,12 @@ if ( $feed_id ) {
         $project_hash = $feed->legacy_project_hash;
 
         $count_rules = 0;
-        if ( ! empty( $feed_filters ) ) {
+        if ( ! empty( $feed_filters ) && is_array( $feed_filters ) ) {
             $count_rules = count( $feed_filters );
         }
 
         $count_rules2 = 0;
-        if ( ! empty( $feed_rules ) ) {
+        if ( ! empty( $feed_rules ) && is_array( $feed_rules ) ) {
             $count_rules2 = count( $feed_rules );
         }
 
@@ -45,13 +45,16 @@ if ( $feed_id ) {
     $project_hash = $feed['project_hash'] ?? '';
     $channel_data = '' !== $channel_hash ? Product_Feed_Helper::get_channel_from_legacy_channel_hash( $channel_hash ) : array();
     $feed_type   = $channel_data['fields'] ?? '';
-    $count_rules  = 0;
-    $count_rules2 = 0;
+
+    $feed_filters = $feed['rules'] ?? array();
+    $feed_rules   = $feed['rules2'] ?? array();
+    $count_rules  = count( $feed_filters );
+    $count_rules2 = count( $feed_rules );
 }
 
 // Instantiate the classes.
-$filters_instance = new Filters( $feed_type ?? '' );
-$rules_instance   = new Rules( $feed_type ?? '');
+$filters_instance = new Filters_Legacy( $feed_type ?? '' );
+$rules_instance   = new Rules_Legacy( $feed_type ?? '');
 
 /**
  * Action hook to add content before the product feed manage page.

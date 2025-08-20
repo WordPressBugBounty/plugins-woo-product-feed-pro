@@ -7,7 +7,7 @@
 
 namespace AdTribes\PFP\Abstracts;
 
-use AdTribes\PFP\Traits\Singleton_Trait;
+use AdTribes\PFP\Traits\Magic_Get_Trait;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -20,7 +20,7 @@ use WP_REST_Response;
  */
 abstract class Abstract_REST extends \WP_REST_Controller {
 
-    use Singleton_Trait;
+    use Magic_Get_Trait;
 
     /**
      * Holds the full REST API URL.

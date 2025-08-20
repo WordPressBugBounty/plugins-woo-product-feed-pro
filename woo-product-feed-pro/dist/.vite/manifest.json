@@ -1,52 +1,80 @@
 {
-  "_style-legacy.DfWtZn9a.js": {
-    "file": "common/style-legacy.DfWtZn9a.js",
+  "_style-legacy.DAJgtavs.js": {
+    "file": "common/style-legacy.DAJgtavs.js",
     "name": "style"
   },
-  "_style.Ah1bX9TY.css": {
-    "file": "css/style.Ah1bX9TY.css",
-    "src": "_style.Ah1bX9TY.css"
+  "_style.tSU6BDvu.css": {
+    "file": "css/style.tSU6BDvu.css",
+    "src": "_style.tSU6BDvu.css"
+  },
+  "src/apps/filters-rules-builder/index-legacy.ts": {
+    "file": "apps/filters-rules-builder/index-legacy.D-uJsjc9.js",
+    "name": "apps/filters-rules-builder/index",
+    "src": "src/apps/filters-rules-builder/index-legacy.ts",
+    "isEntry": true
+  },
+  "src/apps/filters-rules-builder/index.ts": {
+    "file": "apps/filters-rules-builder/index.D26qJZlH.js",
+    "name": "apps/filters-rules-builder/index",
+    "src": "src/apps/filters-rules-builder/index.ts",
+    "isEntry": true,
+    "css": [
+      "css/index.D211i7Py.css"
+    ]
   },
   "src/vanilla/edit-feed/index-legacy.ts": {
-    "file": "vanilla\\edit-feed/index-legacy.B0KCWnd1.js",
+    "file": "vanilla\\edit-feed/index-legacy.DtMAT_3J.js",
     "name": "vanilla\\edit-feed/index",
     "src": "src/vanilla/edit-feed/index-legacy.ts",
     "isEntry": true,
     "imports": [
-      "_style-legacy.DfWtZn9a.js"
+      "_style-legacy.DAJgtavs.js",
+      "src/vanilla/edit-feed/style-legacy.scss"
     ]
   },
   "src/vanilla/edit-feed/index.ts": {
-    "file": "vanilla\\edit-feed/index.BwE6Nb9_.js",
+    "file": "vanilla\\edit-feed/index.DzQmNib4.js",
     "name": "vanilla\\edit-feed/index",
     "src": "src/vanilla/edit-feed/index.ts",
     "isEntry": true,
     "css": [
-      "css/style.Ah1bX9TY.css"
+      "css/style.tSU6BDvu.css",
+      "css/vanilla/edit-feed/style.BlpxB5Bi.css"
     ]
   },
+  "src/vanilla/edit-feed/style-legacy.scss": {
+    "file": "vanilla\\edit-feed/style.scss-legacy.D_J376pW.js",
+    "name": "vanilla\\edit-feed/style.scss",
+    "src": "src/vanilla/edit-feed/style-legacy.scss",
+    "isEntry": true
+  },
+  "src/vanilla/edit-feed/style.scss": {
+    "file": "css/vanilla/edit-feed/style.BlpxB5Bi.css",
+    "src": "src/vanilla/edit-feed/style.scss",
+    "isEntry": true
+  },
   "src/vanilla/manage-feeds/index-legacy.ts": {
-    "file": "vanilla\\manage-feeds/index-legacy.lthoy70z.js",
+    "file": "vanilla\\manage-feeds/index-legacy.xXBH5pmw.js",
     "name": "vanilla\\manage-feeds/index",
     "src": "src/vanilla/manage-feeds/index-legacy.ts",
     "isEntry": true,
     "imports": [
-      "_style-legacy.DfWtZn9a.js",
+      "_style-legacy.DAJgtavs.js",
       "src/vanilla/manage-feeds/style-legacy.scss"
     ]
   },
   "src/vanilla/manage-feeds/index.ts": {
-    "file": "vanilla\\manage-feeds/index.Cvv1VBpD.js",
+    "file": "vanilla\\manage-feeds/index.BCwVWGCN.js",
     "name": "vanilla\\manage-feeds/index",
     "src": "src/vanilla/manage-feeds/index.ts",
     "isEntry": true,
     "css": [
-      "css/style.Ah1bX9TY.css",
+      "css/style.tSU6BDvu.css",
       "css/vanilla/manage-feeds/style.B315Lovp.css"
     ]
   },
   "src/vanilla/manage-feeds/style-legacy.scss": {
-    "file": "vanilla\\manage-feeds/style.scss-legacy.DKdKEjjR.js",
+    "file": "vanilla\\manage-feeds/style.scss-legacy.CHq7dT4S.js",
     "name": "vanilla\\manage-feeds/style.scss",
     "src": "src/vanilla/manage-feeds/style-legacy.scss",
     "isEntry": true
@@ -57,7 +85,7 @@
     "isEntry": true
   },
   "src/vanilla/notices/index-legacy.ts": {
-    "file": "vanilla\\notices/index-legacy.Dtxv5FgP.js",
+    "file": "vanilla\\notices/index-legacy.BllEFAdc.js",
     "name": "vanilla\\notices/index",
     "src": "src/vanilla/notices/index-legacy.ts",
     "isEntry": true
@@ -68,8 +96,37 @@
     "src": "src/vanilla/notices/index.ts",
     "isEntry": true
   },
+  "src/vanilla/upsell/index-legacy.ts": {
+    "file": "vanilla\\upsell/index-legacy.pFtqxAOP.js",
+    "name": "vanilla\\upsell/index",
+    "src": "src/vanilla/upsell/index-legacy.ts",
+    "isEntry": true,
+    "imports": [
+      "src/vanilla/upsell/style-legacy.scss"
+    ]
+  },
+  "src/vanilla/upsell/index.ts": {
+    "file": "vanilla\\upsell/index.BvigDFK-.js",
+    "name": "vanilla\\upsell/index",
+    "src": "src/vanilla/upsell/index.ts",
+    "isEntry": true,
+    "css": [
+      "css/vanilla/upsell/style.DendwrfQ.css"
+    ]
+  },
+  "src/vanilla/upsell/style-legacy.scss": {
+    "file": "vanilla\\upsell/style.scss-legacy.DJ055mw4.js",
+    "name": "vanilla\\upsell/style.scss",
+    "src": "src/vanilla/upsell/style-legacy.scss",
+    "isEntry": true
+  },
+  "src/vanilla/upsell/style.scss": {
+    "file": "css/vanilla/upsell/style.DendwrfQ.css",
+    "src": "src/vanilla/upsell/style.scss",
+    "isEntry": true
+  },
   "vite/legacy-polyfills-legacy": {
-    "file": "polyfills-legacy.1YHuT6CT.js",
+    "file": "polyfills-legacy.TWvsuS_k.js",
     "name": "polyfills",
     "src": "vite/legacy-polyfills-legacy",
     "isEntry": true

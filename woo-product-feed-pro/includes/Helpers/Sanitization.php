@@ -36,6 +36,8 @@ class Sanitization {
         // Platform-specific handling.
         if ( self::platform_allows_html( $feed ) ) {
             $html_content = self::preserve_html_formatting( $html_content, $feed );
+        } elseif ( self::platform_requires_pure_plain_text( $feed ) ) {
+            $html_content = self::convert_to_pure_plain_text( $html_content, $feed );
         } else {
             $html_content = self::convert_to_plain_text( $html_content );
         }
@@ -143,6 +145,57 @@ class Sanitization {
     }
 
     /**
+     * Convert to pure plain text format for platforms that require it.
+     * This method handles platforms like Pinterest that need plain text without HTML entities.
+     *
+     * @since 13.4.6
+     *
+     * @param string       $html_content The string to sanitize.
+     * @param Product_Feed $feed         The feed object.
+     * @return string The sanitized string as pure plain text.
+     */
+    private static function convert_to_pure_plain_text( $html_content, $feed ) {
+        // Convert common list elements to readable plain text first.
+        $html_content = preg_replace( '/<li[^>]*>/i', '• ', $html_content );
+        $html_content = preg_replace( '/<\/li>/i', "\n", $html_content );
+
+        // Convert block elements to line breaks.
+        $html_content = preg_replace( '/<\/?(p|div|h[1-6]|br)[^>]*>/i', "\n", $html_content );
+        $html_content = preg_replace( '/<\/(ul|ol)[^>]*>/i', "\n", $html_content );
+
+        // Remove opening list tags.
+        $html_content = preg_replace( '/<(ul|ol)[^>]*>/i', '', $html_content );
+
+        // Add space before tags to prevent words from sticking together.
+        $html_content = str_replace( '<', ' <', $html_content );
+
+        // Strip all remaining HTML tags.
+        $html_content = wp_strip_all_tags( $html_content );
+
+        // Decode HTML entities back to plain characters.
+        $html_content = html_entity_decode( $html_content, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8' );
+
+        // Clean up whitespace and line breaks.
+        $html_content = preg_replace( '/\r\n|\r|\n/', ' ', $html_content ); // Convert line breaks to spaces.
+        $html_content = preg_replace( '/\s+/', ' ', $html_content ); // Collapse multiple spaces.
+
+        // Remove non-breaking spaces and other problematic characters.
+        $html_content = str_replace( array( '&nbsp;', '&#160;', '&#xa0;' ), ' ', $html_content );
+
+        /**
+         * Filter the pure plain text content for specific platforms.
+         *
+         * @since 13.4.6
+         *
+         * @param string       $html_content The sanitized plain text content.
+         * @param Product_Feed $feed         The feed object.
+         */
+        $html_content = apply_filters( 'adt_product_feed_pure_plain_text_content', $html_content, $feed );
+
+        return trim( $html_content );
+    }
+
+    /**
      * Check if the platform allows HTML formatting.
      *
      * @since 13.4.5
@@ -181,6 +234,38 @@ class Sanitization {
         );
 
         return in_array( $feed->get_channel( 'fields' ), $platform_allowes_html_fields, true );
+    }
+
+    /**
+     * Check if the platform requires pure plain text formatting.
+     *
+     * @since 13.4.6
+     *
+     * @param Product_Feed $feed The feed object.
+     * @return bool True if platform requires pure plain text, false otherwise.
+     */
+    private static function platform_requires_pure_plain_text( $feed ) {
+        if ( ! $feed ) {
+            return false;
+        }
+
+        /**
+         * Filter the platforms that require pure plain text fields.
+         *
+         * @since 13.4.5
+         *
+         * @param array        $platform_requires_pure_plain_text_fields The platforms that require pure plain text fields.
+         * @param Product_Feed $feed                                     The feed object.
+         */
+        $platform_requires_pure_plain_text_fields = apply_filters(
+            'adt_product_feed_platform_requires_pure_plain_text_fields',
+            array(
+                'pinterest',
+            ),
+            $feed
+        );
+
+        return in_array( $feed->get_channel( 'fields' ), $platform_requires_pure_plain_text_fields, true );
     }
 
     /**

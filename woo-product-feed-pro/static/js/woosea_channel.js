@@ -58,6 +58,12 @@ jQuery(document).ready(function ($) {
     var country = this.value;
     var security = $('#_wpnonce').val();
     var td = $('#channel_hash').closest('td');
+    var is_new_feed = $(this).data('is_new_feed');
+
+    // Prevent retrieving channels for existing feeds.
+    if (is_new_feed == false) {
+      return;
+    }
 
     var select = $('#channel_hash');
     select.empty();

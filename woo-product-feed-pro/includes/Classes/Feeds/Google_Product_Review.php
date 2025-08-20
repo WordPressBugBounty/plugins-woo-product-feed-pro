@@ -11,6 +11,8 @@ use AdTribes\PFP\Abstracts\Abstract_Class;
 use AdTribes\PFP\Traits\Singleton_Trait;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Classes\Filters;
+use AdTribes\PFP\Classes\Rules;
+use AdTribes\PFP\Classes\Legacy\Filters_Legacy;
 
 /**
  * Google Product Review class.
@@ -41,6 +43,7 @@ class Google_Product_Review extends Abstract_Class {
         'review_id',
         'reviewer_id',
         'review_ratings',
+        'review_rating', // Also include singular version for compatibility.
         'reviewer_name',
         'content',
         'review_reviever_image',
@@ -86,8 +89,338 @@ class Google_Product_Review extends Abstract_Class {
         return $attributes;
     }
 
+
     /**
-     * Maybe skip filter.
+     * Process filters for Google Product Review feeds
+     *
+     * @since 13.4.6
+     * @access private
+     *
+     * @param array        $data The data to filter.
+     * @param array        $filters The filters structure.
+     * @param Product_Feed $feed The feed object.
+     * @return array
+     */
+    public function process_google_review_filters( $data, $filters, $feed ) {
+        // Get the filters instance.
+        $filters_instance = Filters::instance();
+
+        // Separate review filters from product filters.
+        $review_filters  = array(
+            'include' => array(),
+            'exclude' => array(),
+        );
+        $product_filters = array(
+            'include' => array(),
+            'exclude' => array(),
+        );
+
+        foreach ( array( 'include', 'exclude' ) as $type ) {
+            foreach ( $filters[ $type ] ?? array() as $group ) {
+                if ( 'group' !== $group['type'] ) {
+                    continue;
+                }
+
+                $has_review_fields  = false;
+                $has_product_fields = false;
+
+                // Check what type of fields this group contains.
+                foreach ( $group['fields'] ?? array() as $field ) {
+                    if ( 'field' === $field['type'] && isset( $field['data']['attribute'] ) ) {
+                        if ( in_array( $field['data']['attribute'], $this->review_attributes, true ) ) {
+                            $has_review_fields = true;
+                        } else {
+                            $has_product_fields = true;
+                        }
+                    }
+                }
+
+                // Handle different scenarios.
+                if ( $has_review_fields && ! $has_product_fields ) {
+                    // Pure review filter - apply to individual reviews.
+                    $review_filters[ $type ][] = $group;
+                } elseif ( ! $has_review_fields && $has_product_fields ) {
+                    // Pure product filter - apply to product.
+                    $product_filters[ $type ][] = $group;
+                } else { // phpcs:ignore
+                    // Mixed group - handle based on filter type.
+                    if ( 'exclude' === $type ) {
+                        // For exclude filters with mixed attributes, we need special handling.
+                        // The group should only exclude reviews that match BOTH conditions.
+                        $review_filters[ $type ][] = $group; // Keep the whole group for review filtering.
+                    } else {
+                        // For include filters, split as before.
+                        $review_group  = array(
+                            'type'   => 'group',
+                            'fields' => array(),
+                        );
+                        $product_group = array(
+                            'type'   => 'group',
+                            'fields' => array(),
+                        );
+
+                        foreach ( $group['fields'] ?? array() as $field ) {
+                            if ( 'field' === $field['type'] && isset( $field['data']['attribute'] ) ) {
+                                if ( in_array( $field['data']['attribute'], $this->review_attributes, true ) ) {
+                                    $review_group['fields'][] = $field;
+                                } else {
+                                    $product_group['fields'][] = $field;
+                                }
+                            } else {
+                                // Logic operators go to both groups.
+                                $review_group['fields'][]  = $field;
+                                $product_group['fields'][] = $field;
+                            }
+                        }
+
+                        if ( ! empty( $review_group['fields'] ) ) {
+                            $review_filters[ $type ][] = $review_group;
+                        }
+                        if ( ! empty( $product_group['fields'] ) ) {
+                            $product_filters[ $type ][] = $product_group;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Apply product-level filters (if any).
+        if ( ! empty( $product_filters['include'] ) || ! empty( $product_filters['exclude'] ) ) {
+            $include_result = $filters_instance->process_include_groups( $data, $product_filters['include'], $feed );
+            $exclude_result = $filters_instance->process_exclude_groups( $data, $product_filters['exclude'], $feed );
+
+            $product_passed = $include_result && ! $exclude_result;
+            if ( ! $product_passed ) {
+                $data = array(); // Product doesn't pass, return empty.
+                return apply_filters( 'adt_pfp_filter_product_feed_data', $data, $filters, $feed );
+            }
+        }
+
+        // Then apply review-level filters.
+        if ( ! empty( $review_filters['include'] ) || ! empty( $review_filters['exclude'] ) ) {
+            $reviews          = $data['reviews'] ?? array();
+            $filtered_reviews = array();
+
+            foreach ( $reviews as $review ) {
+                // Merge review data into product data temporarily for filtering.
+                $review_data = array_merge( $data, $review );
+
+                $include_result = $filters_instance->process_include_groups( $review_data, $review_filters['include'], $feed );
+                $exclude_result = $filters_instance->process_exclude_groups( $review_data, $review_filters['exclude'], $feed );
+
+                $review_passed = $include_result && ! $exclude_result;
+                if ( $review_passed ) {
+                    $filtered_reviews[] = $review;
+                }
+            }
+
+            $data['reviews'] = $filtered_reviews;
+        }
+
+        /**
+         * Filter the product feed data after filtering.
+         *
+         * @since 13.4.5
+         *
+         * @param array  $data The product feed data.
+         * @param array  $filters The filters.
+         * @param object $feed The feed.
+         */
+        return apply_filters( 'adt_pfp_filter_product_feed_data', $data, $filters, $feed );
+    }
+
+    /**
+     * Process rules for Google Product Review feeds.
+     *
+     * This handles both the IF (conditions) and THEN (actions) parts of rules.
+     *
+     * @since 13.4.6
+     * @access public
+     *
+     * @param array        $data The data to filter.
+     * @param array        $rules The rules to process.
+     * @param Product_Feed $feed The feed object.
+     * @return array
+     */
+    public function process_google_review_rules( $data, $rules, $feed ) {
+        // Get the rules instance.
+        $rules_instance = Rules::instance();
+
+        // Process each rule.
+        foreach ( $rules as $rule ) {
+            if ( ! isset( $rule['if'] ) || ! isset( $rule['then'] ) ) {
+                continue;
+            }
+
+            // Separate review conditions from product conditions.
+            $review_conditions      = array();
+            $product_conditions     = array();
+            $has_review_conditions  = false;
+            $has_product_conditions = false;
+
+            // Analyze the conditions to see what type they are.
+            foreach ( $rule['if'] as $condition ) {
+                if ( 'group' === ( $condition['type'] ?? '' ) ) {
+                    if ( $this->group_has_review_attributes( $condition ) ) {
+                        $has_review_conditions = true;
+                        $review_conditions[]   = $condition;
+                    } else {
+                        $has_product_conditions = true;
+                        $product_conditions[]   = $condition;
+                    }
+                } else {
+                    // Logic operators apply to both.
+                    $review_conditions[]  = $condition;
+                    $product_conditions[] = $condition;
+                }
+            }
+
+            // Handle different scenarios.
+            if ( $has_review_conditions && ! $has_product_conditions ) {
+                // Pure review rule - apply to individual reviews.
+                $data = $this->apply_review_rule( $data, $rule, $rules_instance );
+            } elseif ( ! $has_review_conditions && $has_product_conditions ) {
+                // Pure product rule - use normal rule processing.
+                if ( $rules_instance->evaluate_rule_conditions( $rule['if'], $data ) ) {
+                    $data = $this->process_google_review_rules_actions( $data, $rule['then'], $feed );
+                }
+            } else { // phpcs:ignore
+                // Mixed rule - apply to reviews only if product conditions are met.
+                if ( ! empty( $product_conditions ) && $rules_instance->evaluate_rule_conditions( $product_conditions, $data ) ) {
+                    $data = $this->apply_review_rule_with_conditions( $data, $review_conditions, $rule['then'], $rules_instance );
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Process rules actions for Google Product Review feeds.
+     *
+     * For review attributes, we need to apply the action to each review.
+     * For other attributes, we need to apply the action to the product same as the Rules class implementation.
+     *
+     * @since 13.4.6
+     * @access private
+     *
+     * @param array        $data The data to filter.
+     * @param array        $actions The actions to apply.
+     * @param Product_Feed $feed The feed object.
+     * @return array
+     */
+    public function process_google_review_rules_actions( $data, $actions, $feed ) {
+        // Get the rules instance.
+        $rules_instance = Rules::instance();
+
+        foreach ( $actions as $action ) {
+            if ( in_array( $action['attribute'], $this->review_attributes, true ) ) {
+                foreach ( $data['reviews'] as $index => $review ) {
+                    $data['reviews'][ $index ] = $rules_instance->process_action( $review, $action );
+                }
+            } else {
+                $data = $rules_instance->process_action( $data, $action );
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Check if a group has review attributes.
+     *
+     * @since 13.4.6
+     * @access private
+     *
+     * @param array $group The group data.
+     * @return bool
+     */
+    private function group_has_review_attributes( $group ) {
+        foreach ( $group['fields'] ?? array() as $field ) {
+            if ( 'field' === ( $field['type'] ?? '' ) && isset( $field['data']['attribute'] ) ) {
+                if ( in_array( $field['data']['attribute'], $this->review_attributes, true ) ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Apply a rule to individual reviews.
+     *
+     * @since 13.4.6
+     * @access private
+     *
+     * @param array $data The product data.
+     * @param array $rule The rule to apply.
+     * @param Rules $rules_instance The rules instance.
+     * @return array
+     */
+    private function apply_review_rule( $data, $rule, $rules_instance ) {
+        $reviews          = $data['reviews'] ?? array();
+        $filtered_reviews = array();
+
+        foreach ( $reviews as $review ) {
+            // Merge review data into product data temporarily.
+            $review_data = array_merge( $data, $review );
+
+            // Evaluate conditions against the merged data.
+            if ( $rules_instance->evaluate_rule_conditions( $rule['if'], $review_data ) ) {
+                // Apply actions to the review.
+                foreach ( $rule['then'] as $action ) {
+                    if ( in_array( $action['attribute'], $this->review_attributes, true ) ) {
+                        $review = $rules_instance->process_action( $review, $action );
+                    }
+                }
+            }
+
+            $filtered_reviews[] = $review;
+        }
+
+        $data['reviews'] = $filtered_reviews;
+        return $data;
+    }
+
+    /**
+     * Apply a rule to reviews with specific conditions.
+     *
+     * @since 13.4.6
+     * @access private
+     *
+     * @param array $data The product data.
+     * @param array $review_conditions The review conditions.
+     * @param array $actions The actions to apply.
+     * @param Rules $rules_instance The rules instance.
+     * @return array
+     */
+    private function apply_review_rule_with_conditions( $data, $review_conditions, $actions, $rules_instance ) {
+        $reviews          = $data['reviews'] ?? array();
+        $filtered_reviews = array();
+
+        foreach ( $reviews as $review ) {
+            // Merge review data into product data temporarily.
+            $review_data = array_merge( $data, $review );
+
+            // Evaluate review conditions against the merged data.
+            if ( $rules_instance->evaluate_rule_conditions( $review_conditions, $review_data ) ) {
+                // Apply actions to the review.
+                foreach ( $actions as $action ) {
+                    if ( in_array( $action['attribute'], $this->review_attributes, true ) ) {
+                        $review = $rules_instance->process_action( $review, $action );
+                    }
+                }
+            }
+
+            $filtered_reviews[] = $review;
+        }
+
+        $data['reviews'] = $filtered_reviews;
+        return $data;
+    }
+
+    /**
+     * Legacy: Maybe skip filter.
      * For google product review, we only want to filter the reviews.
      * Due to the way the filter is applied, we need to skip the filter for other attributes.
      *
@@ -112,7 +445,7 @@ class Google_Product_Review extends Abstract_Class {
     }
 
     /**
-     * Filter product feed data value.
+     * Legacy: Filter product feed data value.
      *
      * @since 13.4.5
      *
@@ -132,7 +465,7 @@ class Google_Product_Review extends Abstract_Class {
         }
 
         // Get the filters instance.
-        $filters_instance = Filters::instance();
+        $filters_instance = Filters_Legacy::instance();
 
         foreach ( $filters as $filter ) {
             $filter_attribute = $filter['attribute'] ?? '';

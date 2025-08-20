@@ -481,53 +481,8 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'feed_name' => 'g:shopping_ads_excluded_country',
                     'format'    => 'optional',
                 ),
-                'Product detail 1'                     => array(
-                    'name'      => 'product_detail_1',
-                    'feed_name' => 'g:product_detail',
-                    'format'    => 'optional',
-                ),
-                'Product detail 2'                     => array(
-                    'name'      => 'product_detail_2',
-                    'feed_name' => 'g:product_detail',
-                    'format'    => 'optional',
-                ),
-                'Product detail 3'                     => array(
-                    'name'      => 'product_detail_3',
-                    'feed_name' => 'g:product_detail',
-                    'format'    => 'optional',
-                ),
-                'Product detail 4'                     => array(
-                    'name'      => 'product_detail_4',
-                    'feed_name' => 'g:product_detail',
-                    'format'    => 'optional',
-                ),
-                'Product detail 5'                     => array(
-                    'name'      => 'product_detail_5',
-                    'feed_name' => 'g:product_detail',
-                    'format'    => 'optional',
-                ),
-                'Product detail 6'                     => array(
-                    'name'      => 'product_detail_6',
-                    'feed_name' => 'g:product_detail',
-                    'format'    => 'optional',
-                ),
-                'Product detail 7'                     => array(
-                    'name'      => 'product_detail_7',
-                    'feed_name' => 'g:product_detail',
-                    'format'    => 'optional',
-                ),
-                'Product detail 8'                     => array(
-                    'name'      => 'product_detail_8',
-                    'feed_name' => 'g:product_detail',
-                    'format'    => 'optional',
-                ),
-                'Product detail 9'                     => array(
-                    'name'      => 'product_detail_9',
-                    'feed_name' => 'g:product_detail',
-                    'format'    => 'optional',
-                ),
-                'Product detail 10'                    => array(
-                    'name'      => 'product_detail_10',
+                'Product detail'                       => array(
+                    'name'      => 'product_detail',
                     'feed_name' => 'g:product_detail',
                     'format'    => 'optional',
                 ),

@@ -52,10 +52,11 @@ class Shipping_Data extends Abstract_Class {
 
         // Get shipping options.
         $options = array(
-            'add_all_shipping'             => get_option( 'add_all_shipping', 'no' ),
-            'only_free_shipping'           => get_option( 'free_shipping', 'no' ), // Only include free shipping if free shipping is met.
-            'remove_free_shipping'         => get_option( 'remove_free_shipping', 'no' ),  // Remove free shipping method.
-            'remove_local_pickup_shipping' => get_option( 'local_pickup_shipping', 'no' ), // Remove local pickup shipping method.
+            'add_all_shipping'               => get_option( 'add_all_shipping', 'no' ),
+            'only_free_shipping'             => get_option( 'free_shipping', 'no' ), // Only include free shipping if free shipping is met.
+            'remove_free_shipping'           => get_option( 'remove_free_shipping', 'no' ),  // Remove free shipping method.
+            'remove_local_pickup_shipping'   => get_option( 'local_pickup_shipping', 'no' ), // Remove local pickup shipping method.
+            'include_all_shipping_countries' => ( true === $feed->include_all_shipping_countries || 'yes' === $feed->include_all_shipping_countries ) ? 'yes' : 'no',
         );
 
         /**
@@ -108,9 +109,28 @@ class Shipping_Data extends Abstract_Class {
             'cart_subtotal'   => $product_price,
         );
 
+        // Collect all countries that have specific zones to avoid duplication with "Everywhere" zones.
+        $countries_with_specific_zones = array();
+        foreach ( $shipping_zones as $shipping_zone ) {
+            $zone_locations = $shipping_zone['zone_locations'] ?? array();
+            if ( ! empty( $zone_locations ) ) {
+                foreach ( $zone_locations as $zone_location ) {
+                    if ( 'country' === $zone_location->type || 'code' === $zone_location->type ) {
+                        $countries_with_specific_zones[] = $zone_location->code;
+                    } elseif ( 'state' === $zone_location->type ) {
+                        $zone_expl = explode( ':', $zone_location->code );
+                        if ( ! empty( $zone_expl[0] ) ) {
+                            $countries_with_specific_zones[] = $zone_expl[0];
+                        }
+                    }
+                }
+            }
+        }
+        $countries_with_specific_zones = array_unique( $countries_with_specific_zones );
+
         if ( ! empty( $shipping_zones ) ) {
             foreach ( $shipping_zones as $shipping_zone ) {
-                $shipping_zones_data = $this->_get_shipping_zones_data( $shipping_zone, $package, $options, $country_code, $shipping_currency, $feed );
+                $shipping_zones_data = $this->_get_shipping_zones_data( $shipping_zone, $package, $options, $country_code, $shipping_currency, $feed, $countries_with_specific_zones );
 
                 if ( ! empty( $shipping_zones_data ) ) {
                     $shipping_data = array_merge( $shipping_data, $shipping_zones_data );
@@ -144,12 +164,19 @@ class Shipping_Data extends Abstract_Class {
      * @param string $country_code     The feed country code.
      * @param string $shipping_currency The shipping currency.
      * @param object $feed             The feed object.
+     * @param array  $countries_with_specific_zones The countries with specific zones.
      * @return array
      */
-    private function _get_shipping_zones_data( $shipping_zone, $package, $options, $country_code, $shipping_currency, $feed ) {
+    private function _get_shipping_zones_data( $shipping_zone, $package, $options, $country_code, $shipping_currency, $feed, $countries_with_specific_zones ) {
         $shipping_zones_data = array();
 
         $zone_locations = $shipping_zone['zone_locations'] ?? array();
+
+        // Check if this zone is set to "Everywhere" (no specific locations).
+        $is_everywhere_zone = empty( $zone_locations );
+
+        // Check if feed country is not set.
+        $feed_country_not_set = empty( $country_code );
 
         // Collect all countries and states in this zone.
         $countries_in_zone = array();
@@ -175,23 +202,78 @@ class Shipping_Data extends Abstract_Class {
             }
         }
 
+        // If this is an "Everywhere" zone, get all allowed countries from WooCommerce.
+        if ( $is_everywhere_zone ) {
+            if ( 'yes' === $options['include_all_shipping_countries'] ) {
+                if ( $feed_country_not_set ) {
+                    // When feed country is not set, show all countries from "Everywhere" zones.
+                    $shipping_countries = WC()->countries->get_shipping_countries();
+
+                    /**
+                     * Filter the shipping countries for "Everywhere" zones.
+                     *
+                     * @since 13.4.5
+                     *
+                     * @param array $shipping_countries The shipping countries.
+                     * @param object $feed The feed object.
+                     * @return array
+                     */
+                    $shipping_countries = apply_filters( 'adt_product_feed_shipping_countries', $shipping_countries, $feed );
+                    if ( ! empty( $shipping_countries ) ) {
+                        $all_countries = array_keys( $shipping_countries );
+                        // Filter out countries that already have specific zones to avoid duplication.
+                        $countries_in_zone = array_diff( $all_countries, $countries_with_specific_zones );
+                    }
+                } else {
+                    // When feed country is set, only show the feed country from "Everywhere" zones.
+                    $feed_country_array = array( $country_code );
+                    $countries_in_zone  = array_diff( $feed_country_array, $countries_with_specific_zones );
+                }
+            } else {
+                // Default behavior: only include the feed country for "Everywhere" zones, but filter out if it has a specific zone.
+                $feed_country_array = array( $country_code );
+                $countries_in_zone  = array_diff( $feed_country_array, $countries_with_specific_zones );
+            }
+        }
+
         // Skip this zone if it's not for the feed country and Add all shipping is not enabled.
-        if ( ! in_array( $country_code, $countries_in_zone, true ) && 'yes' !== $options['add_all_shipping'] ) {
+        // Exception: Include "Everywhere" zones for the feed country.
+        // Also exception: When include_all_shipping_countries is enabled AND feed country is not set, show all zones.
+        if ( ! $is_everywhere_zone && ! in_array( $country_code, $countries_in_zone, true ) && 'yes' !== $options['add_all_shipping'] && ( 'yes' !== $options['include_all_shipping_countries'] || ! $feed_country_not_set ) ) {
             return $shipping_zones_data;
         }
 
         // Get and filter shipping methods.
         $methods = $this->_get_filtered_shipping_methods( $shipping_zone, $options );
 
-        if ( 'yes' === $options['add_all_shipping'] ) {
-            // Feed country is not in the zone, but add all shipping is enabled.
+        if ( 'yes' === $options['add_all_shipping'] || ( 'yes' === $options['include_all_shipping_countries'] && $feed_country_not_set ) ) {
+            // Feed country is not in the zone, but add all shipping is enabled OR include all shipping countries is enabled AND feed country is not set.
             // Process all countries in the zone.
-            foreach ( $countries_in_zone as $country_code ) {
+            if ( $is_everywhere_zone ) {
+                // For "Everywhere" zones, process all allowed countries when add all shipping is enabled.
+                foreach ( $countries_in_zone as $zone_country_code ) {
+                    $zone_data = $this->_setup_zone_and_package( $zone_country_code, '', $package );
+
+                    // Process shipping methods for this country.
+                    $shipping_zones_data = $this->_process_shipping_methods(
+                        $methods,
+                        $shipping_zone,
+                        $zone_data['package'],
+                        $zone_data['zone'],
+                        $options,
+                        $zone_data['has_free_shipping'],
+                        $shipping_currency,
+                        $feed,
+                        $shipping_zones_data
+                    );
+                }
+            } else {
+                foreach ( $countries_in_zone as $zone_country_code ) {
                 // Check if there are specific states for this country.
-                if ( isset( $states_by_country[ $country_code ] ) && ! empty( $states_by_country[ $country_code ] ) ) {
+                    if ( isset( $states_by_country[ $zone_country_code ] ) && ! empty( $states_by_country[ $zone_country_code ] ) ) {
                     // Process each state for this country.
-                    foreach ( $states_by_country[ $country_code ] as $state_code ) {
-                        $zone_data = $this->_setup_zone_and_package( $country_code, $state_code, $package );
+                        foreach ( $states_by_country[ $zone_country_code ] as $state_code ) {
+                            $zone_data = $this->_setup_zone_and_package( $zone_country_code, $state_code, $package );
 
                         // Process shipping methods for this state.
                         $shipping_zones_data = $this->_process_shipping_methods(
@@ -208,9 +290,30 @@ class Shipping_Data extends Abstract_Class {
                     }
                 } else {
                     // No specific states, process the country as a whole.
-                    $zone_data = $this->_setup_zone_and_package( $country_code, '', $package );
+                        $zone_data = $this->_setup_zone_and_package( $zone_country_code, '', $package );
 
                     // Process shipping methods for the whole country.
+                        $shipping_zones_data = $this->_process_shipping_methods(
+                            $methods,
+                            $shipping_zone,
+                            $zone_data['package'],
+                            $zone_data['zone'],
+                            $options,
+                            $zone_data['has_free_shipping'],
+                            $shipping_currency,
+                            $feed,
+                            $shipping_zones_data
+                        );
+                    }
+                }
+            }
+        } elseif ( $is_everywhere_zone || in_array( $country_code, $countries_in_zone, true ) ) { // If the feed country is in the zone or it's an everywhere zone.
+            if ( $is_everywhere_zone ) {
+                // For "Everywhere" zones, process all allowed countries.
+                foreach ( $countries_in_zone as $zone_country_code ) {
+                    $zone_data = $this->_setup_zone_and_package( $zone_country_code, '', $package );
+
+                    // Process shipping methods for this country.
                     $shipping_zones_data = $this->_process_shipping_methods(
                         $methods,
                         $shipping_zone,
@@ -223,10 +326,8 @@ class Shipping_Data extends Abstract_Class {
                         $shipping_zones_data
                     );
                 }
-            }
-        } elseif ( in_array( $country_code, $countries_in_zone, true ) ) { // If the feed country is in the zone.
+            } elseif ( isset( $states_by_country[ $country_code ] ) && ! empty( $states_by_country[ $country_code ] ) ) {
             // Check if there are specific states for this country.
-            if ( isset( $states_by_country[ $country_code ] ) && ! empty( $states_by_country[ $country_code ] ) ) {
                 // Process each state for this country.
                 foreach ( $states_by_country[ $country_code ] as $state_code ) {
                     $zone_data = $this->_setup_zone_and_package( $country_code, $state_code, $package );

@@ -9,6 +9,7 @@
 namespace AdTribes\PFP\Traits;
 
 use AdTribes\PFP\Helpers\Helper;
+use AdTribes\PFP\Classes\Product_Feed_Attributes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,22 +19,38 @@ defined( 'ABSPATH' ) || exit;
 trait Filters_Rules_Trait {
 
     /**
-     * Get template for filter row.
+     * Legacy: GGet attributes.
+     *
+     * @deprecated 13.4.6 Use new attributes methods in REST/Filters_Rules.php
+     *
+     * @since 13.4.6
+     * @access public
+     *
+     * @return array
+     */
+    protected function get_attributes() {
+        $product_feed_attributes = new Product_Feed_Attributes();
+        $attributes              = $product_feed_attributes->get_attributes();
+        return apply_filters( 'adt_pfp_get_filters_rules_attributes', $attributes, $this );
+    }
+
+    /**
+     * Legacy: Get template for filter row.
+     *
+     * @deprecated 13.4.6 Use new filter row rendering methods.
      *
      * @param int   $row_count     Row count for the filter.
      * @param array $filter_data   Optional. Filter data for existing filter.
      * @return string HTML markup for filter row.
      */
     public function get_filter_template( $row_count, $filter_data = array() ) {
-        // Extract needed variables for the template.
+        // Legacy implementation.
         $criteria           = isset( $filter_data['criteria'] ) ? $filter_data['criteria'] : '';
         $condition          = isset( $filter_data['condition'] ) ? $filter_data['condition'] : '';
         $than               = isset( $filter_data['than'] ) ? $filter_data['than'] : '';
         $is_case_sensitive  = isset( $filter_data['cs'] ) && 'on' === $filter_data['cs'] ? true : false;
         $selected_attribute = isset( $filter_data['attribute'] ) ? $filter_data['attribute'] : '';
 
-        // Use output buffering with an include to ensure the PHP is processed
-        // and variables are available.
         ob_start();
         Helper::locate_admin_template(
             'filters-rules/filter-row.php',
@@ -41,7 +58,7 @@ trait Filters_Rules_Trait {
             false,
             array(
                 'row_count'          => $row_count,
-                'attributes'         => $this->attributes,
+                'attributes'         => $this->get_attributes(),
                 'filter_data'        => $filter_data,
                 'criteria'           => $criteria,
                 'condition'          => $condition,
@@ -54,14 +71,16 @@ trait Filters_Rules_Trait {
     }
 
     /**
-     * Get template for rule row.
+     * Legacy: Get template for rule row.
+     *
+     * @deprecated 13.4.6 Use new rule row rendering methods.
      *
      * @param int   $row_count     Row count for the rule.
      * @param array $rule_data     Optional. Rule data for existing rule.
      * @return string HTML markup for rule row.
      */
     public function get_rule_template( $row_count, $rule_data = array() ) {
-        // Extract needed variables for the template.
+        // Legacy implementation.
         $criteria           = isset( $rule_data['criteria'] ) ? $rule_data['criteria'] : '';
         $condition          = isset( $rule_data['condition'] ) ? $rule_data['condition'] : '';
         $new_value          = isset( $rule_data['newvalue'] ) ? $rule_data['newvalue'] : '';
@@ -69,8 +88,6 @@ trait Filters_Rules_Trait {
         $selected_attribute = isset( $rule_data['attribute'] ) ? $rule_data['attribute'] : '';
         $than_attribute     = isset( $rule_data['than_attribute'] ) ? $rule_data['than_attribute'] : '';
 
-        // Use output buffering with an include to ensure the PHP is processed
-        // and variables are available.
         ob_start();
         Helper::locate_admin_template(
             'filters-rules/rule-row.php',
@@ -78,7 +95,7 @@ trait Filters_Rules_Trait {
             false,
             array(
                 'row_count'          => $row_count,
-                'attributes'         => $this->attributes,
+                'attributes'         => $this->get_attributes(),
                 'rule_data'          => $rule_data,
                 'criteria'           => $criteria,
                 'condition'          => $condition,
@@ -92,7 +109,9 @@ trait Filters_Rules_Trait {
     }
 
     /**
-     * Get condition options HTML.
+     * Legacy: Get condition options HTML.
+     *
+     * @deprecated 13.4.6 Use new condition options rendering methods.
      *
      * @param string $selected Selected condition.
      * @param string $type     Filter or rule type.
@@ -115,7 +134,9 @@ trait Filters_Rules_Trait {
     }
 
     /**
-     * Get list of available conditions.
+     * Legacy: Get list of available conditions.
+     *
+     * @deprecated 13.4.6 Use new condition list methods.
      *
      * @param string $type Filter or rule type.
      * @return array Array of conditions.
@@ -151,7 +172,9 @@ trait Filters_Rules_Trait {
     }
 
     /**
-     * Get action options HTML.
+     * Legacy: Get action options HTML.
+     *
+     * @deprecated 13.4.6 Use new action options rendering methods.
      *
      * @param string $selected Selected action.
      * @return string HTML for action options.
@@ -173,17 +196,17 @@ trait Filters_Rules_Trait {
         return $html;
     }
 
-        /**
-         * Get the category hierarchy.
-         *
-         * @since 13.4.4.1
-         * @access private
-         *
-         * @param string $value The value to get the category hierarchy for.
-         * @param string $attribute The attribute to get the category hierarchy for.
-         * @param array  $data The data to get the category hierarchy for.
-         * @return string The category hierarchy.
-         */
+    /**
+     * Get the category hierarchy.
+     *
+     * @since 13.4.4.1
+     * @access private
+     *
+     * @param string $value The value to get the category hierarchy for.
+     * @param string $attribute The attribute to get the category hierarchy for.
+     * @param array  $data The data to get the category hierarchy for.
+     * @return string The category hierarchy.
+     */
     public function maybe_get_category_hierarchy( $value, $attribute, $data ) {
         $categories_attributes = array( 'categories', 'raw_categories' );
         if ( in_array( $attribute, $categories_attributes, true ) ) {

@@ -22,14 +22,12 @@ export default defineConfig(({ command, mode, ssrBuild }) => {
    *
    */
   const vueAppEntries = (source) =>
-    readdirSync(source).forEach((view) => {
-      if (isDirectory(path.resolve(source, view))) {
-        readdirSync(path.resolve(source, view)).forEach((app) => {
-          const filePath = fileURLToPath(new URL(`./src/apps/${view}/${app}/index.ts`, import.meta.url));
-          if (existsSync(filePath)) {
-            entries[`apps/${view}/${app}/index`] = filePath;
-          }
-        });
+    readdirSync(source).forEach((app) => {
+      if (isDirectory(path.resolve(source, app))) {
+        const filePath = fileURLToPath(new URL(`./src/apps/${app}/index.ts`, import.meta.url));
+        if (existsSync(filePath)) {
+          entries[`apps/${app}/index`] = filePath;
+        }
       }
     });
 
@@ -269,9 +267,9 @@ export default defineConfig(({ command, mode, ssrBuild }) => {
              * 'blocks/[block-name]/script/index.js' for the frontend.
              *
              * For the app entry files, the file name should be something like:
-             * 'apps/[view]/[app-name]/index.js'. Where:
+             * 'apps/[app-name]/index.js'. Where:
              *
-             * - [view] is the view name (e.g. 'admin' or 'front')
+             * - [app-name] is the app directory name (e.g. 'filters-rules-builder')
              *
              */
             entryFileNames: '[name].[hash].js',
@@ -368,11 +366,14 @@ export default defineConfig(({ command, mode, ssrBuild }) => {
             };
           } else if (hostType === 'css') {
             return {
-              runtime: `window.adtObj.pluginDirUrl + '/dist/css/${fileName}'`,
+              runtime: `window.adtObj.pluginDirUrl + '/dist/${fileName}'`,
             };
           }
 
-          return fileName;
+          // For other asset types, return the full runtime URL
+          return {
+            runtime: `window.adtObj.pluginDirUrl + '/dist/${fileName}'`,
+          };
         },
       },
     };

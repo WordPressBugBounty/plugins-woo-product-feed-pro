@@ -56,9 +56,18 @@ function woosea_get_term_parents( $id, $taxonomy, $project_taxonomy, $link = fal
  * @param object $product The product object.
  */
 function woosea_add_facebook_pixel( $product = null ) {
-    if ( ! is_object( $product ) ) {
-                global $product;
-        }
+    // Check if WooCommerce is loaded and available
+    if ( ! class_exists( 'WooCommerce' ) ) {  
+        return;  
+    }  
+
+    if ( ! is_object( $product ) ) {  
+        $product = function_exists( 'wc_get_product' ) ? wc_get_product( get_the_ID() ) : null;  
+    }  
+    
+    if ( ! $product instanceof WC_Product ) {  
+        return;  
+    }  
 
     $add_facebook_pixel = get_option( 'add_facebook_pixel' );
     $add_facebook_capi  = get_option( 'add_facebook_capi' );
@@ -453,9 +462,18 @@ add_action( 'wp_footer', 'woosea_add_facebook_pixel' );
  * @param object $product The product object.
  */
 function woosea_add_remarketing_tags( $product = null ) {
-    if ( ! is_object( $product ) ) {
-        $product = wc_get_product( get_the_ID() );
-    }
+    // Check if WooCommerce is loaded and available
+    if ( ! class_exists( 'WooCommerce' ) ) {  
+        return;  
+    }  
+
+    if ( ! is_object( $product ) ) {  
+        $product = function_exists( 'wc_get_product' ) ? wc_get_product( get_the_ID() ) : null;  
+    }  
+    
+    if ( ! $product instanceof WC_Product ) {  
+        return;  
+    }  
 
     $ecomm_pagetype  = WooSEA_Google_Remarketing::woosea_google_remarketing_pagetype();
     $add_remarketing = get_option( 'add_remarketing' );

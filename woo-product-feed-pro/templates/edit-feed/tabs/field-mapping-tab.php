@@ -20,7 +20,6 @@ if ( $feed_id ) {
     if ( $feed ) {
         $feed_attributes = $feed->attributes;
         $channel_data    = $feed->channel;
-        $count_mappings  = count( $feed_attributes );
 
         $project_hash = $feed->legacy_project_hash;
         $channel_hash = $feed->channel_hash;
@@ -40,7 +39,11 @@ if ( $feed_id ) {
     $channel_hash    = $feed['channel_hash'] ?? '';
     $project_hash    = $feed['project_hash'] ?? '';
     $channel_data    = '' !== $channel_hash ? Product_Feed_Helper::get_channel_from_legacy_channel_hash( $channel_hash ) : array();
+
     $feed_attributes = array();
+    if ( !empty( $feed['attributes'] ) && is_array( $feed['attributes'] ) ) {
+        $feed_attributes = $feed['attributes'];
+    }
 }
 
 /**
@@ -121,7 +124,7 @@ if (file_exists($channel_class_file)) {
             <tbody class="woo-product-feed-pro-body">
                 <?php
                 if ( ! empty( $channel_attributes ) ) {
-                    if ( ! isset( $count_mappings ) ) {
+                    if ( ! isset( $feed_attributes ) || empty( $feed_attributes ) ) {
                         $c = 0;
                         foreach ( $channel_attributes as $row_key => $row_value ) {
                             foreach ( $row_value as $row_k => $row_v ) {

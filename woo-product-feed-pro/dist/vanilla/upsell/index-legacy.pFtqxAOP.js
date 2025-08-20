@@ -1,0 +1,1 @@
+System.register(["./style.scss-legacy.DJ055mw4.js"],function(e,t){"use strict";return{setters:[null],execute:function(){var e;e=window,document,jQuery(function(){e.adtObj.showEliteUpsellModal=function(t){const s=(e.adtObj.upsellL10n[t]||e.adtObj.upsellL10n.default).content;vex.dialog.alert({className:"vex-theme-plain adt-pfp-upsell-modal",unsafeMessage:s})}})}}});

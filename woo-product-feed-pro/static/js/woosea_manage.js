@@ -430,6 +430,50 @@ jQuery(function ($) {
     }
   });
 
+  $('#adt_use_legacy_filters_and_rules').on('change', function () {
+    var nonce = $('#_wpnonce').val();
+    var value = $(this).is(':checked');
+    var popup_dialog = confirm('Are you sure you want to use legacy filters and rules?');
+    if (popup_dialog == true) {
+      jQuery.ajax({
+        method: 'POST',
+        url: ajaxurl,
+        data: {
+          action: 'adt_use_legacy_filters_and_rules',
+          security: nonce,
+          value: value,
+        },
+      });
+    }
+  });
+
+  $('#adt_fix_duplicate_feed').on('click', function () {
+    var nonce = $('#_wpnonce').val();
+    var popup_dialog = confirm('Are you sure you want to fix the duplicated feed?');
+
+    if (popup_dialog == true) {
+      jQuery
+        .ajax({
+          method: 'POST',
+          url: ajaxurl,
+          data: {
+            action: 'adt_fix_duplicate_feed',
+            security: nonce,
+          },
+        })
+        .done(function (response) {
+          if (response.success) {
+            alert(response.data.message);
+          } else {
+            alert(response.data.message);
+          }
+        })
+        .fail(function (data) {
+          alert('An error occurred while fixing the duplicated feed. Please try again.');
+        });
+    }
+  });
+
   $('#adt_pfp_anonymous_data').on('change', function () {
     var nonce = $('#_wpnonce').val();
     var value = $(this).is(':checked');

@@ -137,8 +137,17 @@ class Formatting {
                 )
             );
 
+            $rfc822_feeds = apply_filters(
+                'adt_pfp_date_rfc822_format_feeds',
+                array(
+                    'pinterest_rss_board',
+                )
+            );
+
             if ( in_array( $feed->get_channel( 'fields' ), $iso8601_feeds, true ) ) {
                 $formatted_date = self::date_iso8601( $date );
+            } elseif ( in_array( $feed->get_channel( 'fields' ), $rfc822_feeds, true ) ) {
+                $formatted_date = self::date_rfc822( $date );
             }
         }
 
@@ -170,6 +179,25 @@ class Formatting {
         }
 
         return $date->__toString();
+    }
+
+    /**
+     * Format date to RFC822.
+     *
+     * @since 13.4.1
+     * @access private
+     *
+     * @param string|WC_DateTime $date The date to format.
+     * @return string
+     */
+    public static function date_rfc822( $date ) {
+        if ( is_string( $date ) ) {
+            $date = new \WC_DateTime( $date, new \DateTimeZone( 'UTC' ) );
+        }
+        if ( ! is_a( $date, 'WC_DateTime' ) ) {
+            return '';
+        }
+        return $date->date_i18n( 'D, d M Y H:i:s O' );
     }
 
     /**

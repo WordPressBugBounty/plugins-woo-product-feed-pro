@@ -109,69 +109,45 @@ class Product_Feed_Admin extends Abstract_Class {
         // Generate a new project hash for the cloned feed.
         $project_hash = Product_Feed_Helper::generate_legacy_project_hash();
 
-        $feed = Product_Feed_Helper::get_product_feed();
-        $feed->set_props(
-            apply_filters(
-                'adt_clone_product_feed_props',
-                array(
-                    'title'                             => 'Copy ' . $original_feed->title,
-                    'post_status'                       => 'draft',
-                    'status'                            => 'not run yet',
-                    'country'                           => $original_feed->country,
-                    'channel_hash'                      => $original_feed->channel_hash,
-                    'file_format'                       => $original_feed->file_format,
-                    'delimiter'                         => $original_feed->delimiter,
-                    'refresh_interval'                  => $original_feed->refresh_interval,
-                    'refresh_only_when_product_changed' => $original_feed->refresh_only_when_product_changed,
-                    'create_preview'                    => $original_feed->create_preview,
-                    'include_product_variations'        => $original_feed->include_product_variations,
-                    'only_include_default_product_variation' => $original_feed->only_include_default_product_variation,
-                    'only_include_lowest_product_variation' => $original_feed->only_include_lowest_product_variation,
-                    'products_count'                    => $original_feed->products_count,
-                    'total_products_processed'          => $original_feed->total_products_processed,
-                    'utm_enabled'                       => $original_feed->utm_enabled,
-                    'utm_source'                        => $original_feed->utm_source,
-                    'utm_medium'                        => $original_feed->utm_medium,
-                    'utm_campaign'                      => $original_feed->utm_campaign,
-                    'utm_term'                          => $original_feed->utm_term,
-                    'utm_content'                       => $original_feed->utm_content,
-                    'utm_total_product_orders_lookback' => $original_feed->utm_total_product_orders_lookback,
-                    'attributes'                        => $original_feed->attributes,
-                    'mappings'                          => $original_feed->mappings,
-                    'rules'                             => $original_feed->rules,
-                    'filters'                           => $original_feed->filters,
-                    'legacy_project_hash'               => $project_hash, // Backward compatibility.
-                    'file_name'                         => $project_hash, // Backward compatibility.
-                ),
-                $feed,
-                $original_feed
-            )
-        );
+        // Clone the feed.
+        $new_feed     = clone $original_feed;
+        $new_feed->id = 0; // Reset ID to create a new entry.
+
+        // translators: %s is the feed title.
+        $new_feed->title               = sprintf( __( 'Copy of %s', 'woo-product-feed-pro' ), $original_feed->title );
+        $new_feed->post_status         = 'draft';
+        $new_feed->status              = 'not run yet';
+        $new_feed->legacy_project_hash = $project_hash;
+        $new_feed->file_name           = $project_hash;
+        $new_feed->last_updated        = '';
 
         /**
          * Filter the cloned product feed.
          *
-         * @since 13.3.5
+         * @since 13.4.4
          *
-         * @param Product_Feed_Factory $feed           The cloned product feed.
-         * @param Product_Feed_Factory $original_feed  The original product feed.
+         * @param Product_Feed_Factory $new_feed The cloned product feed.
+         * @param Product_Feed_Factory $feed     The original product feed.
          */
-        do_action( 'adt_clone_product_feed_before_save', $feed, $original_feed );
+        do_action( 'adt_clone_product_feed_before_save', $new_feed, $original_feed );
 
-        $feed->save();
-        $feed->register_action();
+        // Save the new feed.
+        $new_feed->save();
+
+        // Register the new feed action.
+        $new_feed->register_action();
 
         $response = array(
-            'project_hash'  => $feed->legacy_project_hash,
-            'channel'       => $feed->channel_hash,
-            'projectname'   => $feed->title,
-            'fileformat'    => $feed->file_format,
-            'interval'      => $feed->refresh_interval,
-            'external_file' => $feed->get_file_url(),
+            'project_hash'  => $new_feed->legacy_project_hash,
+            'channel'       => $new_feed->channel_hash,
+            'projectname'   => $new_feed->title,
+            'fileformat'    => $new_feed->file_format,
+            'interval'      => $new_feed->refresh_interval,
+            'external_file' => $new_feed->get_file_url(),
             'copy_status'   => true,  // Do not start processing, user wants to make changes to the copied project.
         );
 
-        wp_send_json_success( apply_filters( 'adt_clone_product_feed_response', $response, $feed ) );
+        wp_send_json_success( apply_filters( 'adt_clone_product_feed_response', $response, $new_feed ) );
     }
 
     /**

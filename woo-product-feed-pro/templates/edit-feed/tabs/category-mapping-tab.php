@@ -11,7 +11,7 @@ $is_fetching                     = $google_product_taxonomy_fetcher->is_fetching
 $is_file_exists                  = $google_product_taxonomy_fetcher->is_file_exists();
 
 $feed    = null;
-$feed_id = isset( $_GET['id'] ) ? sanitize_text_field( $_GET['id'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$feed_id = isset( $_GET['id'] ) ? sanitize_text_field( wp_unslash( $_GET['id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 $edit_feed = false;
 if ( $feed_id ) {
@@ -23,8 +23,7 @@ if ( $feed_id ) {
         $channel_hash = $feed->channel_hash;
         $project_hash = $feed->legacy_project_hash;
 
-        $count_mappings = count( $feed_mappings );
-        $edit_feed      = true;
+        $edit_feed = true;
     }
 } else {
     $feed         = get_option( ADT_OPTION_TEMP_PRODUCT_FEED, array() );
@@ -32,8 +31,11 @@ if ( $feed_id ) {
     $project_hash = $feed['project_hash'] ?? '';
     $channel_data = '' !== $channel_hash ? Product_Feed_Helper::get_channel_from_legacy_channel_hash( $channel_hash ) : array();
 
-    $feed_mappings  = array();
-    $count_mappings = 0;
+    $feed_mappings = array();
+
+    if ( ! empty( $feed['mappings'] ) && is_array( $feed['mappings'] ) ) {
+        $feed_mappings = $feed['mappings'];
+    }
 }
 
 /**

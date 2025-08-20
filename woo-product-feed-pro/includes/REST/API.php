@@ -3,6 +3,7 @@
 namespace AdTribes\PFP\REST;
 
 use AdTribes\PFP\Abstracts\Abstract_REST;
+use AdTribes\PFP\Traits\Singleton_Trait;
 use WP_REST_Response;
 use WP_REST_Server;
 
@@ -12,6 +13,8 @@ use WP_REST_Server;
  * This class creates an API for the plugin.
  */
 class API extends Abstract_REST {
+
+    use Singleton_Trait;
 
     /**
      * Register the routes.
@@ -36,7 +39,7 @@ class API extends Abstract_REST {
      * @return WP_REST_Response
      */
     public function version() {
-        $version = defined( 'ADT_PFP_OPTION_INSTALLED_VERSION' ) ? ADT_PFP_OPTION_INSTALLED_VERSION : '';
+        $version = defined( 'WOOCOMMERCESEA_PLUGIN_VERSION' ) ? WOOCOMMERCESEA_PLUGIN_VERSION : '';
         return new WP_REST_Response( array( 'version' => $version ), 200 );
     }
 }
