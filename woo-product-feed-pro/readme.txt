@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.8
-Stable tag: 13.4.6
+Stable tag: 13.4.7
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -378,16 +378,34 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 
 == Screenshots ==
 
-1. From within the manage feeds section you can control, (re)confige and activate or pause your product feed projects
-2. Graph displaying the amount of products in your product feed (updated after every refresh)
-3. Drag and drop the attributes that you want to put in the product feed
-4. Map your product categories to those of the channels you are creating feeds for (for example Google shopping)
-5. Map your attribute fields to the fields of the channels you are creating feeds for
-6. Set feed filter rules so only the profitable products end up in the product feed
-7. Add Google Analytics UTM parameters to the product landingpage URL's in your product feed 
-8. Set the basic configurations for your product feed
+1. Manage Feeds – See all feeds at a glance: format, status, last updated, refresh plan, and feed URL. Use quick actions to edit, regenerate, duplicate, copy the URL, or delete.
+2. General settings – Name the feed, choose country and channel, pick the file format, set the refresh interval, enable preview, and optionally prune products with no recent sales. Decide how to handle variations.
+3. Field Mapping – Map channel attributes (g:id, g:title, g:description, g:link, g:image_link, g:price, etc.) to your product data. Add prefixes/suffixes, static values, or custom fields where needed.
+4. Category Mapping – Match your store’s categories to the channel taxonomy (e.g., Google Shopping) with type-ahead search so products are classified correctly.
+5. Filters – Include or exclude products using AND/OR conditions on fields like price, category, and WooCommerce stock status.
+6. Rules – Create IF/THEN rules that change data in the feed when conditions are met (for example, set weight to 0.5 or replace SKU for preorder items).
+7. Conversion & Google Analytics – Append UTM parameters to each product URL in the feed for detailed campaign tracking in GA.
+8. Feed actions & scheduling – From the feed list you can copy/open the feed URL, trigger a manual refresh, and control refresh frequency for each feed.
 
 === Changelog ===
+
+= 13.4.7 (2025-09-25) =
+* Bug Fix: Exclude filter migration changes operator from OR to AND
+* Bug Fix: Issue with comma separator in rule THEN action (Multiply/Divide/Plus/Minus)
+* Bug Fix: Pinterest RSS Board feed generate many errors in the XML validator
+* Bug Fix: Remove `Refresh only when products changed` option due to causing the feed never being regenerated
+* Bug Fix: Static value for price is returning no value/attribute on XML file
+* Bug Fix: Store code mappable field no output if static value ss only numbers
+* Bug Fix: Unable to change country for all channel feeds
+* Feature: Feature to export product feed setup
+* Feature: Implement cleanup tool on uninstall
+* Improvement: Add `g:free_shipping_threshold` attribute for google shopping feed
+* Improvement: Add filter on retrieving post id for facebook fixel feature
+* Improvement: Group search results for attributes in Rules And Filter
+* Improvement: Prevent feed settings from being updated while feed generation is in progress
+* Improvement: Refactor `generate()` function parameter & skip registering feed action scheduler if refresh interval is set to `custom`
+* Improvement: Refactor the plugin settings page
+* Improvement: Save/Toast notification for settings
 
 = 13.4.6 (2025-08-14) =
 * Bug Fix: Duplicating a feed doesn't transfer the filters and rules from the original feed to the duplicate

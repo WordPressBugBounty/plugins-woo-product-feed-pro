@@ -72,6 +72,11 @@
   border-style: solid;
   text-decoration: none;
 
+  &:disabled {
+    @apply adt-tw-bg-gray-200 adt-tw-text-gray-400 !important;
+    cursor: not-allowed !important;
+  }
+
   &:hover {
     @apply adt-tw-bg-gray-50;
   }
@@ -114,6 +119,11 @@
         border-color: var(--adt-primary-color);
       }
     }
+  }
+
+  &.adt-button-disabled {
+    @apply adt-tw-bg-gray-200 adt-tw-text-gray-400;
+    cursor: not-allowed;
   }
 
   &.adt-button-lg {
@@ -316,3 +326,40 @@
     }
   }
 }
+
+// Spinner
+.adt-loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid var(--adt-gray-color);
+  border-bottom-color: var(--adt-primary-color);
+  border-radius: 50%;
+  display: none;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+
+  &.adt-loader-secondary {
+    border-bottom-color: var(--adt-dark-gray-color);
+  }
+
+  &.adt-loader-sm {
+    width: 24px;
+    height: 24px;
+    border-width: 4px;
+  }
+
+  &.adt-loader-xs {
+    width: 16px;
+    height: 16px;
+    border-width: 3px;
+  }
+}
+
+@keyframes rotation {
+  0% {
+      transform: rotate(0deg);
+  }
+  100% {
+      transform: rotate(360deg);
+  }
+} 

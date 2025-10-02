@@ -11,7 +11,7 @@ use AdTribes\PFP\Helpers\Helper;
 $edit_feed_page = Edit_Feed_Page::instance();
 
 $feed    = null;
-$feed_id = isset( $_GET['id'] ) ? sanitize_text_field( $_GET['id'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$feed_id = isset( $_GET['id'] ) ? sanitize_text_field( wp_unslash( $_GET['id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 if ( array_key_exists( 'id', $_GET ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $feed = Product_Feed_Helper::get_product_feed( sanitize_text_field( $feed_id ) );
 } else {
@@ -19,9 +19,9 @@ if ( array_key_exists( 'id', $_GET ) ) { // phpcs:ignore WordPress.Security.Nonc
 }
 
 // Get the active tab, default to general.
-$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 ?>
-<div id="adt-edit-feed" class="adt-page wrap adt-tw-wrapper nosubsub">
+<div id="adt-edit-feed" class="adt-page wrap adt-tw-wrapper nosubsub" data-feed-id="<?php echo esc_attr( $feed_id ); ?>" data-active-tab="<?php echo esc_attr( $active_tab ); ?>" data-status="<?php echo Product_Feed_Helper::is_a_product_feed( $feed ) ? esc_attr( $feed->status ) : ''; ?>">
     <div class="adt-container lg:adt-tw-px-8 sm:adt-tw-py-4 adt-tw-py-0">
         <?php
             Helper::locate_admin_template( 'header.php', true );
@@ -45,13 +45,6 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'gen
                 </a>
             <?php endforeach; ?>
         </h2>
-        
-        <?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
-            <div class="notice notice-success is-dismissible">
-                <p><?php esc_html_e( 'Feed settings updated successfully.', 'woo-product-feed-pro' ); ?></p>
-            </div>
-        <?php endif; ?>
-        
         <div class="tab-content adt-tw-mt-6">
             <?php if ( false === $feed ) : ?>
                 <div class="notice notice-error">

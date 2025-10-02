@@ -405,10 +405,63 @@ class Filters_Rules extends Abstract_REST {
 
         // Transform exclude filters to new schema.
         if ( ! empty( $exclude_filters ) ) {
-            $new_filters['exclude'] = $this->build_group( $exclude_filters );
+            $new_filters['exclude'] = $this->build_exclude_groups( $exclude_filters );
         }
 
         return $new_filters;
+    }
+
+    /**
+     * Build separate groups for exclude filters with OR logic.
+     *
+     * @since 13.4.6
+     * @access private
+     *
+     * @param array $exclude_filters Array of exclude filter data.
+     * @return array The groups structure with OR logic.
+     */
+    private function build_exclude_groups( $exclude_filters ) {
+        if ( empty( $exclude_filters ) ) {
+            return array();
+        }
+
+        $groups       = array();
+        $filter_count = count( $exclude_filters );
+
+        foreach ( $exclude_filters as $index => $filter ) {
+            if ( empty( $filter['attribute'] ) || empty( $filter['value'] ) ) {
+                continue;
+            }
+
+            // Build the data array for the filter.
+            $data = array(
+                'attribute'      => $filter['attribute'],
+                'condition'      => $filter['condition'] ?? 'contains',
+                'value'          => $filter['value'],
+                'case_sensitive' => $filter['case_sensitive'] ?? false,
+            );
+
+            // Create a separate group for each exclude filter.
+            $groups[] = array(
+                'type'   => 'group',
+                'fields' => array(
+                    array(
+                        'type' => 'field',
+                        'data' => $data,
+                    ),
+                ),
+            );
+
+            // Add group logic operator between groups (except after the last group).
+            if ( $index < $filter_count - 1 ) {
+                $groups[] = array(
+                    'type'  => 'group_logic',
+                    'value' => 'or',
+                );
+            }
+        }
+
+        return $groups;
     }
 
     /**
@@ -441,7 +494,7 @@ class Filters_Rules extends Abstract_REST {
 
             // Add type-specific fields.
             $data['condition']      = $item['condition'] ?? 'contains';
-            $data['case_sensitive'] = $item['case_sensitive'] ?? '0';
+            $data['case_sensitive'] = $item['case_sensitive'] ?? false;
 
             // Add the field.
             $fields[] = array(

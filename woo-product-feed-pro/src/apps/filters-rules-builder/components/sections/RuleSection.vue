@@ -9,6 +9,9 @@ import AttributeSelect from '../common/AttributeSelect.vue';
 import RuleAction from '../common/RuleAction.vue';
 import { isEliteActive, showEliteUpsellModal } from '@/helpers';
 
+// Get translation function from WordPress i18n
+const { __ } = window.wp.i18n;
+
 const store = useRulesStore();
 const { getFieldErrors } = useValidation('rules');
 
@@ -57,6 +60,21 @@ const updateActionAttribute = (actionId: string, value: string) => {
 
 const updateActionValue = (actionId: string, value: string) => {
   store.updateRuleAction(props.rule.id, actionId, { value });
+};
+
+// Validation helper for numeric input
+const isValidNumericValue = (value: string): boolean => {
+  if (!value.trim()) return true; // Allow empty values (will be caught by required validation)
+  const validNumericPattern = /^-?\d+(\.\d+)?$/;
+  return validNumericPattern.test(value.trim());
+};
+
+// Get placeholder text based on action type
+const getValuePlaceholder = (action: any): string => {
+  if (['multiply', 'divide', 'minus', 'plus'].includes(action.action)) {
+    return __('Enter numeric value (e.g., 2.5)', 'woo-product-feed-pro');
+  }
+  return __('Enter value', 'woo-product-feed-pro');
 };
 
 const updateAction = (action: any, value: string) => {
@@ -183,7 +201,7 @@ const addAction = () => {
                   <input
                     type="text"
                     :value="action.value || ''"
-                    placeholder="Enter value"
+                    :placeholder="getValuePlaceholder(action)"
                     :class="getActionErrorClasses('adt-tw-w-full adt-tw-px-2 adt-tw-py-1 adt-tw-border adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-text-sm adt-tw-focus-ring-2 adt-tw-focus-ring-blue-500 adt-tw-focus-border-blue-500 adt-tw-focus-outline-none', action.id)"
                     @input="updateActionValue(action.id, ($event.target as HTMLInputElement).value)"
                   />

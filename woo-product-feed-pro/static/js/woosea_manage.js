@@ -63,11 +63,17 @@ jQuery(function ($) {
     });
 
   // Check if user would like to use mother image for variations
-  $('.adt-pfp-general-setting').on('change', function () {
+  $('.adt-pfp-general-setting').on('change', function (e) {
     // Get name of setting.
     var nonce = $('#_wpnonce').val();
     var setting = $(this).attr('name');
     var $row = $(this).closest('tr');
+    var confirmation = $(this).data('confirmation');
+
+    // Disable the button.
+    var $button = $(this);
+    $button.prop('disabled', true);
+    $button.addClass('loading');
 
     // Get type of setting
     var type = $(this).attr('type') || 'text';
@@ -82,23 +88,47 @@ jQuery(function ($) {
         break;
     }
 
+    if (confirmation && type === 'checkbox' && value === true) {
+      var popup_dialog = confirm(confirmation);
+      if (popup_dialog == false) {
+        $(this).prop('checked', false);
+        e.preventDefault();
+        return;
+      }
+    }
+
     if ($row.hasClass('group') && type === 'checkbox') {
       var group = $row.data('group');
       adt_show_or_hide_addtitional_setting_row(group, value);
     }
 
     // Send AJAX request to update the setting.
-    jQuery.ajax({
-      method: 'POST',
-      url: ajaxurl,
-      data: {
-        action: 'adt_pfp_update_settings',
-        security: nonce,
-        setting: setting,
-        type: type,
-        value: value,
-      },
-    });
+    jQuery
+      .ajax({
+        method: 'POST',
+        url: ajaxurl,
+        data: {
+          action: 'adt_pfp_update_settings',
+          security: nonce,
+          setting: setting,
+          type: type,
+          value: value,
+        },
+      })
+      .done(function (response) {
+        if (response.success) {
+          toastr.success(response.data.message);
+        } else {
+          toastr.error(response.data.message);
+        }
+      })
+      .fail(function (response) {
+        toastr.error(response.data.message);
+      })
+      .always(function () {
+        $button.prop('disabled', false);
+        $button.removeClass('loading');
+      });
   });
 
   /**
@@ -159,18 +189,42 @@ jQuery(function ($) {
     $error.text('');
     $error.hide();
 
+    // Disable the button
+    var $button = $(this);
+    $button.prop('disabled', true);
+    $button.addClass('loading');
+
+    // Set text to "Saving..." to the value attribute
+    var originalText = $button.val();
+    $button.val('Saving...');
+
     // Now we need to save the conversion ID so we can use it in the dynamic remarketing JS
-    jQuery.ajax({
-      method: 'POST',
-      url: ajaxurl,
-      data: {
-        action: 'adt_pfp_update_settings',
-        security: nonce,
-        setting: setting,
-        type: 'text',
-        value: value,
-      },
-    });
+    jQuery
+      .ajax({
+        method: 'POST',
+        url: ajaxurl,
+        data: {
+          action: 'adt_pfp_update_settings',
+          security: nonce,
+          setting: setting,
+          type: 'text',
+          value: value,
+        },
+      })
+      .done(function (response) {
+        if (response.success) {
+          toastr.success(response.data.message);
+        } else {
+          toastr.error(response.data.message);
+        }
+      })
+      .fail(function (response) {
+        toastr.error(response.data.message);
+      })
+      .always(function () {
+        $button.prop('disabled', false);
+        $button.val(originalText);
+      });
   });
 
   $('.actions').on('click', 'span', function () {
@@ -348,9 +402,9 @@ jQuery(function ($) {
           $button.prop('disabled', false);
 
           if (response.success) {
-            alert(response.data.message);
+            toastr.success(response.data.message);
           } else {
-            alert('Migration failed');
+            toastr.error('Migration failed');
           }
         })
         .fail(function (data) {
@@ -383,9 +437,9 @@ jQuery(function ($) {
           $button.prop('disabled', false);
 
           if (response.success) {
-            alert(response.data.message);
+            toastr.success(response.data.message);
           } else {
-            alert(response.data.message);
+            toastr.error(response.data.message);
           }
         })
         .fail(function (data) {
@@ -418,9 +472,9 @@ jQuery(function ($) {
           $button.prop('disabled', false);
 
           if (response.success) {
-            alert(response.data.message);
+            toastr.success(response.data.message);
           } else {
-            alert(response.data.message);
+            toastr.error(response.data.message);
           }
         })
         .fail(function (data) {
@@ -430,12 +484,21 @@ jQuery(function ($) {
     }
   });
 
-  $('#adt_use_legacy_filters_and_rules').on('change', function () {
+  $('#adt_use_legacy_filters_and_rules').on('change', function (e) {
     var nonce = $('#_wpnonce').val();
     var value = $(this).is(':checked');
-    var popup_dialog = confirm('Are you sure you want to use legacy filters and rules?');
-    if (popup_dialog == true) {
-      jQuery.ajax({
+
+    if (value === true) {
+      var popup_dialog = confirm('Are you sure you want to use legacy filters and rules?');
+      if (popup_dialog == false) {
+        $(this).prop('checked', false);
+        e.preventDefault();
+        return;
+      }
+    }
+
+    jQuery
+      .ajax({
         method: 'POST',
         url: ajaxurl,
         data: {
@@ -443,8 +506,17 @@ jQuery(function ($) {
           security: nonce,
           value: value,
         },
+      })
+      .done(function (response) {
+        if (response.success) {
+          toastr.success(response.data.message);
+        } else {
+          toastr.error(response.data.message);
+        }
+      })
+      .fail(function (data) {
+        toastr.error('An error occurred while using the legacy filters and rules. Please try again.');
       });
-    }
   });
 
   $('#adt_fix_duplicate_feed').on('click', function () {
@@ -463,30 +535,50 @@ jQuery(function ($) {
         })
         .done(function (response) {
           if (response.success) {
-            alert(response.data.message);
+            toastr.success(response.data.message);
           } else {
-            alert(response.data.message);
+            toastr.error(response.data.message);
           }
         })
         .fail(function (data) {
-          alert('An error occurred while fixing the duplicated feed. Please try again.');
+          toastr.error('An error occurred while fixing the duplicated feed. Please try again.');
         });
     }
   });
 
-  $('#adt_pfp_anonymous_data').on('change', function () {
+  $('#adt_pfp_anonymous_data').on('change', function (e) {
     var nonce = $('#_wpnonce').val();
     var value = $(this).is(':checked');
 
-    jQuery.ajax({
-      method: 'POST',
-      url: ajaxurl,
-      data: {
-        action: 'adt_pfp_anonymous_data',
-        security: nonce,
-        value: value,
-      },
-    });
+    if (value === true) {
+      var popup_dialog = confirm('Are you sure you want to allow usage tracking?');
+      if (popup_dialog === false) {
+        $(this).prop('checked', false);
+        e.preventDefault();
+        return;
+      }
+    }
+
+    jQuery
+      .ajax({
+        method: 'POST',
+        url: ajaxurl,
+        data: {
+          action: 'adt_pfp_anonymous_data',
+          security: nonce,
+          value: value,
+        },
+      })
+      .done(function (response) {
+        if (response.success) {
+          toastr.success(response.data.message);
+        } else {
+          toastr.error(response.data.message);
+        }
+      })
+      .fail(function () {
+        toastr.error('An error occurred while saving the anonymous data. Please try again.');
+      });
   });
 
   function woosea_generate_product_feed(feed_id, offset, batch_size) {

@@ -12,7 +12,7 @@ use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
 use AdTribes\PFP\Traits\Singleton_Trait;
-use AdTribes\PFP\Factories\Product_Feed;
+use AdTribes\PFP\Factories\Vite_App;
 use AdTribes\PFP\Factories\Product_Feed_Query;
 
 /**
@@ -47,6 +47,9 @@ class WP_Admin extends Abstract_Class {
             wp_enqueue_script( 'jquery-tiptip' );
             wp_enqueue_script( 'select2' );
 
+            wp_enqueue_script( 'adt-toastr', ADT_PFP_JS_URL . 'lib/toastr/toastr.min.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_enqueue_style( 'adt-toastr', ADT_PFP_JS_URL . 'lib/toastr/toastr.min.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
+
             wp_enqueue_style( 'woocommerce_admin_styles' );
             wp_enqueue_style( 'pfp-admin-css', ADT_PFP_CSS_URL . 'pfp-admin.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
             wp_enqueue_style( 'woosea_admin-css', ADT_PFP_CSS_URL . 'woosea_admin.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
@@ -71,6 +74,15 @@ class WP_Admin extends Abstract_Class {
             wp_enqueue_script( 'woosea_manage-js', ADT_PFP_JS_URL . 'woosea_manage.js?yo=12', array( 'clipboard' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
             wp_localize_script( 'woosea_manage-js', 'woosea_manage_params', array( 'total_product_feeds' => Product_Feed_Helper::get_total_product_feed() ) );
 
+            // Enqueue the admin plugin JS and CSS.
+            $admin_js = new Vite_App(
+                'adt-admin-js',
+                'src/vanilla/index.ts',
+                array( 'jquery' ),
+                array(),
+                'adtObj',
+            );
+            $admin_js->enqueue();
         }
 
         // Admin wide styles and scripts.
@@ -224,6 +236,15 @@ class WP_Admin extends Abstract_Class {
                 'desc'  => __( 'Use legacy filters and rules', 'woo-product-feed-pro' ),
                 'id'    => 'adt_use_legacy_filters_and_rules',
             ),
+            array(
+                'title'        => __( 'Clean up plugin data on un-installation', 'woo-product-feed-pro' ),
+                'type'         => 'checkbox',
+                'desc'         => __( 'If checked, removes all plugin data when this plugin is uninstalled. Warning: This process is irreversible.', 'woo-product-feed-pro' ),
+                'id'           => ADT_PFP_CLEAN_UP_PLUGIN_OPTIONS,
+                'class'        => 'adt-pfp-general-setting',
+                'confirmation' => __( 'Are you sure you want to clean up plugin data on un-installation?', 'woo-product-feed-pro' ),
+                'show_title'   => true,
+            ),
         );
 
         /**
@@ -275,9 +296,6 @@ class WP_Admin extends Abstract_Class {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
-        $setting = sanitize_text_field( wp_unslash( $_REQUEST['setting'] ?? '' ) );
-        $type    = sanitize_text_field( wp_unslash( $_REQUEST['type'] ?? '' ) );
-        $value   = sanitize_text_field( wp_unslash( $_REQUEST['value'] ?? '' ) );
         $setting = sanitize_text_field( wp_unslash( $_REQUEST['setting'] ?? '' ) );
         $type    = sanitize_text_field( wp_unslash( $_REQUEST['type'] ?? '' ) );
         $value   = sanitize_text_field( wp_unslash( $_REQUEST['value'] ?? '' ) );
@@ -443,20 +461,24 @@ class WP_Admin extends Abstract_Class {
      */
     public function ajax_use_legacy_filters_and_rules() {
         if ( isset( $_REQUEST['security'] ) && ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'woosea_ajax_nonce' ) ) {
-            wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
+            wp_send_json_error( array( 'message' => __( 'Invalid security token', 'woo-product-feed-pro' ) ) );
         }
 
         if ( ! Helper::is_current_user_allowed() ) {
-            wp_send_json_error( __( 'You do not have permission to do this', 'woo-product-feed-pro' ) );
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to do this', 'woo-product-feed-pro' ) ) );
         }
 
         $value = sanitize_text_field( wp_unslash( $_REQUEST['value'] ?? '' ) );
         $value = 'true' === $value ? 'yes' : 'no';
 
         if ( update_option( 'adt_use_legacy_filters_and_rules', $value, false ) ) {
-            wp_send_json_success( __( 'Legacy filters and rules enabled', 'woo-product-feed-pro' ) );
+            if ( 'yes' === $value ) {
+                wp_send_json_success( array( 'message' => __( 'Legacy filters and rules enabled', 'woo-product-feed-pro' ) ) );
+            } else {
+                wp_send_json_success( array( 'message' => __( 'Legacy filters and rules disabled', 'woo-product-feed-pro' ) ) );
+            }
         } else {
-            wp_send_json_error( __( 'Error enabling legacy filters and rules', 'woo-product-feed-pro' ) );
+            wp_send_json_error( array( 'message' => __( 'Error enabling legacy filters and rules', 'woo-product-feed-pro' ) ) );
         }
     }
 

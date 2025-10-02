@@ -31,6 +31,7 @@ use AdTribes\PFP\Post_Types\Product_Feed_Post_Type;
 use AdTribes\PFP\Classes\Upsell;
 use AdTribes\PFP\Classes\Legacy\Filters_Legacy;
 use AdTribes\PFP\Classes\Legacy\Rules_Legacy;
+use AdTribes\PFP\Classes\Export_Import_Tools;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -60,4 +61,5 @@ return array(
     Upsell::instance(),
     Filters_Legacy::instance(),
     Rules_Legacy::instance(),
+    Export_Import_Tools::instance(),
 );

@@ -135,7 +135,7 @@ $feeds_query = new Product_Feed_Query(
                         </div>
                         <div class="adt-manage-feeds-table-row-item adt-manage-feeds-table-row-refresh-interval adt-manage-feeds-table-row-labeled" data-label="<?php esc_html_e( 'Refresh Interval', 'woo-product-feed-pro' ); ?>">
                             <div>
-                                <?php echo esc_html( Formatting::format_refresh_interval( $feed->refresh_interval ) ); ?>
+                                <?php echo wp_kses_post( Formatting::format_refresh_interval( $feed->refresh_interval, $feed ) ); ?>
                             </div>
                         </div>
                         <div class="adt-manage-feeds-table-row-item adt-manage-feeds-table-row-url adt-manage-feeds-table-row-labeled" data-label="<?php esc_html_e( 'Feed URL', 'woo-product-feed-pro' ); ?>">
@@ -369,4 +369,5 @@ $feeds_query = new Product_Feed_Query(
     <span class="adt-tw-icon-[lucide--chart-area]"></span>
     <span class="adt-tw-icon-[lucide--refresh-cw]"></span>
     <span class="adt-tw-icon-[lucide--x]"></span>
+    <span class="adt-tw-icon-[lucide--calendar-clock]"></span>
 </div>

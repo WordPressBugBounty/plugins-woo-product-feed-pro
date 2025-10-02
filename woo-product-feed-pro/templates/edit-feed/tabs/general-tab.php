@@ -4,6 +4,7 @@ use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Classes\Product_Feed_Attributes;
+use AdTribes\PFP\Classes\Upsell;
 
 $country = '';
 
@@ -46,6 +47,7 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
 
 <div class="woo-product-feed-pro-form-style-2">
     <?php Helper::locate_admin_template( 'notices/upgrade-to-elite-notice.php', true ); ?>
+    <?php Upsell::show_custom_refresh_interval_notice( $feed ); ?>
     <form class="adt-edit-feed-form" id="general" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
         <?php wp_nonce_field( 'woosea_ajax_nonce' ); ?>
         <input type="hidden" name="action" value="edit_feed_form_process" />
@@ -87,7 +89,7 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                             <td>
                                 <?php if ( ! $edit_feed || ( $edit_feed && $feed && Product_Feed_Helper::is_all_feeds_channel( $feed->get_channel('fields') ) ) ) : ?> 
                                 <select name="countries" id="countries" class="select-field woo-sea-select2" data-is_new_feed="<?php echo $edit_feed ? false : true; ?>">
-                                    <option><?php esc_html_e( 'Select a country', 'woo-product-feed-pro' ); ?></option>
+                                    <option value=""><?php esc_html_e( 'Select a country', 'woo-product-feed-pro' ); ?></option>
                                     <?php foreach ( $countries as $value ) : ?>
                                     <option value="<?php echo esc_attr( $value ); ?>" <?php echo isset( $feed_country ) && $feed_country === $value ? 'selected' : ''; ?>>
                                         <?php echo esc_html( $value ); ?>
@@ -271,20 +273,6 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                         do_action( 'adt_general_feed_settings_after_refresh_interval', $feed );
                         ?>
                         <tr>
-                            <td><span><?php esc_html_e( 'Refresh only when products changed', 'woo-product-feed-pro' ); ?>:</span></td>
-                            <td>
-                                <?php if ( $edit_feed ) : ?> 
-                                    <input name="products_changed" type="checkbox" class="checkbox-field" <?php echo $feed->refresh_only_when_product_changed ? 'checked' : ''; ?>>
-                                <?php else : ?>
-                                    <input name="products_changed" type="checkbox" class="checkbox-field" <?php echo isset( $feed['products_changed'] ) && 'on' === $feed['products_changed'] ? 'checked' : ''; ?>>
-                                <?php endif; ?>
-                                <a href="<?php echo esc_url( Helper::get_utm_url( 'update-product-feed-products-changed-new-ones-added', 'pfp', 'googleanalytics-settings', 'total product orders lookback' ) ); ?>" target="_blank">
-                                    Read our tutorial about this feature
-                                </a>
-                            </td>
-                        </tr>
-
-                        <tr>
                             <td><span><?php esc_html_e( 'Create a preview of the feed', 'woo-product-feed-pro' ); ?>:</span></td>
                             <td>
                                 <?php if ( $edit_feed ) : ?> 
@@ -319,11 +307,15 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
 
                         <tr>
                             <td colspan="2">
-                                <?php if ( $edit_feed ) : ?> 
-                                    <input type="submit" value="<?php esc_attr_e( 'Save Changes', 'woo-product-feed-pro' ); ?>" />
-                                <?php else : ?>
-                                    <input type="submit" value="<?php esc_attr_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>" />
-                                <?php endif; ?>
+                                <div class="adt-edit-feed-form-buttons adt-tw-flex adt-tw-gap-2 adt-tw-items-center">
+                                    <button class="adt-button adt-button-sm adt-button-primary" type="submit">
+                                        <?php if ( $edit_feed ) : ?> 
+                                                <?php esc_attr_e( 'Save Changes', 'woo-product-feed-pro' ); ?>
+                                        <?php else : ?>
+                                            <?php esc_attr_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>
+                                        <?php endif; ?>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </tbody>

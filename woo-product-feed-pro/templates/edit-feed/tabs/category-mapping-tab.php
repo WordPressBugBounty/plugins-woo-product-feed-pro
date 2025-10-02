@@ -109,15 +109,21 @@ do_action( 'adt_before_product_feed_manage_page', 1, $project_hash, $feed );
                         <?php echo Product_Feed_Helper::get_hierarchical_categories_mapping( $feed ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                         <tr>
                             <td colspan="3">
-                                <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
-                                <?php if ( $edit_feed ) : ?> 
-                                    <input type="hidden" name="project_update" id="project_update" value="yes" />
-                                    <input type="hidden" id="project_hash" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                                    <input type="submit" value="<?php esc_attr_e( 'Save mappings', 'woo-product-feed-pro' ); ?>" />
-                                <?php else : ?>
-                                    <input type="hidden" id="project_hash" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                                    <input type="submit" value="<?php esc_attr_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>" />
-                                <?php endif; ?>
+                                <div class="adt-edit-feed-form-buttons adt-tw-flex adt-tw-gap-2 adt-tw-items-center">
+                                    <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
+                                    <?php if ( $edit_feed ) : ?> 
+                                        <input type="hidden" name="project_update" id="project_update" value="yes" />
+                                        <input type="hidden" id="project_hash" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                                        <button type="submit" class="adt-button adt-button-sm adt-button-primary" id="savebutton">
+                                            <?php esc_attr_e( 'Save Mappings', 'woo-product-feed-pro' ); ?>
+                                        </button>
+                                    <?php else : ?>
+                                        <input type="hidden" id="project_hash" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                                        <button type="submit" class="adt-button adt-button-sm adt-button-primary adt-tw-gap-2" id="savebutton">
+                                            <?php esc_attr_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     </tbody>

@@ -206,15 +206,25 @@ class Formatting {
      * @since 13.4.1
      * @access public
      *
-     * @param string $interval The interval to format.
+     * @param string      $interval The interval to format.
+     * @param object|null $feed The feed object.
      * @return string
      */
-    public static function format_refresh_interval( $interval ) {
+    public static function format_refresh_interval( $interval, $feed = null ) {
         $intervals = array(
             'hourly'     => __( 'Hourly', 'woo-product-feed-pro' ),
             'twicedaily' => __( 'Twice Daily', 'woo-product-feed-pro' ),
             'daily'      => __( 'Daily', 'woo-product-feed-pro' ),
         );
+
+        /**
+         * Filters the refresh interval labels.
+         *
+         * @since 13.4.6
+         * @param array $intervals The refresh interval options.
+         * @return array
+         */
+        $intervals = apply_filters( 'adt_format_refresh_interval_manage_feeds_table', $intervals, $feed );
 
         return $intervals[ $interval ] ?? __( 'No Refresh', 'woo-product-feed-pro' );
     }

@@ -51,21 +51,21 @@ class Deactivation extends Abstract_Class {
         delete_option( 'adt_pfp_activation_code_triggered' );
         delete_site_option( ADT_PFP_OPTION_INSTALLED_VERSION );
 
-        $this->cleanup_cron();
+        $this->cleanup_action_scheduler();
         $this->cleanup_options();
         $this->cleanup_transients();
     }
 
     /**
-     * Cleanup cron.
+     * Cleanup action scheduler.
      *
      * @since 13.3.3
      * @access public
      */
-    protected function cleanup_cron() {
+    protected function cleanup_action_scheduler() {
         // Clear Action Scheduler hooks.
         if ( function_exists( 'as_unschedule_all_actions' ) ) {
-            as_unschedule_all_actions( ADT_PFP_AS_GENERATE_PRODUCT_FEED );
+            as_unschedule_all_actions( '', array(), ADT_PFP_AS_GENERATE_PRODUCT_FEED_GROUP );
             as_unschedule_all_actions( ADT_PFP_AS_FETCH_GOOGLE_PRODUCT_TAXONOMY );
         }
     }

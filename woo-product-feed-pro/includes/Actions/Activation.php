@@ -140,13 +140,19 @@ class Activation extends Abstract_Class {
             array(
                 'post_status'    => array( 'publish' ),
                 'posts_per_page' => -1,
+                'meta_query'     => array(
+                    array(
+                        'key'     => 'adt_refresh_interval',
+                        'value'   => 'custom',
+                        'compare' => '!=',
+                    ),
+                ),
             ),
             'edit'
         );
 
         if ( $product_feeds_query->have_posts() ) {
             foreach ( $product_feeds_query->get_posts() as $product_feed ) {
-
                 if ( ! $product_feed instanceof Product_Feed ) {
                     continue;
                 }

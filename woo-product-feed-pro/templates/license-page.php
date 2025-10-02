@@ -6,14 +6,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use AdTribes\PFP\Helpers\Helper;
 ?>
-<div class="adt-license-settings">
+<div class="wrap adt-tw-wrapper adt-license-settings">
+    <?php Helper::locate_admin_template( 'header.php', true ); ?>
     <div class="adt-license-settings-container">
-        <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank">
-            <img style="max-height: 72px;" class="logo" src="<?php echo esc_attr( ADT_PFP_IMAGES_URL . 'logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>">
-        </a>
-        <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
-        <a href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" target="_blank" class="logo-upgrade">Upgrade to Elite</a>
-        <?php endif; ?>
         <h1 class="title">Licenses</h1>
         <p class="desc"><?php esc_html_e( 'Enter your license keys below to enjoy full access, plugin updates, and support.', 'woo-product-feed-pro' ); ?></p>
         

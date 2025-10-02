@@ -2,8 +2,6 @@
 declare var jQuery: any;
 declare var $: any;
 
-import '@/tailwind.css';
-import '@/scss/style.scss';
 import './style.scss';
 
 (function (w, d, $) {
@@ -11,6 +9,11 @@ import './style.scss';
 
   // DOM ready
   $(function () {
+    const feedId = w.adtObj.feed_id;
+    let feedData = w.adtObj.feed_data;
+    let feedStatus = feedData?.status || '';
+    let heartbeatInterval: NodeJS.Timeout;
+
     // Function to get the current tab from URL or form
     const getCurrentTab = (): string => {
       const currentParams = new URLSearchParams(window.location.search);
@@ -18,15 +21,24 @@ import './style.scss';
     };
 
     // Function to show WordPress style admin notices
-    const showAdminNotice = (message: string, type: 'error' | 'info' | 'warning' | 'success'): void => {
+    const showAdminNotice = (
+      message: string,
+      type: 'error' | 'info' | 'warning' | 'success',
+      id: string = '',
+      loading: boolean = false
+    ): void => {
       // Remove any existing notice with our specific class
       $('.woosea-admin-notice').remove();
+
+      const loadingHtml = loading
+        ? '<span class="adt-loader adt-loader-secondary adt-loader-sm adt-tw-inline-block"></span>'
+        : '';
 
       // Create a new notice with WordPress standard classes
       const noticeClass = `notice notice-${type} is-dismissible woosea-admin-notice`;
       const noticeHtml = `
-        <div class="${noticeClass}">
-          <p>${message}</p>
+        <div class="${noticeClass}" id="${id}">
+          <p style="display: flex; align-items: center; gap: 8px;">${loadingHtml}${message}</p>
           <button type="button" class="notice-dismiss">
             <span class="screen-reader-text">${__('Dismiss this notice.', 'woo-product-feed-pro')}</span>
           </button>
@@ -34,7 +46,7 @@ import './style.scss';
       `;
 
       // Insert the notice at the top of the form
-      $('.adt-edit-feed-form').prepend(noticeHtml);
+      $('#adt-edit-feed .tab-content').prepend(noticeHtml);
 
       // Make the dismiss button work
       $('.woosea-admin-notice .notice-dismiss').on('click', function () {
@@ -46,6 +58,11 @@ import './style.scss';
             $(this).remove();
           });
       });
+    };
+
+    // Function to check if we're on the create new feed page (no feed ID in URL)
+    const isCreateNewFeedPage = (): boolean => {
+      return !new URLSearchParams(window.location.search).has('id');
     };
 
     // Function to validate project name without showing notices
@@ -158,6 +175,105 @@ import './style.scss';
       return true;
     };
 
+    /**
+     * Run heartbeat to check if the feed is processing.
+     * @returns void
+     */
+    const heartbeat = () => {
+      if (!heartbeatInterval) {
+        // Start heartbeat.
+        heartbeatInterval = setInterval(() => {
+          checkFeedStatus(feedId);
+        }, 10000);
+      }
+    };
+
+    /**
+     * Check the status of the feed.
+     * @returns void
+     */
+    const checkFeedStatus = (feedId: number) => {
+      const feedIds = [feedId];
+
+      $.ajax({
+        url: w.ajaxurl,
+        type: 'POST',
+        data: {
+          action: 'adt_get_feed_processing_status',
+          nonce: w.adtObj.adtNonce,
+          feed_ids: feedIds,
+        },
+      }).done((response: any) => {
+        if (response.success) {
+          // Find the data array in the response that has the same feed ID.
+          const feedDataObj = Array.isArray(response.data)
+            ? response.data.find((data: any) => String(data.feed_id) === String(feedId))
+            : null;
+          feedStatus = feedDataObj?.status || '';
+
+          updateFeedProcessingNotice();
+          updateContainerStatus();
+          updateFormSubmitButton();
+        }
+      });
+    };
+
+    /**
+     * Disable the form submit button.
+     * @returns void
+     */
+    const updateFormSubmitButton = (): void => {
+      const status = feedStatus === 'processing' ? 'disabled' : 'enabled';
+
+      // Check if there is an input or button with type="submit".
+      const $form = $('.adt-edit-feed-form');
+      $form.find('button[type="submit"]').prop('disabled', status === 'disabled');
+    };
+
+    /**
+     * Update the container status.
+     * @returns void
+     */
+    const updateContainerStatus = (): void => {
+      const $container = $('#adt-edit-feed');
+      $container.attr('data-status', feedStatus);
+    };
+
+    /**
+     * Show or hide a notice if the feed is processing.
+     * @returns void
+     */
+    const updateFeedProcessingNotice = (): void => {
+      if (feedStatus === 'processing') {
+        showAdminNotice(
+          __(
+            'Feed is currently processing. Please wait for the feed generation to complete before making changes.',
+            'woo-product-feed-pro'
+          ),
+          'error',
+          'feed-processing-notice',
+          true
+        );
+      } else {
+        $('.woosea-admin-notice#feed-processing-notice').remove();
+      }
+    };
+
+    /**
+     * Check the status of the feed on load.
+     * @returns void
+     */
+    const checkFeedStatusOnLoad = () => {
+      if (!isCreateNewFeedPage()) {
+        heartbeat();
+        updateFeedProcessingNotice();
+        updateFormSubmitButton();
+      }
+    };
+
+    // Check the status of the feed on load.
+    checkFeedStatusOnLoad();
+
     // Handle form submission
     // @ts-ignore
     $('.adt-edit-feed-form').on('submit', function (e) {
@@ -209,11 +325,6 @@ import './style.scss';
       // Let form submit normally if validation passes
       return true;
     });
-
-    // Function to check if we're on the create new feed page (no feed ID in URL)
-    const isCreateNewFeedPage = (): boolean => {
-      return !new URLSearchParams(window.location.search).has('id');
-    };
 
     // Function to check if the target URL is navigating to another tab within the same edit feed page
     const isNavigatingToSameEditPage = (targetUrl: string): boolean => {

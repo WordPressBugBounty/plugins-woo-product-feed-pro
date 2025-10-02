@@ -280,27 +280,33 @@ if (file_exists($channel_class_file)) {
 
             <tr>
                 <td colspan="6">
-                    <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
-                    <?php if ( $edit_feed ) : ?>
-                        <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                        <input type="hidden" name="addrow" id="addrow" value="1">
-                        <input type="button" class="delete-field-mapping" value="- Delete">&nbsp;
-                        <input type="button" class="add-field-mapping" value="+ Add field mapping">&nbsp;
-                        <input type="button" class="add-own-mapping" value="+ Add custom field">&nbsp;
-                        <input type="submit" id="savebutton" value="<?php esc_attr_e( 'Save', 'woo-product-feed-pro' ); ?>" />
-                    <?php else : ?>
-                        <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                        <input type="hidden" name="addrow" id="addrow" value="1">
-                        <input type="button" class="delete-field-mapping" value="- Delete">&nbsp;
-                        <input type="button" class="add-field-mapping" value="+ Add field mapping">&nbsp;
-                        <input type="button" class="add-own-mapping" value="+ Add custom field">&nbsp;
-                        <?php
-                        // Check if channel has taxonomy
-                        $has_taxonomy = isset($channel_data['taxonomy']) && $channel_data['taxonomy'] !== 'none';
-                        $next_step = $has_taxonomy ? __('Category Mapping', 'woo-product-feed-pro') : __('Filters & Rules', 'woo-product-feed-pro');
-                        ?>
-                        <input type="submit" id="savebutton" value="<?php esc_attr_e('Save & Continue', 'woo-product-feed-pro'); ?>" />
-                    <?php endif; ?>
+                    <div class="adt-edit-feed-form-buttons adt-tw-flex adt-tw-gap-2 adt-tw-items-center">
+                        <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
+                        <?php if ( $edit_feed ) : ?>
+                            <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                            <input type="hidden" name="addrow" id="addrow" value="1">
+                            <button type="button" class="adt-button adt-button-sm delete-field-mapping">- <?php esc_attr_e( 'Delete', 'woo-product-feed-pro' ); ?></button>
+                            <button type="button" class="adt-button adt-button-sm add-field-mapping">+ <?php esc_attr_e( 'Add field mapping', 'woo-product-feed-pro' ); ?></button>
+                            <button type="button" class="adt-button adt-button-sm add-own-mapping">+ <?php esc_attr_e( 'Add custom field', 'woo-product-feed-pro' ); ?></button>
+                            <button type="submit" class="adt-button adt-button-sm adt-button-primary" id="savebutton">
+                                <?php esc_attr_e( 'Save Changes', 'woo-product-feed-pro' ); ?>
+                            </button>
+                        <?php else : ?>
+                            <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                            <input type="hidden" name="addrow" id="addrow" value="1">
+                            <button type="button" class="adt-button adt-button-sm delete-field-mapping">- <?php esc_attr_e( 'Delete', 'woo-product-feed-pro' ); ?></button>
+                            <button type="button" class="adt-button adt-button-sm add-field-mapping">+ <?php esc_attr_e( 'Add field mapping', 'woo-product-feed-pro' ); ?></button>
+                            <button type="button" class="adt-button adt-button-sm add-own-mapping">+<?php esc_attr_e( 'Add custom field', 'woo-product-feed-pro' ); ?></button>
+                            <?php
+                            // Check if channel has taxonomy
+                            $has_taxonomy = isset($channel_data['taxonomy']) && $channel_data['taxonomy'] !== 'none';
+                            $next_step = $has_taxonomy ? __('Category Mapping', 'woo-product-feed-pro') : __('Filters & Rules', 'woo-product-feed-pro');
+                            ?>
+                            <button type="submit" class="adt-button adt-button-sm adt-button-primary" id="savebutton">
+                                <?php esc_attr_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>
+                            </button>
+                        <?php endif; ?>
+                    </div>
                 </td>
             </tr>
         </table>

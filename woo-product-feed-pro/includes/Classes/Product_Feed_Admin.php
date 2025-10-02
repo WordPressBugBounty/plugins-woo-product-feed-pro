@@ -63,13 +63,8 @@ class Product_Feed_Admin extends Abstract_Class {
 
             $feed->register_action();
 
-            /**
-             * Run the product feed batch processing.
-             */
-            $executed_from = defined( 'ADT_PFP_MANUAL_REFRESH_FEED_EXECUTION_METHOD' ) ? ADT_PFP_MANUAL_REFRESH_FEED_EXECUTION_METHOD : 'cron';
-
             // Generate the feed.
-            $feed->generate( $executed_from );
+            $feed->generate( 'manual' );
         }
 
         $feed->post_status = 'true' === $is_publish ? 'publish' : 'draft';
@@ -245,14 +240,10 @@ class Product_Feed_Admin extends Abstract_Class {
         // Remove cache.
         Product_Feed_Helper::disable_cache();
 
-        // Determine if the feed is executed from AJAX or cron.
-        // For debugging purposes, ajax is easier to debug.
-        $executed_from = defined( 'ADT_PFP_MANUAL_REFRESH_FEED_EXECUTION_METHOD' ) ? ADT_PFP_MANUAL_REFRESH_FEED_EXECUTION_METHOD : 'cron';
-
         /**
          * Run the product feed batch processing.
          */
-        $response = $feed->generate( $executed_from );
+        $response = $feed->generate( 'manual' );
 
         wp_send_json_success( $response );
     }
@@ -430,11 +421,8 @@ class Product_Feed_Admin extends Abstract_Class {
                         // Remove cache.
                         Product_Feed_Helper::disable_cache();
 
-                        // Determine if the feed is executed from AJAX or cron.
-                        $executed_from = defined( 'ADT_PFP_MANUAL_REFRESH_FEED_EXECUTION_METHOD' ) ? ADT_PFP_MANUAL_REFRESH_FEED_EXECUTION_METHOD : 'cron';
-
                         // Generate the feed.
-                        $feed->generate( $executed_from );
+                        $feed->generate( 'manual' );
                         ++$processed_count;
                     } catch ( \Exception $e ) {
                         // translators: %s is the error message.

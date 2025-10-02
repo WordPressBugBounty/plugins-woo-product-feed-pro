@@ -142,7 +142,7 @@ class Cron extends Abstract_Class {
 
         Product_Feed_Helper::disable_cache();
 
-        $feed->generate( 'cron' );
+        $feed->generate( 'schedule' );
     }
 
     /**

@@ -7,13 +7,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 use AdTribes\PFP\Helpers\Helper;
 
 ?>
-<div id="pfp-about-page" class="pfp-page wrap nosubsub">
+<div id="pfp-about-page" class="pfp-page wrap adt-tw-wrapper nosubsub">
+    <?php Helper::locate_admin_template( 'header.php', true ); ?>
     <div class="container">
-        <div class="row">
-            <div class="col xs-text-center">
-                <img style="max-height: 72px;" class="logo" src="<?php echo esc_url( ADT_PFP_IMAGES_URL . 'logo.png' ); ?>" alt="<?php esc_attr_e( 'AdTribes', 'woo-product-feed-pro' ); ?>" />
-            </div>
-        </div>
         <div class="row">
             <div class="col xs-text-center">
                 <h1 class="page-title"><?php esc_html_e( 'Getting Help', 'woo-product-feed-pro' ); ?></h1>

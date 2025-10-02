@@ -183,21 +183,27 @@ do_action( 'adt_before_product_feed_manage_page', 4, $project_hash, $feed );
             <tbody>
             <tr class="rules-buttons">
                 <td colspan="8">
-                    <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ?? '' ); ?>">
-                    <?php if ( $edit_feed ) : ?>
-                        <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                        <input type="hidden" name="woosea_page" value="filters_rules">
-                        <input type="button" class="delete-row" value="- Delete">&nbsp;
-                        <input type="button" class="add-filter" value="+ Add filter">&nbsp;
-                        <input type="button" class="add-rule" value="+ Add rule">&nbsp;
-                        <input type="submit" id="savebutton" value="<?php esc_attr_e( 'Save', 'woo-product-feed-pro' ); ?>">
-                    <?php else : ?>
-                        <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                        <input type="button" class="delete-row" value="- Delete">&nbsp;
-                        <input type="button" class="add-filter" value="+ Add filter">&nbsp;
-                        <input type="button" class="add-rule" value="+ Add rule">&nbsp;
-                        <input type="submit" id="savebutton" value="<?php esc_attr_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>">
-                    <?php endif; ?>
+                    <div class="adt-edit-feed-form-buttons adt-tw-flex adt-tw-gap-2 adt-tw-items-center">
+                        <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ?? '' ); ?>">
+                        <?php if ( $edit_feed ) : ?>
+                            <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                            <input type="hidden" name="woosea_page" value="filters_rules">
+                            <button type="button" class="adt-button adt-button-sm delete-row" >- <?php esc_attr_e( 'Delete', 'woo-product-feed-pro' ); ?></button>
+                            <button type="button" class="adt-button adt-button-sm add-filter">+ <?php esc_attr_e( 'Add filter', 'woo-product-feed-pro' ); ?></button>
+                            <button type="button" class="adt-button adt-button-sm add-rule">+ <?php esc_attr_e( 'Add rule', 'woo-product-feed-pro' ); ?></button>
+                            <button type="submit" id="savebutton" class="adt-button adt-button-sm adt-button-primary">
+                                <?php esc_attr_e( 'Save Changes', 'woo-product-feed-pro' ); ?>
+                            </button>
+                        <?php else : ?>
+                            <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                            <button type="button" class="adt-button adt-button-sm delete-row" >- <?php esc_attr_e( 'Delete', 'woo-product-feed-pro' ); ?></button>
+                            <button type="button" class="adt-button adt-button-sm add-filter">+ <?php esc_attr_e( 'Add filter', 'woo-product-feed-pro' ); ?></button>
+                            <button type="button" class="adt-button adt-button-sm add-rule">+ <?php esc_attr_e( 'Add rule', 'woo-product-feed-pro' ); ?></button>
+                            <button type="submit" id="savebutton" class="adt-button adt-button-sm adt-button-primary">
+                                <?php esc_attr_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>
+                            </button>
+                        <?php endif; ?>
+                    </div>
                 </td>
             </tr>
             </tbody>

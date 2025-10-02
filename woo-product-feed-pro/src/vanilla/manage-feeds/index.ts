@@ -1,8 +1,6 @@
 declare var jQuery: any;
 declare var $: any;
 
-import '@/tailwind.css';
-import '@/scss/style.scss';
 import './style.scss';
 
 (function (w, d, $) {

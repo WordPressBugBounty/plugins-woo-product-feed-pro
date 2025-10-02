@@ -2,6 +2,9 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import api from '@/api';
 
+// Get translation function from WordPress i18n
+const { __ } = window.wp.i18n;
+
 // Types specific to Rules
 export interface RuleFieldData {
   condition?: string;
@@ -642,17 +645,17 @@ export const useRulesStore = defineStore('rules', () => {
 
       // Required field validations
       if (!fieldData.attribute) {
-        errors.push('Attribute is required');
+        errors.push(__('Attribute is required', 'woo-product-feed-pro'));
       }
       if (!fieldData.condition) {
-        errors.push('Condition is required');
+        errors.push(__('Condition is required', 'woo-product-feed-pro'));
       }
 
       // Value validation based on condition
       const noValueConditions = ['is_empty', 'is_not_empty'];
       if (fieldData.condition && !noValueConditions.includes(fieldData.condition)) {
         if (!fieldData.value && fieldData.value !== 0) {
-          errors.push('Value is required for this condition');
+          errors.push(__('Value is required for this condition', 'woo-product-feed-pro'));
         }
       }
     }
@@ -725,21 +728,49 @@ export const useRulesStore = defineStore('rules', () => {
     rule.then.forEach((action) => {
       // Only validate actions that have some data
       if (!action.attribute) {
-        errors.push('Action attribute is required');
+        errors.push(__('Action attribute is required', 'woo-product-feed-pro'));
       }
 
       if (action.action === 'findreplace') {
         if (!action.find) {
-          errors.push('Action find text is required');
+          errors.push(__('Action find text is required', 'woo-product-feed-pro'));
         }
       } else if (['multiply', 'divide', 'minus', 'plus'].includes(action.action)) {
         if (!action.value && action.value !== 0) {
-          errors.push('Action value is required');
+          errors.push(__('Action value is required', 'woo-product-feed-pro'));
+        } else if (action.value) {
+          // Validate numeric value format - only allow numbers with period as decimal separator
+          const numericValue = String(action.value).trim();
+          const validNumericPattern = /^-?\d+(\.\d+)?$/;
+
+          if (!validNumericPattern.test(numericValue)) {
+            if (numericValue.includes(',')) {
+              errors.push(
+                __(
+                  'Invalid decimal format. Use period (.) instead of comma (,) for decimal numbers (e.g., 2.5 instead of 2,5)',
+                  'woo-product-feed-pro'
+                )
+              );
+            } else {
+              errors.push(
+                __(
+                  'Invalid numeric value. Only numbers with period (.) as decimal separator are allowed',
+                  'woo-product-feed-pro'
+                )
+              );
+            }
+          } else {
+            // Additional validation for mathematical operations
+            const parsedValue = parseFloat(numericValue);
+            if (isNaN(parsedValue)) {
+              errors.push(__('Invalid numeric value', 'woo-product-feed-pro'));
+            } else if (action.action === 'divide' && parsedValue === 0) {
+              errors.push(__('Division by zero is not allowed', 'woo-product-feed-pro'));
+            }
+          }
         }
       }
     });
-
-    console.log('errors', errors);
 
     return errors;
   };
@@ -797,16 +828,46 @@ export const useRulesStore = defineStore('rules', () => {
       rule.then.forEach((action) => {
         const actionErrors: string[] = [];
         if (!action.attribute) {
-          actionErrors.push('Action attribute is required');
+          actionErrors.push(__('Action attribute is required', 'woo-product-feed-pro'));
         }
 
         if (action.action === 'findreplace') {
           if (!action.find) {
-            actionErrors.push('Action find text is required');
+            actionErrors.push(__('Action find text is required', 'woo-product-feed-pro'));
           }
         } else if (['multiply', 'divide', 'minus', 'plus'].includes(action.action)) {
           if (!action.value && action.value !== 0) {
-            actionErrors.push('Action value is required');
+            actionErrors.push(__('Action value is required', 'woo-product-feed-pro'));
+          } else if (action.value) {
+            // Validate numeric value format - only allow numbers with period as decimal separator
+            const numericValue = String(action.value).trim();
+            const validNumericPattern = /^-?\d+(\.\d+)?$/;
+
+            if (!validNumericPattern.test(numericValue)) {
+              if (numericValue.includes(',')) {
+                actionErrors.push(
+                  __(
+                    'Invalid decimal format. Use period (.) instead of comma (,) for decimal numbers (e.g., 2.5 instead of 2,5)',
+                    'woo-product-feed-pro'
+                  )
+                );
+              } else {
+                actionErrors.push(
+                  __(
+                    'Invalid numeric value. Only numbers with period (.) as decimal separator are allowed',
+                    'woo-product-feed-pro'
+                  )
+                );
+              }
+            } else {
+              // Additional validation for mathematical operations
+              const parsedValue = parseFloat(numericValue);
+              if (isNaN(parsedValue)) {
+                actionErrors.push(__('Invalid numeric value', 'woo-product-feed-pro'));
+              } else if (action.action === 'divide' && parsedValue === 0) {
+                actionErrors.push(__('Division by zero is not allowed', 'woo-product-feed-pro'));
+              }
+            }
           }
         }
 

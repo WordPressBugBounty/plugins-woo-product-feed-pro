@@ -319,25 +319,6 @@ input:checked + .woo-product-feed-pro-slider:before {
   height: 100px;
   width: 55%;
 }
-.woo-product-feed-pro-form-style-2 input[type='submit'],
-.woo-product-feed-pro-form-style-2 input[type='button'] {
-  border: none;
-  padding: 8px 15px 8px 15px;
-  background: #ff8500;
-  color: #fff;
-  box-shadow: 1px 1px 4px #dadada;
-  -moz-box-shadow: 1px 1px 4px #dadada;
-  -webkit-box-shadow: 1px 1px 4px #dadada;
-  border-radius: 3px;
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  cursor: pointer;
-}
-.woo-product-feed-pro-form-style-2 input[type='submit']:hover,
-.woo-product-feed-pro-form-style-2 input[type='button']:hover {
-  background: #ea7b00;
-  color: #fff;
-}
 
 .button.button-pink {
   background-color: #E63E77;
@@ -478,4 +459,12 @@ input:checked + .woo-product-feed-pro-slider:before {
 .woo-product-feed-pro-helpful-articles-list {
   margin-top: 3px;
   margin-bottom: 6px;
+}
+
+.general-tab-content .adt-edit-feed-form .woo-product-feed-pro-table tr#refresh_interval {
+  border-bottom: 0;
+}
+
+.general-tab-content .adt-edit-feed-form .woo-product-feed-pro-table tr#custom_refresh_interval_upsell {
+  border-top: 0;
 }

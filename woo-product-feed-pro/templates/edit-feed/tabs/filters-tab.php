@@ -26,14 +26,15 @@ $feed_id = isset( $_GET['id'] ) ? sanitize_text_field( wp_unslash( $_GET['id'] )
         
         <!-- Form submission button -->
         <div class="adt-tw-mt-6 adt-tw-flex adt-tw-gap-4">
-            <button type="submit" class="adt-button adt-button-primary" id="filters-submit-button">
-                <?php if ( $feed_id ) : ?>
-                    <?php esc_html_e( 'Save Filters', 'woo-product-feed-pro' ); ?>
-                <?php else : ?>
-                    <?php esc_html_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>
-                <?php endif; ?>
-            </button>
-            
+            <div class="adt-edit-feed-form-buttons adt-tw-flex adt-tw-gap-2 adt-tw-items-center">
+                <button type="submit" class="adt-button adt-button-primary" id="filters-submit-button">
+                    <?php if ( $feed_id ) : ?>
+                        <?php esc_html_e( 'Save Filters', 'woo-product-feed-pro' ); ?>
+                    <?php else : ?>
+                        <?php esc_html_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>
+                    <?php endif; ?>
+                </button>
+            </div>
             <!-- Validation status indicator -->
             <div id="validation-status" class="adt-tw-flex adt-tw-items-center adt-tw-text-sm adt-tw-hidden">
                 <span class="adt-tw-icon-[lucide--alert-circle] adt-tw-size-4 adt-tw-mr-2 adt-tw-text-red-500"></span>

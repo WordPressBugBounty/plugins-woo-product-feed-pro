@@ -621,9 +621,9 @@ class Product_Feed {
      * @since 13.4.1
      * @access public
      *
-     * @param string $context The context of the generation. 'ajax' or 'cron'.
+     * @param string $context The context of the generation. 'schedule' or 'manual'.
      */
-    public function generate( $context = '' ) {
+    public function generate( $context = 'schedule' ) {
         // Log when feed generation starts.
         $logging = get_option( 'add_woosea_logging', 'no' );
         if ( 'yes' === $logging ) {
@@ -631,7 +631,7 @@ class Product_Feed {
                 'feed_id'        => $this->id,
                 'feed_title'     => $this->title,
                 'execution_date' => current_time( 'Y-m-d H:i:s' ),
-                'context'        => 'ajax' === $context ? 'ajax' : 'cron',
+                'context'        => $context,
                 'channel'        => $this->channel,
                 'file_format'    => $this->file_format,
                 'action'         => 'Feed generation started',
@@ -657,21 +657,10 @@ class Product_Feed {
         $this->products_count           = intval( $published_products );
         $this->total_products_processed = 0;
         $this->batch_size               = $batch_size;
-        $this->executed_from            = 'ajax' === $context ? 'ajax' : 'cron';
+        $this->executed_from            = $context;
         $this->save();
 
-        if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-            wp_send_json_success(
-                array(
-                    'feed_id'       => $this->id,
-                    'offset'        => 0,
-                    'batch_size'    => $batch_size,
-                    'executed_from' => $this->executed_from,
-                )
-            );
-        } else {
-            return Cron::schedule_next_batch( $this->id, 0, $batch_size );
-        }
+        return Cron::schedule_next_batch( $this->id, 0, $batch_size );
     }
 
     /**
@@ -900,7 +889,8 @@ class Product_Feed {
             $timestamp,
             $interval_in_seconds,
             ADT_PFP_AS_GENERATE_PRODUCT_FEED,
-            array( 'feed_id' => $this->id )
+            array( 'feed_id' => $this->id ),
+            ADT_PFP_AS_GENERATE_PRODUCT_FEED_GROUP
         );
     }
 

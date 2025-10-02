@@ -10,7 +10,9 @@ namespace AdTribes\PFP\Classes;
 use AdTribes\PFP\Abstracts\Abstract_Class;
 use AdTribes\PFP\Traits\Singleton_Trait;
 use AdTribes\PFP\Helpers\Helper;
+use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Factories\Vite_App;
+use AdTribes\PFP\Factories\Admin_Notice;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -43,6 +45,16 @@ class Upsell extends Abstract_Class {
                 'title'   => __( 'Upgrade to Set Attributes', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can dynamically set and modify product attributes on-the-fly. This is perfect for customizing product data for different channels, adding custom labels, and optimizing feed data without touching your product catalog.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'setattrrules' ),
+            ),
+            'custom_refresh_interval'   => array(
+                'title'   => __( 'Upgrade to set custom refresh interval', 'woo-product-feed-pro' ),
+                'message' => __( 'In Product Feed ELITE for WooCommerce you can set custom refresh intervals and specific times for your feeds. Schedule feeds to run hourly, daily, weekly, yearly or every X hours at specific times (e.g., daily at 11 PM). Perfect for optimizing server performance during off-peak hours and ensuring feeds complete before the next refresh cycle.', 'woo-product-feed-pro' ),
+                'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'customrefreshinterval' ),
+            ),
+            'import_feeds'              => array(
+                'title'   => __( 'Upgrade to import feeds', 'woo-product-feed-pro' ),
+                'message' => __( 'In Product Feed ELITE for WooCommerce you can import feed configurations from JSON files. Perfect for migrating feeds between sites, restoring backups, or bulk importing multiple feed setups at once. Save hours of manual configuration work.', 'woo-product-feed-pro' ),
+                'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'importfeeds' ),
             ),
         );
 
@@ -128,13 +140,90 @@ class Upsell extends Abstract_Class {
     }
 
     /**
+     * Add custom refresh interval upsell fields.
+     *
+     * @since 13.4.7
+     * @access public
+     */
+    public function add_custom_refresh_interval_upsell_fields() {
+        Helper::locate_admin_template(
+            'upsell/custom-refresh-interval.php',
+            true,
+            true
+        );
+    }
+
+    /**
+     * Add custom refresh interval options.
+     *
+     * @since 13.4.7
+     * @access public
+     *
+     * @param array $refresh_arr The refresh interval options.
+     * @return array
+     */
+    public function add_custom_refresh_interval_upsell_options( $refresh_arr ) {
+        $refresh_arr[] = 'custom_upsell';
+        return $refresh_arr;
+    }
+
+    /**
+     * Add custom refresh interval labels.
+     *
+     * @since 13.4.7
+     * @access public
+     *
+     * @param array $refresh_labels The refresh interval labels.
+     * @return array
+     */
+    public function add_custom_refresh_interval_upsell_labels( $refresh_labels ) {
+        $refresh_labels['custom_upsell'] = __( 'Custom (Elite)', 'woo-product-feed-pro' );
+        return $refresh_labels;
+    }
+
+    /**
+     * Show custom refresh interval notice.
+     *
+     * @since 13.4.7
+     * @access public
+     *
+     * @param array|object|null $feed The feed data.
+     * @return void
+     */
+    public static function show_custom_refresh_interval_notice( $feed ) {
+        if ( Product_Feed_Helper::is_a_product_feed( $feed ) ) {
+            $refresh_interval = $feed->refresh_interval ?? '';
+            if ( 'custom' === $refresh_interval ) {
+                $admin_notice = new Admin_Notice(
+                    __( 'The refresh interval has been automatically set to ‘No Refresh’ because the Elite plugin is deactivated. Custom refresh intervals are only available with the Elite version.', 'woo-product-feed-pro' ),
+                    'warning',
+                    'string',
+                    true
+                );
+                $admin_notice->run();
+            }
+        }
+    }
+
+    /**
      * Execute Notices class.
      *
      * @since 13.3.9
      * @access public
      */
     public function run() {
+        if ( Helper::has_paid_plugin_active() ) {
+            return;
+        }
+
         // Enqueue admin styles and scripts.
         add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+
+        // Add custom refresh interval options and labels.
+        add_filter( 'adt_product_feed_refresh_interval_options', array( $this, 'add_custom_refresh_interval_upsell_options' ) );
+        add_filter( 'adt_product_feed_refresh_interval_labels', array( $this, 'add_custom_refresh_interval_upsell_labels' ) );
+
+        // Add custom refresh interval upsell fields.
+        add_action( 'adt_general_feed_settings_after_refresh_interval', array( $this, 'add_custom_refresh_interval_upsell_fields' ) );
     }
 }

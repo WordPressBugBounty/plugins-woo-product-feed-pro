@@ -367,57 +367,62 @@ class WooSEA_google_shopping { // phpcs:ignore
                 ),
             ),
             'Shipping'                     => array(
-                'Shipping'              => array(
+                'Shipping'                => array(
                     'name'      => 'shipping',
                     'feed_name' => 'g:shipping',
                     'format'    => 'optional',
                 ),
-                'Shipping label'        => array(
+                'Shipping label'          => array(
                     'name'      => 'shipping_label',
                     'feed_name' => 'g:shipping_label',
                     'format'    => 'optional',
                 ),
-                'Shipping weight'       => array(
+                'Shipping weight'         => array(
                     'name'      => 'shipping_weight',
                     'feed_name' => 'g:shipping_weight',
                     'format'    => 'optional',
                 ),
-                'Shipping length'       => array(
+                'Shipping length'         => array(
                     'name'      => 'shipping_length',
                     'feed_name' => 'g:shipping_length',
                     'format'    => 'optional',
                 ),
-                'Shipping width'        => array(
+                'Shipping width'          => array(
                     'name'      => 'shipping_width',
                     'feed_name' => 'g:shipping_width',
                     'format'    => 'optional',
                 ),
-                'Shipping height'       => array(
+                'Shipping height'         => array(
                     'name'      => 'shipping_height',
                     'feed_name' => 'g:shipping_height',
                     'format'    => 'optional',
                 ),
-                'Transit time label'    => array(
+                'Free shipping threshold' => array(
+                    'name'      => 'free_shipping_threshold',
+                    'feed_name' => 'g:free_shipping_threshold',
+                    'format'    => 'optional',
+                ),
+                'Transit time label'      => array(
                     'name'      => 'transit_time_label',
                     'feed_name' => 'g:transit_time_label',
                     'format'    => 'optional',
                 ),
-                'Minimum handling time' => array(
+                'Minimum handling time'   => array(
                     'name'      => 'min_handling_time',
                     'feed_name' => 'g:min_handling_time',
                     'format'    => 'optional',
                 ),
-                'Maximum handling time' => array(
+                'Maximum handling time'   => array(
                     'name'      => 'max_handling_time',
                     'feed_name' => 'g:max_handling_time',
                     'format'    => 'optional',
                 ),
-                'Ships from country'    => array(
+                'Ships from country'      => array(
                     'name'      => 'ships_from_country',
                     'feed_name' => 'g:ships_from_country',
                     'format'    => 'optional',
                 ),
-                'Region Id'             => array(
+                'Region Id'               => array(
                     'name'      => 'region_id',
                     'feed_name' => 'g:region_id',
                     'format'    => 'optional',

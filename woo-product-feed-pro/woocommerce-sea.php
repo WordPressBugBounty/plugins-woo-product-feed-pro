@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Product Feed PRO for WooCommerce
- * Version:     13.4.6
+ * Version:     13.4.7
  * Plugin URI:  https://www.adtribes.io/support/?utm_source=wpadmin&utm_medium=plugin&utm_campaign=woosea_product_feed_pro
  * Description: Configure and maintain your WooCommerce product feeds for Google Shopping, Catalog managers, Remarketing, Bing, Skroutz, Yandex, Comparison shopping websites and over a 100 channels more.
  * Author:      AdTribes.io
@@ -17,7 +17,7 @@
  * Domain Path: /languages
  *
  * WC requires at least: 4.4
- * WC tested up to: 10.1
+ * WC tested up to: 10.2
  *
  * Product Feed PRO for WooCommerce is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants.
  */
-define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.4.6' );
+define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.4.7' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME', 'woocommerce-product-feed-pro' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME_SHORT', 'woo-product-feed-pro' );
 
@@ -96,6 +96,10 @@ if ( ! defined( 'ADT_OPTION_TEMP_PRODUCT_FEED' ) ) {
     define( 'ADT_OPTION_TEMP_PRODUCT_FEED', 'adt_temp_product_feed' );
 }
 
+if ( ! defined( 'ADT_PFP_CLEAN_UP_PLUGIN_OPTIONS' ) ) {
+    define( 'ADT_PFP_CLEAN_UP_PLUGIN_OPTIONS', 'adt_clean_up_plugin_data' );
+}
+
 // Transient keys.
 if ( ! defined( 'ADT_TRANSIENT_CUSTOM_ATTRIBUTES' ) ) {
     define( 'ADT_TRANSIENT_CUSTOM_ATTRIBUTES', 'adt_transient_custom_attributes' );
@@ -121,6 +125,9 @@ if ( ! defined( 'ADT_PFP_SHOW_ALLOW_USAGE_NOTICE' ) ) {
 // Define the Action Scheduler hook for generating product feeds.
 if ( ! defined( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED' ) ) {
     define( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED', 'adt_pfp_as_generate_product_feed' );
+}
+if ( ! defined( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED_GROUP' ) ) {
+    define( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED_GROUP', 'adt_pfp_as_generate_product_feed_group' );
 }
 if ( ! defined( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH' ) ) {
     define( 'ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH', 'adt_pfp_as_generate_product_feed_batch' );

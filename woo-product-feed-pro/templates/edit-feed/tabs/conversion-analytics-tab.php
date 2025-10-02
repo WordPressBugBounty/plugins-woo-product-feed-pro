@@ -76,7 +76,7 @@ do_action( 'adt_before_product_feed_manage_page', 5, $project_hash, $feed );
             
             <table class="woo-product-feed-pro-table">
                 <tr>
-                    <td><span><?php esc_html_e( 'Enable Google Analytics tracking', 'woo-product-feed-pro' ); ?>: </span></td>
+                    <td style="width: 350px;"><span><?php esc_html_e( 'Enable Google Analytics tracking', 'woo-product-feed-pro' ); ?>: </span></td>
                     <td>
                         <label class="woo-product-feed-pro-switch">
                             <input type="checkbox" name="utm_on" class="checkbox-field" <?php echo $utm_enabled ? 'checked' : ''; ?>>
@@ -98,7 +98,7 @@ do_action( 'adt_before_product_feed_manage_page', 5, $project_hash, $feed );
                 </tr>
                 <tr>
                     <td><span><?php esc_html_e( 'Google Analytics campaign term (utm_term)', 'woo-product-feed-pro' ); ?>:</span></td>
-                    <td><input type="hidden" name="utm_term" value="id"><input type="text" class="input-field" value="[productId]" disabled/> <i>(<?php esc_html_e( 'dynamically added Product ID', 'woo-product-feed-pro' ); ?>)</i></td>
+                    <td><input type="hidden" name="utm_term" value="id"><input type="text" class="input-field" value="adtribes" disabled/></td>
                 </tr>
                 <tr>
                     <td><span><?php esc_html_e( 'Google Analytics campaign content (utm_content)', 'woo-product-feed-pro' ); ?>:</span></td>
@@ -108,18 +108,24 @@ do_action( 'adt_before_product_feed_manage_page', 5, $project_hash, $feed );
 
                 <tr>
                     <td colspan="2">
-                       <?php if ( $edit_feed ) : ?>
-                            <input type="hidden" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
-                            <input type="hidden" name="project_update" id="project_update" value="yes">
-                            <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                            <input type="hidden" name="woosea_page" value="analytics">
-                            <input type="submit" id="savebutton" value="<?php esc_attr_e( 'Save', 'woo-product-feed-pro' ); ?>">
-                        <?php else : ?>
-                            <input type="hidden" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
-                            <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                            <input type="hidden" name="woosea_page" value="analytics">
-                            <input type="submit" id="savebutton" value="<?php esc_attr_e( 'Generate Product Feed', 'woo-product-feed-pro' ); ?>">
-                        <?php endif; ?>
+                        <div class="adt-edit-feed-form-buttons adt-tw-flex adt-tw-gap-2 adt-tw-items-center">
+                        <?php if ( $edit_feed ) : ?>
+                                <input type="hidden" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
+                                <input type="hidden" name="project_update" id="project_update" value="yes">
+                                <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                                <input type="hidden" name="woosea_page" value="analytics">
+                                <button type="submit" class="adt-button adt-button-sm adt-button-primary adt-tw-gap-2" id="savebutton">
+                                    <?php esc_attr_e( 'Save Changes', 'woo-product-feed-pro' ); ?>
+                                </button>
+                            <?php else : ?>
+                                <input type="hidden" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
+                                <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                                <input type="hidden" name="woosea_page" value="analytics">
+                                <button type="submit" class="adt-button adt-button-sm adt-button-primary adt-tw-gap-2" id="savebutton">
+                                    <?php esc_attr_e( 'Generate Product Feed', 'woo-product-feed-pro' ); ?>
+                                </button>
+                            <?php endif; ?>
+                        </div>
                     </td>
                 </tr>
             </table>

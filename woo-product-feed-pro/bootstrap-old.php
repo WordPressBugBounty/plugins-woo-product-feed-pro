@@ -61,13 +61,14 @@ function woosea_add_facebook_pixel( $product = null ) {
         return;  
     }  
 
-    if ( ! is_object( $product ) ) {  
-        $product = function_exists( 'wc_get_product' ) ? wc_get_product( get_the_ID() ) : null;  
+    if ( ! is_object( $product ) ) {
+        $post_id = apply_filters( 'adt_facebook_pixel_post_id', get_the_ID() );
+        $product = function_exists( 'wc_get_product' ) ? wc_get_product( $post_id ) : null;  
     }  
     
     if ( ! $product instanceof WC_Product ) {  
         return;  
-    }  
+    }
 
     $add_facebook_pixel = get_option( 'add_facebook_pixel' );
     $add_facebook_capi  = get_option( 'add_facebook_capi' );
