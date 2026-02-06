@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useFiltersStore } from '../../stores/filtersStore';
 import FilterGroup from '../groups/FilterGroup.vue';
 import GroupDropdown from '../common/GroupDrowdown.vue';
+import { __ } from '@wordpress/i18n';
 import type { SectionType } from '../../types';
 
 const store = useFiltersStore();
@@ -31,12 +32,12 @@ watch(sectionFilters, (newFilters) => {
             <h2 class="adt-tw-text-base adt-tw-font-semibold adt-tw-text-gray-800 adt-tw-capitalize">
                 {{ props.type }}
             </h2>
-            <div class="adt-tw-text-xs adt-tw-text-gray-600">IF...</div>
+            <div class="adt-tw-text-xs adt-tw-text-gray-600">{{ __('IF...', 'woo-product-feed-pro') }}</div>
         </div>
         <button 
             type="button"
             class="adt-remove-filter-section adt-tw-bg-transparent adt-tw-border-none adt-tw-cursor-pointer"
-            aria-label="Remove section"
+            :aria-label="__('Remove section', 'woo-product-feed-pro')"
             @click="store.clearFilterSection(props.type)"
         >
             <span class="adt-tw-icon-[lucide--trash-2] adt-tw-size-4 adt-tw-text-gray-400 adt-tw-transition-colors hover:adt-tw-text-red-500"></span>

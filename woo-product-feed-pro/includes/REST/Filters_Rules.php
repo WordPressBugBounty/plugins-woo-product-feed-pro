@@ -68,15 +68,36 @@ class Filters_Rules extends Abstract_REST {
      * @access private
      *
      * @param Product_Feed $feed The feed object.
+     * @param string       $type The type of data to get.
+     *                           'filters' for filters and rules builder.
+     *                           'rules' for rules builder.
+     *                           'rules_then' for then attributes builder.
      * @return array
      */
-    private function get_attributes( $feed = null ) {
+    private function get_attributes( $feed = null, $type = 'filters' ) {
         // Get the Product_Feed_Attributes instance.
         $product_feed_attributes = Product_Feed_Attributes::instance();
         $attributes              = $product_feed_attributes->get_attributes();
         $feed_channel            = $feed ? $feed->get_channel( 'fields' ) : null;
 
-        $attributes = apply_filters( 'adt_pfp_get_filters_rules_attributes', $attributes, $feed_channel );
+        if ( 'filters' === $type || 'rules' === $type ) {
+            // Exclude attributes for filter and rules conditions builder.
+            $attributes_to_exclude = array(
+                'Other fields' => array(
+                    'static_value',
+                    'page_url',
+                    'post_url',
+                ),
+            );
+
+            foreach ( $attributes_to_exclude as $group_name => $group_attributes ) {
+                foreach ( $group_attributes as $attribute ) {
+                    unset( $attributes[ $group_name ][ $attribute ] );
+                }
+            }
+        }
+
+        $attributes = apply_filters( 'adt_pfp_get_filters_rules_attributes', $attributes, $feed_channel, $type );
 
         // Transform the attributes to match the expected format.
         $formatted_attributes = array();
@@ -218,7 +239,7 @@ class Filters_Rules extends Abstract_REST {
         }
 
         // Get attributes, conditions, and categories for the builder.
-        $response_data['attributes'] = $this->get_attributes( $feed );
+        $response_data['attributes'] = $this->get_attributes( $feed, $type );
         $response_data['categories'] = $this->get_categories_data( $feed_id );
 
         // Get conditions and actions for the builder.
@@ -236,7 +257,11 @@ class Filters_Rules extends Abstract_REST {
         $default_rules   = array( 'rules' => array() );
 
         if ( 'rules' === $type ) {
-            $response_data['actions'] = $this->rules->get_actions();
+            $response_data['actions']       = $this->rules->get_actions();
+            $response_data['field_mapping'] = $feed ? $feed->attributes : array();
+
+            // Get then attributes for rules builder.
+            $response_data['thenAttributes'] = $this->get_attributes( $feed, 'rules_then' );
 
             if ( $feed ) {
                 // Existing feed - get from feed data.

@@ -1,8 +1,10 @@
 jQuery(document).ready(function ($) {
+  const { __ } = wp.i18n;
+  
   // Initialize Select2 for all dropdown fields
   $(document.body).on('init_woosea_select2', function () {
     $('.woo-sea-select2').select2({
-      placeholder: 'Select an attribute',
+      placeholder: __('Select an attribute', 'woo-product-feed-pro'),
       allowClear: true,
     });
   });

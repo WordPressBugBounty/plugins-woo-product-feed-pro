@@ -131,12 +131,21 @@ return array(
             'utm_source'   => 'tiktok',
             'type'         => 'Advertising',
         ),
+
         'Vivino'                               => array(
             'channel_hash' => '4f4d30ea9fef64d166fe50c577e7f312',
             'name'         => 'Vivino',
             'fields'       => 'vivino',
             'taxonomy'     => 'none',
             'utm_source'   => 'Vivino',
+            'type'         => 'Advertising',
+        ),
+        'OpenAI Product Feed'                  => array(
+            'channel_hash' => '3f7d9c8b5e4a6f1d2c0e7b8a4d5f3e9c',
+            'name'         => 'OpenAI Product Feed',
+            'fields'       => 'openai',
+            'taxonomy'     => 'none',
+            'utm_source'   => 'OpenAI Product Feed',
             'type'         => 'Advertising',
         ),
     ),

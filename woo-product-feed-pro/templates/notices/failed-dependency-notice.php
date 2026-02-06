@@ -80,7 +80,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 </style>
 <div class="notice notice-error pfp-failed-dependency-notice">
     <p class="heading">
-        <img src="<?php echo esc_url( ADT_PFP_IMAGES_URL . 'logo.png' ); ?>" alt="Product Feed Pro for WooCommerce" />
+        <img src="<?php echo esc_url( ADT_PFP_IMAGES_URL . 'logo.svg' ); ?>" alt="Product Feed Pro for WooCommerce" />
         <span><?php esc_html_e( 'Action required', 'woo-product-feed-pro' ); ?></span>
     </p>
     <?php echo wp_kses_post( $message ); ?>

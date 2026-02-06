@@ -36,16 +36,6 @@ class Admin_Notice extends Abstract_Class {
     protected $type;
 
     /**
-     * Holds the format type of message. Either 'string' or 'html'.
-     *
-     * @since 13.3.3
-     * @access protected
-     *
-     * @var string The message format.
-     */
-    protected string $message_format;
-
-    /**
      * Holds the dismissible status of the notice.
      *
      * @since 13.3.4
@@ -56,14 +46,24 @@ class Admin_Notice extends Abstract_Class {
     protected bool $is_dismissible;
 
     /**
-     * Holds the missing plugins.
+     * Holds the HTML format of the notice.
      *
-     * @since 13.3.7
+     * @since 13.5.0
      * @access protected
      *
-     * @var array The missing plugins.
+     * @var bool The HTML format of the notice.
      */
-    protected array $failed_dependencies;
+    protected bool $is_html;
+
+    /**
+     * Holds the arguments.
+     *
+     * @since 13.5.0
+     * @access protected
+     *
+     * @var array The arguments.
+     */
+    protected array $args;
 
     /**
      * Constructor.
@@ -73,16 +73,37 @@ class Admin_Notice extends Abstract_Class {
      *
      * @param string $message                  The admin notice message.
      * @param string $type                     The admin notice type.
-     * @param string $message_format           The message format. Either 'string' or 'html'.
      * @param bool   $is_dismissible           The dismissible status of the notice.
-     * @param array  $failed_dependencies      The failed dependencies.
+     * @param bool   $is_html                  The HTML format of the notice.
+     * @param array  $args                     The arguments.
+     *                                         Available arguments:
+     *                                         - notice_id: The ID of the notice.
+     *                                         - data: The data of the notice.
+     *                                         - image_url: The image URL of the notice.
+     *                                         - actions: The actions of the notice.
+     *                                           - link: The link of the notice.
+     *                                           - type: The type of the notice.
+     *                                           - class: The class of the notice.
+     *                                           - data: The data of the notice.
+     *                                           - is_external: The external status of the notice.
+     *                                         - class: The class of the notice.
+     *                                         - nonce: The nonce of the notice.
+     *                                         - failed_dependencies: The failed dependencies.
+     *                                           - failed_version_requirements: The failed version requirements.
+     *                                           - missing_plugins: The missing plugins.
      */
-    public function __construct( $message, $type = 'error', $message_format = 'string', $is_dismissible = true, $failed_dependencies = array() ) {
-        $this->message             = $message;
-        $this->type                = $type;
-        $this->message_format      = $message_format;
-        $this->is_dismissible      = $is_dismissible;
-        $this->failed_dependencies = $failed_dependencies;
+    public function __construct(
+        $message,
+        $type = 'error',
+        $is_dismissible = true,
+        $is_html = false,
+        $args = array()
+    ) {
+        $this->message        = $message;
+        $this->type           = $type;
+        $this->is_dismissible = $is_dismissible;
+        $this->is_html        = $is_html;
+        $this->args           = $args;
     }
 
     /**
@@ -110,8 +131,8 @@ class Admin_Notice extends Abstract_Class {
      */
     private function _failed_dependencies() {
         $failed_dependencies = array();
-        if ( ! empty( $this->failed_dependencies['missing_plugins'] ) ) {
-            foreach ( $this->failed_dependencies['missing_plugins'] as $failed_dependency ) {
+        if ( ! empty( $this->args['missing_plugins'] ) ) {
+            foreach ( $this->args['missing_plugins'] as $failed_dependency ) {
                 $plugin_file = WP_PLUGIN_DIR . "/{$failed_dependency['plugin-base']}";
                 if ( file_exists( $plugin_file ) ) {
                     $plugin_data = get_plugin_data( $plugin_file );
@@ -175,12 +196,12 @@ class Admin_Notice extends Abstract_Class {
                     $failed_dependencies[] = $message;
                 }
             }
-        } elseif ( ! empty( $this->failed_dependencies['failed_version_requirements'] ) ) {
-            foreach ( $this->failed_dependencies['failed_version_requirements'] as $failed_dependency ) {
+        } elseif ( ! empty( $this->args['failed_version_requirements'] ) ) {
+            foreach ( $this->args['failed_version_requirements'] as $failed_dependency ) {
                 $failed_dependencies[] = sprintf(
                     /* translators: %1$s = opening <a> tag; %2$s = closing </a> tag */
                     esc_html__(
-                        '%1$s%3$s version needs to be on at least version %4$s to work properly with Product Feed Pro Pro. %2$s%1$sPlease update by clicking below.%2$s%5$sUpdate plugin &rarr;%6$s',
+                        '%1$s%3$s version needs to be on at least version %4$s to work properly with Product Feed Pro. %2$s%1$sPlease update by clicking below.%2$s%5$sUpdate plugin &rarr;%6$s',
                         'woo-product-feed-pro'
                     ),
                     '<p>',
@@ -212,21 +233,20 @@ class Admin_Notice extends Abstract_Class {
      * @access public
      */
     public function add_notice() {
-        $message_id     = 'woo-sea-' . md5( $this->message );
-        $message_format = $this->message_format;
-        $message        = $this->message;
-        $type           = $this->type;
-        $is_dismissible = $this->is_dismissible;
+        $notice_id = $this->args['notice_id'] ?? '';
+        if ( empty( $notice_id ) ) {
+            $notice_id = 'adt-pfp-' . md5( is_array( $this->message ) ? wp_json_encode( $this->message ) : $this->message );
+        }
 
-        switch ( $type ) {
+        switch ( $this->type ) {
             case 'failed_dependency':
                 $failed_dependencies = $this->_failed_dependencies();
                 Helper::locate_admin_template(
                     'notices/failed-dependency-notice.php',
                     true,
-                    true,
+                    false,
                     array(
-                        'message'             => $message,
+                        'message'             => $this->message,
                         'failed_dependencies' => $failed_dependencies,
                     )
                 );
@@ -235,13 +255,13 @@ class Admin_Notice extends Abstract_Class {
                 Helper::locate_admin_template(
                     'notices/allow-tracking-notice.php',
                     true,
-                    true,
+                    false,
                     array(
-                        'message_id'     => $message_id,
-                        'message'        => $message,
-                        'type'           => $type,
-                        'message_format' => $message_format,
-                        'is_dismissible' => $is_dismissible,
+                        'notice_id'      => $notice_id,
+                        'message'        => $this->message,
+                        'type'           => $this->type,
+                        'is_html'        => $this->is_html,
+                        'is_dismissible' => $this->is_dismissible,
                     )
                 );
                 break;
@@ -249,13 +269,14 @@ class Admin_Notice extends Abstract_Class {
                 Helper::locate_admin_template(
                     'notices/admin-notice.php',
                     true,
-                    true,
+                    false,
                     array(
-                        'message_id'     => $message_id,
-                        'message'        => $message,
-                        'type'           => $type,
-                        'message_format' => $message_format,
-                        'is_dismissible' => $is_dismissible,
+                        'notice_id'      => $notice_id,
+                        'message'        => $this->message,
+                        'type'           => $this->type,
+                        'is_html'        => $this->is_html,
+                        'is_dismissible' => $this->is_dismissible,
+                        'args'           => $this->args,
                     )
                 );
                 break;

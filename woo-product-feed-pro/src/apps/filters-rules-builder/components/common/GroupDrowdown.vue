@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useFiltersStore } from '../../stores/filtersStore';
 import { useRulesStore } from '../../stores/rulesStore';
+import { __ } from '@wordpress/i18n';
 import type { SectionType } from '../../types';
 
 interface Props {
@@ -33,7 +34,7 @@ const addGroup = (logicType: 'and' | 'or') => {
       class="adt-tw-border-none adt-tw-cursor-pointer adt-tw-flex adt-tw-items-center adt-tw-px-2 adt-tw-py-1 adt-tw-bg-gray-100 adt-tw-text-gray-700 adt-tw-rounded-md adt-tw-hover-bg-gray-200 adt-tw-transition-colors adt-tw-text-xs adt-tw-group"
     >
       <span class="adt-tw-icon-[lucide--plus-circle] adt-tw-mr-1 adt-tw-size-3"></span>
-      Add Group
+      {{ __('Add Group', 'woo-product-feed-pro') }}
       <span class="adt-tw-icon-[lucide--chevron-down] adt-tw-ml-1 adt-tw-transition-transform group-hover:adt-tw-rotate-180"></span>
     </button>
 
@@ -43,14 +44,14 @@ const addGroup = (logicType: 'and' | 'or') => {
         @click="addGroup('and')"
         class="adt-add-group-and adt-tw-bg-transparent adt-tw-cursor-pointer adt-tw-border-none adt-tw-w-full adt-tw-px-3 adt-tw-py-1.5 adt-tw-text-left adt-tw-text-sm hover:adt-tw-bg-gray-50 adt-tw-text-gray-700"
       >
-        AND Group
+        {{ __('AND Group', 'woo-product-feed-pro') }}
       </button>
       <button
         type="button"
         @click="addGroup('or')"
         class="adt-add-group-or adt-tw-bg-transparent adt-tw-cursor-pointer adt-tw-border-none adt-tw-w-full adt-tw-px-3 adt-tw-py-1.5 adt-tw-text-left adt-tw-text-sm hover:adt-tw-bg-gray-50 adt-tw-text-gray-700"
       >
-        OR Group
+        {{ __('OR Group', 'woo-product-feed-pro') }}
       </button>
     </div>
     
@@ -61,7 +62,7 @@ const addGroup = (logicType: 'and' | 'or') => {
         @click="addGroup('and')"
         class="adt-add-rule adt-tw-bg-transparent adt-tw-cursor-pointer adt-tw-border-none adt-tw-w-full adt-tw-px-3 adt-tw-py-1.5 adt-tw-text-left adt-tw-text-sm hover:adt-tw-bg-gray-50 adt-tw-text-gray-700"
       >
-        Add Group
+        {{ __('Add Group', 'woo-product-feed-pro') }}
       </button>
     </div>
   </div>

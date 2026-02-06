@@ -46,6 +46,11 @@ class Upsell extends Abstract_Class {
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can dynamically set and modify product attributes on-the-fly. This is perfect for customizing product data for different channels, adding custom labels, and optimizing feed data without touching your product catalog.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'setattrrules' ),
             ),
+            'rule_action_exclude'       => array(
+                'title'   => __( 'Upgrade to Exclude Attributes with Rules', 'woo-product-feed-pro' ),
+                'message' => __( 'In Product Feed ELITE for WooCommerce you can exclude specific attributes from your feed based on advanced rules and criteria. Perfect for removing sensitive data, hiding irrelevant fields, or omitting attributes that don\'t meet channel requirements—keeping your feed streamlined and compliant.', 'woo-product-feed-pro' ),
+                'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'excludeattributesrule' ),
+            ),
             'custom_refresh_interval'   => array(
                 'title'   => __( 'Upgrade to set custom refresh interval', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can set custom refresh intervals and specific times for your feeds. Schedule feeds to run hourly, daily, weekly, yearly or every X hours at specific times (e.g., daily at 11 PM). Perfect for optimizing server performance during off-peak hours and ensuring feeds complete before the next refresh cycle.', 'woo-product-feed-pro' ),
@@ -99,7 +104,7 @@ class Upsell extends Abstract_Class {
         // Extracted variables are defined above.
         extract( $args ); // phpcs:ignore
 
-        $html  = sprintf( '<img src="%1$s" alt="%2$s" />', ADT_PFP_IMAGES_URL . '/logo.png', __( 'Product Feed Pro for WooCommerce', 'woo-product-feed-pro' ) );
+        $html  = sprintf( '<img src="%1$s" alt="%2$s" />', ADT_PFP_IMAGES_URL . '/logo.svg', __( 'Product Feed Pro for WooCommerce', 'woo-product-feed-pro' ) );
         $html .= sprintf( '<h3>%s</h3>', $title );
         $html .= sprintf( '<p>%s</p>', $message );
         if ( ! empty( $link ) ) {
@@ -191,13 +196,13 @@ class Upsell extends Abstract_Class {
      * @return void
      */
     public static function show_custom_refresh_interval_notice( $feed ) {
-        if ( Product_Feed_Helper::is_a_product_feed( $feed ) ) {
+        if ( Product_Feed_Helper::is_a_product_feed( $feed ) && ! Helper::has_paid_plugin_active() ) {
             $refresh_interval = $feed->refresh_interval ?? '';
             if ( 'custom' === $refresh_interval ) {
                 $admin_notice = new Admin_Notice(
                     __( 'The refresh interval has been automatically set to ‘No Refresh’ because the Elite plugin is deactivated. Custom refresh intervals are only available with the Elite version.', 'woo-product-feed-pro' ),
                     'warning',
-                    'string',
+                    false,
                     true
                 );
                 $admin_notice->run();

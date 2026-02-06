@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useRulesStore } from '../stores/rulesStore';
 import RuleSection from './sections/RuleSection.vue';
 import Skeleton from './common/Skeleton.vue';
+import { __ } from '@wordpress/i18n';
 import MigrationNotice from './common/MigrationNotice.vue';
 
 const store = useRulesStore();
@@ -44,7 +45,8 @@ const closeMigrationNotice = () => {
           @click="store.addRule()"
         >
           <span class="adt-tw-icon-[lucide--plus-circle] adt-tw-mr-1"></span>
-          Add New Rule
+          <!-- translators: Button text to add a new rule in the rules builder -->
+          {{ __('Add New Rule', 'woo-product-feed-pro') }}
         </button>
       </div>
     </template>

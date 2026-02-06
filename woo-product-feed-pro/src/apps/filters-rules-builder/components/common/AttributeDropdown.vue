@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { __ } from '@wordpress/i18n';
 import type { AttributeGroup } from '../../types';
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: 'Select attribute',
+  placeholder: __('Select attribute', 'woo-product-feed-pro'),
 });
 
 const emit = defineEmits<{

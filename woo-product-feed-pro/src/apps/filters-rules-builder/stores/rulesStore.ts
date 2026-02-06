@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { __ } from '@wordpress/i18n';
 import api from '@/api';
-
-// Get translation function from WordPress i18n
-const { __ } = window.wp.i18n;
 
 // Types specific to Rules
 export interface RuleFieldData {
@@ -43,6 +41,7 @@ export interface RuleAction {
 
 export interface Rule {
   id: string;
+  name?: string;
   if: RuleConditionItem[];
   then: RuleAction[];
 }
@@ -51,6 +50,17 @@ export interface AttributeGroup {
   [groupName: string]: {
     [attribute: string]: string;
   };
+}
+
+export interface FieldMappingItem {
+  attribute: string;
+  prefix?: string;
+  suffix?: string;
+  rowCount?: number;
+}
+
+export interface FieldMapping {
+  [index: string]: FieldMappingItem;
 }
 
 export interface ConditionOption {
@@ -87,9 +97,11 @@ export const useRulesStore = defineStore('rules', () => {
 
   // Metadata for dropdowns and options
   const attributes = ref<AttributeGroup>({});
+  const thenAttributes = ref<AttributeGroup>({});
   const conditions = ref<ConditionOption[]>([]);
   const actions = ref<ActionOption[]>([]);
   const categories = ref<CategoryOption[]>([]);
+  const fieldMapping = ref<FieldMapping>({});
 
   // Validation state (matching FiltersStore pattern)
   const validationErrors = ref<Record<string, string[]>>({});
@@ -148,6 +160,7 @@ export const useRulesStore = defineStore('rules', () => {
       rulesData.forEach((rule: any, ruleIndex: number) => {
         const normalizedRule: Rule = {
           id: rule.id || `rule-${Date.now()}-${ruleIndex}`,
+          name: rule.name || '',
           if: [],
           then: [],
         };
@@ -252,12 +265,19 @@ export const useRulesStore = defineStore('rules', () => {
       if (response.data.attributes) {
         attributes.value = response.data.attributes;
       }
+      if (response.data.thenAttributes) {
+        thenAttributes.value = response.data.thenAttributes;
+      }
       if (response.data.conditions) {
         conditions.value = response.data.conditions;
       }
       if (response.data.actions) {
         actions.value = response.data.actions;
       }
+      if (response.data.field_mapping) {
+        fieldMapping.value = response.data.field_mapping;
+      }
+
       // Load categories from the API response
       if (response.data.categories && Array.isArray(response.data.categories)) {
         categories.value = response.data.categories;
@@ -284,6 +304,7 @@ export const useRulesStore = defineStore('rules', () => {
     const timestamp = Date.now();
     const newRule: Rule = {
       id: `rule-${timestamp}`,
+      name: '',
       if: [],
       then: [],
     };
@@ -338,6 +359,17 @@ export const useRulesStore = defineStore('rules', () => {
     if (showValidation.value) {
       clearValidationErrors();
     }
+  };
+
+  /**
+   * Update a rule's properties (e.g., name)
+   */
+  const updateRule = (ruleId: string, updates: Partial<Rule>) => {
+    const rule = getRuleById.value(ruleId);
+    if (!rule) return;
+
+    // Update the rule properties
+    Object.assign(rule, updates);
   };
 
   /**
@@ -910,6 +942,7 @@ export const useRulesStore = defineStore('rules', () => {
     feedId.value = null;
     clearRules(); // This will also clear validation
     attributes.value = {};
+    thenAttributes.value = {};
     conditions.value = [];
     actions.value = [];
     categories.value = [];
@@ -922,8 +955,10 @@ export const useRulesStore = defineStore('rules', () => {
     feedId,
     rules,
     attributes,
+    thenAttributes,
     conditions,
     actions,
+    fieldMapping,
     categories,
     migrationRan,
 
@@ -942,6 +977,7 @@ export const useRulesStore = defineStore('rules', () => {
     loadRules,
     addRule,
     removeRule,
+    updateRule,
     addRuleGroup,
     removeRuleGroup,
     addRuleField,

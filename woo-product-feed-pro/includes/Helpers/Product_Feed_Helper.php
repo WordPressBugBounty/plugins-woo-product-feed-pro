@@ -215,15 +215,30 @@ class Product_Feed_Helper {
     public static function get_batch_size( $feed, $published_products = null ) {
         $published_products = $published_products ?? self::get_feed_total_published_products( $feed );
 
-        // By default process a 750 products per batch.
-        // If the number of products is greater than 50000, process a 2500 products per batch.
-        $batch_size = $published_products > 50000 ? 2500 : 750;
+        // Tiered batch sizes for better reliability and efficiency.
+        // Smaller batches = more reliable, better progress tracking, less memory usage.
+        if ( $published_products > 50000 ) {
+            // Very large feeds: 1500 products per batch.
+            $batch_size = 1500;
+        } elseif ( $published_products > 10000 ) {
+            // Large feeds: 1000 products per batch.
+            $batch_size = 1000;
+        } elseif ( $published_products > 5000 ) {
+            // Medium-large feeds: 500 products per batch.
+            $batch_size = 500;
+        } elseif ( $published_products > 1000 ) {
+            // Medium feeds: 300 products per batch.
+            $batch_size = 300;
+        } else {
+            // Small feeds: 200 products per batch.
+            $batch_size = 200;
+        }
 
         /**
-         * User set his own batch size
+         * User set his own batch size.
          */
-        $batch_option      = get_option( 'add_batch', 'no' );
-        $batch_size_option = get_option( 'woosea_batch_size', '' );
+        $batch_option      = get_option( 'adt_enable_batch', 'no' );
+        $batch_size_option = get_option( 'adt_batch_size', '' );
         if ( 'yes' === $batch_option && ! empty( $batch_size_option ) && is_numeric( $batch_size_option ) ) {
             $batch_size = intval( $batch_size_option );
         }
@@ -608,10 +623,11 @@ class Product_Feed_Helper {
     public static function find_tax_rates( $args, $feed = null, $product = null ) {
         if ( 'base' === get_option( 'woocommerce_tax_based_on' ) ) {
             $args = array(
-                'country'  => WC()->countries->get_base_country(),
-                'state'    => WC()->countries->get_base_state(),
-                'postcode' => WC()->countries->get_base_postcode(),
-                'city'     => WC()->countries->get_base_city(),
+                'country'   => WC()->countries->get_base_country(),
+                'state'     => WC()->countries->get_base_state(),
+                'postcode'  => WC()->countries->get_base_postcode(),
+                'city'      => WC()->countries->get_base_city(),
+                'tax_class' => $args['tax_class'] ?? '',
             );
         }
 

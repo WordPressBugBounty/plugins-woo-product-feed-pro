@@ -56,7 +56,7 @@ do_action( 'adt_before_product_feed_manage_page', 1, $project_hash, $feed );
             esc_html__( 'Map your products or categories to the categories of your selected channel. For some channels adding their categorisation in the product feed is mandatory. Even when category mappings are not mandatory it is likely your products will get better visibility and higher conversions when mappings have been added.', 'woo-product-feed-pro' )
         ),
         'info',
-        'string',
+        false,
         false
     );
     $admin_notice->run();

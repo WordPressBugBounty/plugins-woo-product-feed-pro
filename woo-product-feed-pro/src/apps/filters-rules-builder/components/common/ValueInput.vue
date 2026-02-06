@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { __ } from '@wordpress/i18n'
 
 interface CategoryOption {
   value: string
@@ -24,7 +25,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: 'Enter value',
+  placeholder: '',
   hasError: false,
   inputClass: 'adt-value-input',
   inputType: 'text',
@@ -33,6 +34,11 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+
+// Computed placeholder with translation fallback
+const computedPlaceholder = computed(() => {
+  return props.placeholder || __('Enter value', 'woo-product-feed-pro')
+})
 
 // Determine if we should show categories dropdown
 const showCategoriesDropdown = computed(() => {
@@ -57,7 +63,7 @@ const onValueChange = (event: Event) => {
       :class="`${inputClass} adt-categories-select`"
       @change="onValueChange"
     >
-      <option value="">{{ placeholder }}</option>
+      <option value="">{{ computedPlaceholder }}</option>
       <option
         v-for="category in categories"
         :key="category.value"
@@ -72,7 +78,7 @@ const onValueChange = (event: Event) => {
       v-else
       :type="inputType"
       :value="modelValue"
-      :placeholder="placeholder"
+      :placeholder="computedPlaceholder"
       :class="inputClass"
       @input="onValueChange"
     />

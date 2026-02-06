@@ -16,6 +16,7 @@ interface Props {
   placeholder?: string
   hasError?: boolean
   storeType?: 'filters' | 'rules'
+  isThenAttributes?: boolean
 }
 
 interface Emits {
@@ -45,7 +46,7 @@ const selectedAttribute = ref<AttributeOption | null>(null)
 
 // Convert store.attributes to vue-select options format with group information
 const flattenedAttributes = computed(() => {
-  const attributes = props.storeType === 'rules' ? rulesStore.attributes : filtersStore.attributes
+  const attributes = props.isThenAttributes ? rulesStore.thenAttributes : (props.storeType === 'rules' ? rulesStore.attributes : filtersStore.attributes)
   const options: Array<{ value: string; label: string; group: string; isGroupHeader?: boolean }> = [];
   let lastGroup = '';
   

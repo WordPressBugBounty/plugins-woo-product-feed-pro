@@ -7,11 +7,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 use AdTribes\PFP\Helpers\Helper;
 ?>
 <div class="wrap adt-tw-wrapper adt-license-settings">
-    <?php Helper::locate_admin_template( 'header.php', true ); ?>
-    <div class="adt-license-settings-container">
-        <h1 class="title">Licenses</h1>
-        <p class="desc"><?php esc_html_e( 'Enter your license keys below to enjoy full access, plugin updates, and support.', 'woo-product-feed-pro' ); ?></p>
-        
+    <div class="adt-container adt-license-settings-container lg:adt-tw-px-8 sm:adt-tw-py-4 adt-tw-py-0">
+        <?php Helper::locate_admin_template( 'header.php', true ); ?>
+        <h1 class="adt-tw-text-[32px] adt-tw-font-semibold adt-tw-text-gray-800 adt-tw-mb-2">
+            <?php esc_html_e( 'Licenses', 'woo-product-feed-pro' ); ?>
+            <p class="adt-tw-text-base adt-tw-mt-2 adt-tw-font-normal">
+                <?php esc_html_e( 'Enter your license keys below to enjoy full access, plugin updates, and support.', 'woo-product-feed-pro' ); ?>
+            </p>
+        </h1>
         <div class="postbox license-box">
             <ul class="license-nav-tabs">
                 <li class="active">

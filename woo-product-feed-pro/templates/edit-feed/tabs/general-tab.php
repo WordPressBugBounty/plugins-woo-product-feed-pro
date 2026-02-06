@@ -196,7 +196,7 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                             <td>
                                 <select name="fileformat" id="fileformat" class="select-field">
                                     <?php
-                                    $format_arr = array( 'xml', 'csv', 'txt', 'tsv' );
+                                    $format_arr = array( 'xml', 'csv', 'txt', 'tsv', 'jsonl' );
                                     foreach ( $format_arr as $format ) :
                                         $selected = '';
                                         if ( $edit_feed ) {
@@ -297,9 +297,9 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                             </td>
                             <td>
                                 <?php if ( $edit_feed ) : ?> 
-                                    <input type="number" class="input-field input-field-small" name="total_product_orders_lookback" min="0" value="<?php echo $feed->utm_total_product_orders_lookback; ?>" />
+                                   <input type="number" class="input-field input-field-small" name="total_product_orders_lookback" min="0" value="<?php echo ( $feed->utm_total_product_orders_lookback && $feed->utm_total_product_orders_lookback > 0 ) ? esc_attr( $feed->utm_total_product_orders_lookback ) : ''; ?>" />
                                 <?php else : ?>
-                                    <input type="number" class="input-field input-field-small" name="total_product_orders_lookback" min="0" value="<?php echo isset( $feed['total_product_orders_lookback'] ) ? esc_attr( max(0, intval($feed['total_product_orders_lookback'])) ) : ''; ?>" />
+                                   <input type="number" class="input-field input-field-small" name="total_product_orders_lookback" min="0" value="<?php echo isset( $feed['total_product_orders_lookback'] ) && '' !== $feed['total_product_orders_lookback'] && $feed['total_product_orders_lookback'] > 0 ? esc_attr( intval( $feed['total_product_orders_lookback'] ) ) : ''; ?>" />
                                 <?php endif; ?>
                                 <?php esc_html_e( 'days', 'woo-product-feed-pro' ); ?>
                             </td>

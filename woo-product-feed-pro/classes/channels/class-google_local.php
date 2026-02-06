@@ -19,8 +19,6 @@ class WooSEA_google_local { // phpcs:ignore
      */
     public static function get_channel_attributes() {
 
-        $sitename = get_option( 'blogname' );
-
         $google_local = array(
             'Local product inventory fields' => array(
                 'Itemid'                    => array(
@@ -45,6 +43,7 @@ class WooSEA_google_local { // phpcs:ignore
                     'feed_name'   => 'g:price',
                     'format'      => 'required',
                     'woo_suggest' => 'price',
+                    'suffix'      => ' {{CURRENCY}}',
                 ),
                 'Sale price'                => array(
                     'name'        => 'Sale price',

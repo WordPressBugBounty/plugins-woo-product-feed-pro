@@ -110,7 +110,7 @@ class Helper {
             return false;
         }
 
-        $is_plugin_page = strpos( $screen->id, 'product-feed' ) !== false || strpos( $screen->id, 'product-feed-elite' ) !== false;
+        $is_plugin_page = strpos( $screen->id, 'product-feed_page_' ) !== false || strpos( $screen->id, 'woo-product-feed' ) !== false;
         return apply_filters( 'adt_is_plugin_page', $is_plugin_page );
     }
 
@@ -474,5 +474,152 @@ class Helper {
         );
 
         return wp_parse_args( $merge, $defaults );
+    }
+
+    /**
+     * Get all WordPress pages for dropdown selection.
+     *
+     * @since 13.4.8
+     * @access public
+     *
+     * @return array Array of pages with ID as key and title as value.
+     */
+    public static function get_wordpress_pages() {
+        $pages = get_pages(
+            array(
+                'sort_column' => 'post_title',
+                'sort_order'  => 'ASC',
+                'post_status' => 'publish',
+            )
+        );
+
+        $page_options = array();
+        foreach ( $pages as $page ) {
+            $page_options[ $page->ID ] = $page->post_title;
+        }
+
+        return $page_options;
+    }
+
+    /**
+     * Get all WordPress posts for dropdown selection.
+     *
+     * @since 13.4.8
+     * @access public
+     *
+     * @return array Array of posts with ID as key and title as value.
+     */
+    public static function get_wordpress_posts() {
+        $posts = get_posts(
+            array(
+                'numberposts' => -1,
+                'post_status' => 'publish',
+                'orderby'     => 'title',
+                'order'       => 'ASC',
+            )
+        );
+
+        $post_options = array();
+        foreach ( $posts as $post ) {
+            $post_options[ $post->ID ] = $post->post_title;
+        }
+
+        return $post_options;
+    }
+
+    /**
+     * Get the correct WooCommerce script handle based on WooCommerce version.
+     *
+     * WooCommerce 10.3.0+ deprecated several script handles and prefixed them with 'wc-'.
+     * This function provides backward compatibility with older WooCommerce versions.
+     *
+     * Based on WooCommerce core's WC_Admin_Assets::get_scripts() implementation.
+     *
+     * Supported handle mappings (legacy → new):
+     * - select2 → wc-select2
+     * - jquery-blockui → wc-jquery-blockui
+     * - jquery-tiptip → wc-jquery-tiptip
+     * - round → wc-round
+     * - qrcode → wc-qrcode
+     * - stupidtable → wc-stupidtable
+     * - serializejson → wc-serializejson
+     * - flot → wc-flot
+     * - flot-resize → wc-flot-resize
+     * - flot-time → wc-flot-time
+     * - flot-pie → wc-flot-pie
+     * - flot-stack → wc-flot-stack
+     * - js-cookie → wc-js-cookie
+     * - dompurify → wc-dompurify
+     * - accounting → wc-accounting
+     *
+     * Unchanged handles: selectWoo, jquery, jquery-ui-core
+     *
+     * @since 13.3.10
+     * @access public
+     *
+     * @param string $handle The script handle to get (e.g., 'select2', 'jquery-tiptip').
+     * @return string The appropriate script handle to use based on WooCommerce version.
+     */
+    public static function get_wc_script_handle( $handle ) {
+        // Handles that don't need prefixing in any version.
+        $unchanged_handles = array( 'selectWoo', 'jquery', 'jquery-ui-core', 'jquery-ui-sortable', 'jquery-ui-widget', 'jquery-ui-datepicker', 'jquery-ui-autocomplete' );
+
+        // If the handle is in the unchanged list, return as-is.
+        if ( in_array( $handle, $unchanged_handles, true ) ) {
+            return $handle;
+        }
+
+        // Check if WooCommerce 10.3.0+ is active.
+        if ( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '10.3.0', '>=' ) ) {
+            // If handle already has 'wc-' prefix, return as-is.
+            if ( strpos( $handle, 'wc-' ) === 0 ) {
+                return $handle;
+            }
+
+            /**
+             * Map of known legacy handles to their new WC 10.3.0+ equivalents.
+             * Based on WooCommerce core WC_Admin_Assets class implementation.
+             *
+             * @see class-wc-admin-assets.php::get_scripts()
+             */
+            $handle_map = array(
+                'select2'        => 'wc-select2',
+                'jquery-blockui' => 'wc-jquery-blockui',
+                'jquery-tiptip'  => 'wc-jquery-tiptip',
+                'round'          => 'wc-round',
+                'qrcode'         => 'wc-qrcode',
+                'stupidtable'    => 'wc-stupidtable',
+                'serializejson'  => 'wc-serializejson',
+                'flot'           => 'wc-flot',
+                'flot-resize'    => 'wc-flot-resize',
+                'flot-time'      => 'wc-flot-time',
+                'flot-pie'       => 'wc-flot-pie',
+                'flot-stack'     => 'wc-flot-stack',
+                'js-cookie'      => 'wc-js-cookie',
+                'dompurify'      => 'wc-dompurify',
+                'accounting'     => 'wc-accounting',
+            );
+
+            // Return the mapped handle if it exists, otherwise prefix with 'wc-'.
+            return isset( $handle_map[ $handle ] ) ? $handle_map[ $handle ] : 'wc-' . $handle;
+        }
+
+        // For older WooCommerce versions, return the original handle.
+        return $handle;
+    }
+
+    /**
+     * Get the correct Select2 script handle based on WooCommerce version.
+     *
+     * WooCommerce 10.3.0+ deprecated the 'select2' handle in favor of 'wc-select2'.
+     * This function provides backward compatibility with older WooCommerce versions.
+     *
+     * @since 13.3.10
+     * @access public
+     *
+     * @return string The Select2 script handle to use.
+     */
+    public static function get_select2_script_handle() {
+        return self::get_wc_script_handle( 'select2' );
     }
 }

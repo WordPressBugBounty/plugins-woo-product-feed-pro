@@ -61,6 +61,10 @@ class Rules extends Abstract_Filters_Rules {
                 'value' => 'minus',
                 'label' => __( 'Minus', 'woo-product-feed-pro' ),
             ),
+            array(
+                'value' => 'exclude',
+                'label' => __( 'Exclude Attribute (Elite)', 'woo-product-feed-pro' ),
+            ),
         );
 
         /**
@@ -453,7 +457,7 @@ class Rules extends Abstract_Filters_Rules {
             $data                  = $google_product_review->process_google_review_rules_actions( $data, $actions, $feed );
         } else {
             foreach ( $actions as $action ) {
-                $data = $this->process_action( $data, $action );
+                $data = $this->process_action( $data, $action, $feed );
             }
         }
 
@@ -473,13 +477,15 @@ class Rules extends Abstract_Filters_Rules {
      * Process an action.
      *
      * @since 13.4.6
+     * @since 13.5.1 Added $feed parameter.
      * @access private
      *
-     * @param array $data The data to filter.
-     * @param array $action The action to apply.
-     * @return array
+     * @param array  $data The data to filter.
+     * @param array  $action The action to apply.
+     * @param object $feed The feed object.
+     * @return array The filtered data array.
      */
-    public function process_action( $data, $action ) {
+    public function process_action( $data, $action, $feed ) {
         $attribute   = $action['attribute'] ?? '';
         $value       = $action['value'] ?? '';
         $action_type = $action['action'] ?? 'set_value';
@@ -507,8 +513,10 @@ class Rules extends Abstract_Filters_Rules {
          *
          * @param array $data The data to filter.
          * @param array $action The action to apply.
+         * @param object $feed The feed object.
+         * @return array
          */
-        return apply_filters( 'adt_pfp_process_rules_action', $data, $action );
+        return apply_filters( 'adt_pfp_process_rules_action', $data, $action, $feed );
     }
 
     /**

@@ -74,6 +74,7 @@ export interface FiltersApiResponse {
 export interface RulesApiResponse {
   rules?: Rule[];
   attributes?: AttributeGroup;
+  thenAttributes?: AttributeGroup;
   ruleConditions?: ConditionOption[];
   ruleActions?: ActionOption[];
 }

@@ -1,11 +1,11 @@
-=== Product Feed PRO for WooCommerce by AdTribes – WooCommerce Product Feeds ===
+=== Product Feed PRO for WooCommerce by AdTribes – Product Feeds for WooCommerce ===
 Contributors: jkohlbach, RymeraWebCo, Rymera01, smub
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
-Tested up to: 6.8
-Stable tag: 13.4.7
+Tested up to: 6.9
+Stable tag: 13.5.2
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -388,6 +388,57 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Feed actions & scheduling – From the feed list you can copy/open the feed URL, trigger a manual refresh, and control refresh frequency for each feed.
 
 === Changelog ===
+
+= 13.5.2 (2026-01-27) =
+* Bug Fix: "Remove products that did not have sales in the last days" field cannot be disabled
+* Bug Fix: Force Pinterest feeds to follow ISO-4217 format
+* Bug Fix: Unable to select file formats other than XML for Google Shopping feeds
+* Improvement: Add support for Min/Max handling time in shipping data
+* Improvement: PHP 8.5 compatibility
+
+= 13.5.1 (2025-12-15) =
+* Bug Fix: "Remove All Other Shipping Options" Setting Doesn't Work
+* Bug Fix: Feed Step Notice Content Contains Raw HTML Tags
+* Bug Fix: Memory exhaustion in XML feed generation - redundant DOM reload on line 956
+* Bug Fix: PHP Warning : Undefined Array Key "s"
+* Bug Fix: Product Description Parent Product No Value When Product Type is Simple
+* Bug Fix: Product Preview Empty When Rules and Filter Don't Match First 5 Products
+* Improvement: Add SaveTo Wishlist Lite for WooCommerce to the About page
+* Improvement: Add Upsell for "Exclude Products with Rules" Feature
+* Improvement: Cache total_product_orders query for product variations
+* Improvement: Text in JS files are not translatable
+* Improvement: Wording tweak on SaveTo Wishlist notification
+* Improvement: Wrap product descriptions in CDATA for HTML formatting in Google Shopping feeds
+
+= 13.5.0 (2025-11-21) =
+* Bug Fix: "No Refresh" Warning Appears for Custom Interval Even with Elite License
+* Bug Fix: Fix WooCommerce 10.3.0+ deprecated script handles compatibility
+* Bug Fix: Performance: `total_product_orders` query runs unconditionally, causing slow feed generation
+* Bug Fix: Remove additional_image_link Attribute When Empty
+* Improvement: Migrate notifications from Elite to Pro and expand functionality
+* Improvement: add filter to modify the xml and csv,txt,tsv writter
+
+= 13.4.9 (2025-11-07) =
+* Bug Fix: Fix: Stuck feed generation on Manage Feeds page (HTTP processing overload)
+* Bug Fix: Incorrect mapping of "Total Product Orders" Calculation for Variation Products
+* Bug Fix: Invalid Request when saving Facebook Conversions API Token
+* Feature: New mappable field: All Product Categories (comma separated)
+* Feature: Add support for OpenAI product feed
+* Improvement: Change Google taxonomy file path
+* Improvement: Change Link icon for the CSV, TSV, and TXT to Download icon the Feed URL Manage Feeds page
+* Improvement: Refactor the field mapping logic and templating
+* Improvement: Remove the `additional_image_link` attribute when the value is empty
+
+= 13.4.8 (2025-10-17) =
+* Bug Fix: Category mapping fails to load Google taxonomy when .txt files are blocked by server security rules
+* Bug Fix: The custom batch size setting was no longer working
+* Bug Fix: The UTM term was not being hidden in the Google & Analytics section
+* Bug Fix: Multiple PHP error warnings were logged while creating a feed
+* Bug Fix: The parent variable image was not being used for variations when the setting was enabled
+* Bug Fix: The price had the wrong value due to a custom tax class
+* Bug Fix: Variable product creation date mapping was not updating after date changes
+* Improvement: Added the ability to name a rule in the Rules Builder
+* Improvement: Refactored unprefixed options
 
 = 13.4.7 (2025-09-25) =
 * Bug Fix: Exclude filter migration changes operator from OR to AND

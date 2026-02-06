@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Author: Rymera Web Co.
  *
@@ -22,6 +23,7 @@ use AdTribes\PFP\Factories\Product_Feed_Query;
  */
 class WP_Admin extends Abstract_Class {
 
+
     use Singleton_Trait;
 
     /**
@@ -44,8 +46,8 @@ class WP_Admin extends Abstract_Class {
             wp_enqueue_script( 'jquery-ui-dialog' );
             wp_enqueue_script( 'jquery-ui-calender' );
             wp_enqueue_script( 'jquery-ui-datepicker' );
-            wp_enqueue_script( 'jquery-tiptip' );
-            wp_enqueue_script( 'select2' );
+            wp_enqueue_script( Helper::get_wc_script_handle( 'jquery-tiptip' ) );
+            wp_enqueue_script( Helper::get_wc_script_handle( 'select2' ) );
 
             wp_enqueue_script( 'adt-toastr', ADT_PFP_JS_URL . 'lib/toastr/toastr.min.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
             wp_enqueue_style( 'adt-toastr', ADT_PFP_JS_URL . 'lib/toastr/toastr.min.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
@@ -63,8 +65,15 @@ class WP_Admin extends Abstract_Class {
             // JS for adding table rows to the rules page.
             wp_enqueue_script( 'woosea_filters_rules-js', ADT_PFP_JS_URL . 'woosea_filters_rules.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
 
-            // JS for adding table rows to the field mappings page.
-            wp_enqueue_script( 'woosea_field_mapping-js', ADT_PFP_JS_URL . 'woosea_field_mapping.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            // JS for field mapping.
+            $field_mapping_js = new Vite_App(
+                'adt-field-mapping-js',
+                'src/vanilla/field-mapping/index.ts',
+                array( 'jquery' ),
+                array(),
+                'adtObj',
+            );
+            $field_mapping_js->enqueue();
 
             // JS for getting channels.
             wp_enqueue_script( 'woosea_channel-js', ADT_PFP_JS_URL . 'woosea_channel.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
@@ -298,22 +307,38 @@ class WP_Admin extends Abstract_Class {
 
         $setting = sanitize_text_field( wp_unslash( $_REQUEST['setting'] ?? '' ) );
         $type    = sanitize_text_field( wp_unslash( $_REQUEST['type'] ?? '' ) );
-        $value   = sanitize_text_field( wp_unslash( $_REQUEST['value'] ?? '' ) );
 
-        if ( empty( $setting ) || empty( $value ) || empty( $type ) ) {
+        // Allow empty values - check if value key exists in request.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in switch statement based on type.
+        $value = isset( $_REQUEST['value'] ) ? wp_unslash( $_REQUEST['value'] ) : '';
+
+        // Only validate required fields (setting and type), allow empty values.
+        if ( empty( $setting ) || empty( $type ) ) {
             wp_send_json_error( array( 'message' => __( 'Invalid request.', 'woo-product-feed-pro' ) ) );
         }
 
+        // Process value based on type.
         switch ( $type ) {
             case 'checkbox':
-                $value = 'true' === sanitize_text_field( $value ) ? 'yes' : 'no';
+                // Handle checkbox: convert boolean strings to yes/no.
+                $value = in_array( $value, array( 'true', '1', 'yes' ), true ) ? 'yes' : 'no';
                 break;
             case 'text':
+            case 'number':
+                // Allow empty text/number values (for clearing fields).
+                $value = sanitize_text_field( $value );
+                break;
+            case 'textarea':
+                // Allow empty textarea values.
+                $value = sanitize_textarea_field( $value );
+                break;
             default:
+                // Default sanitization for unknown types.
                 $value = sanitize_text_field( $value );
                 break;
         }
 
+        // Update the option (allows empty values).
         update_option( $setting, $value );
 
         wp_send_json_success( array( 'message' => __( 'Settings updated.', 'woo-product-feed-pro' ) ) );
@@ -494,7 +519,7 @@ class WP_Admin extends Abstract_Class {
         }
 
         // Reset backward compatibility options.
-        delete_option( 'cron_projects' );
+        delete_option( 'adt_cron_projects' );
 
         // If the file name or legacy project hash is empty that means the feed is duplicated, delete the post.
         $args  = array(

@@ -6,6 +6,7 @@ import { getValidationClasses, getContainerValidationClasses, hasValidationError
 import type { RuleItemProps } from '../../types';
 import AttributeSelect from '../common/AttributeSelect.vue';
 import ConditionSelect from '../common/ConditionSelect.vue';
+import { __ } from '@wordpress/i18n';
 import ValueInput from '../common/ValueInput.vue';
 
 const props = defineProps<RuleItemProps>();
@@ -142,7 +143,7 @@ const updateCaseSensitive = (event: Event) => {
           <!-- Actions Container -->
           <div class="adt-tw-col-span-2 sm:adt-tw-col-span-1 sm:adt-tw-mt-0 adt-tw-mt-2 adt-tw-flex adt-tw-items-center adt-tw-justify-between adt-tw-space-x-2 adt-rule-actions-container">
             <div class="adt-tw-flex adt-tw-items-center adt-tw-gap-1">
-              <div v-if="showCaseSensitive" class="adt-tw-flex adt-tw-items-center adt-tw-gap-1 adt-case-sensitive-container" title="Case Sensitive">
+              <div v-if="showCaseSensitive" class="adt-tw-flex adt-tw-items-center adt-tw-gap-1 adt-case-sensitive-container" :title="__('Case Sensitive', 'woo-product-feed-pro')">
                 <input
                   v-if="isFieldData(item.data)"
                   type="checkbox"

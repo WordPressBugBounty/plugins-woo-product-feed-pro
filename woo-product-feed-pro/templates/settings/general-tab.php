@@ -42,8 +42,8 @@ $settings_page = Settings_Page::instance();
             <?php elseif ( 'text' === $setting['type'] ) : ?>
                 <td colspan="2">
                     <span><?php echo wp_kses_post( $setting['title'] ); ?></span>&nbsp;
-                    <input type="text" class="adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-h-10 adt-tw-p-2 adt-tw-m-0" id="fb_pixel_id" name="<?php echo esc_attr( $setting['id'] ); ?>" value="<?php echo esc_attr( get_option( $setting['id'], '' ) ); ?>">&nbsp;
-                    <button type="button" class="adt-pfp-save-setting-button adt-button adt-button-primary adt-button-sm adt-tw-rounded-md adt-tw-h-10" id="save_facebook_pixel_id">
+                    <input type="text" class="adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-h-10 adt-tw-p-2 adt-tw-m-0" id="<?php echo esc_attr( $setting['id'] ); ?>" name="<?php echo esc_attr( $setting['id'] ); ?>" value="<?php echo esc_attr( get_option( $setting['id'], '' ) ); ?>">&nbsp;
+                    <button type="button" class="adt-pfp-save-setting-button adt-button adt-button-primary adt-button-sm adt-tw-rounded-md adt-tw-h-10">
                         <?php esc_html_e( 'Save', 'woo-product-feed-pro' ); ?>
                     </button>
                     <p class="error-message hidden"></p>
@@ -53,9 +53,18 @@ $settings_page = Settings_Page::instance();
                     <span><?php echo wp_kses_post( $setting['title'] ); ?></span>&nbsp;&nbsp;
                     <select id="<?php echo esc_attr( $setting['id'] ); ?>" name="<?php echo esc_attr( $setting['id'] ); ?>" class="select-field adt-pfp-general-setting select-field adt-pfp-general-setting adt-tw-h-10 adt-tw-m-0 adt-tw-rounded-md adt-tw-border-gray-300">
                         <?php foreach ( $setting['options'] as $option ) : ?>
-                            <option value="<?php echo esc_attr( $option['value'] ); ?>"><?php echo esc_html( $option['label'] ); ?></option>
+                            <option value="<?php echo esc_attr( $option['value'] ); ?>" <?php echo get_option( $setting['id'] ) === $option['value'] ? 'selected' : ''; ?>><?php echo esc_html( $option['label'] ); ?></option>
                         <?php endforeach; ?>
                     </select>
+                </td>
+            <?php elseif ( 'textarea' === $setting['type'] ) : ?>
+                <td colspan="2">
+                    <span><?php echo wp_kses_post( $setting['title'] ); ?></span>
+                    <textarea id="<?php echo esc_attr( $setting['id'] ); ?>" name="<?php echo esc_attr( $setting['id'] ); ?>" class="textarea-field adt-pfp-general-setting adt-tw-h-20 adt-tw-block adt-tw-m-0 adt-tw-my-2 adt-tw-rounded-md adt-tw-border-gray-300"><?php echo esc_attr( get_option( $setting['id'], '' ) ); ?></textarea>
+                    <button type="button" class="adt-pfp-save-setting-button adt-button adt-button-primary adt-button-sm adt-tw-rounded-md adt-tw-h-10" id="save_facebook_pixel_id">
+                        <?php esc_html_e( 'Save', 'woo-product-feed-pro' ); ?>
+                    </button>
+                    <p class="error-message hidden"></p>
                 </td>
             <?php endif; ?>
         </tr>

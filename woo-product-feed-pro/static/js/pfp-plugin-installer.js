@@ -1,4 +1,6 @@
 jQuery(function ($) {
+  const { __ } = wp.i18n;
+  
   // Click event listener for the install button
   $('#pfp-about-page .pfp-install-plugin').on('click', function (e) {
     e.preventDefault(); // Prevent the default button behavior
@@ -13,7 +15,7 @@ jQuery(function ($) {
     var nonce = $('#pfp-about-page #adt-install-plugin').val(); // Get the nonce value
 
     // Disable the button and change its text
-    $button.text('Installing...').data('disabled', true);
+    $button.text(__('Installing...', 'woo-product-feed-pro')).data('disabled', true);
     $button.addClass('disabled');
 
     // Make the AJAX call to the backend
@@ -30,18 +32,18 @@ jQuery(function ($) {
         // Check the response to determine if the action was successful.
         if (response.success) {
           // If successful, update the UI accordingly
-          $button.closest('.install-status').find('.install-status-value').text('Installed'); // Update the install status text
+          $button.closest('.install-status').find('.install-status-value').text(__('Installed', 'woo-product-feed-pro')); // Update the install status text
           $button.remove(); // Remove the install button
         } else {
           // If the action fails, revert the button text
-          $button.text('Install Plugin').data('disabled', false);
+          $button.text(__('Install Plugin', 'woo-product-feed-pro')).data('disabled', false);
           $button.removeClass('disabled');
           // Fail silently, so no further action is taken
         }
       },
       error: function () {
         // In case of an AJAX error, revert the button text
-        $button.text('Install Plugin').data('disabled', false);
+        $button.text(__('Install Plugin', 'woo-product-feed-pro')).data('disabled', false);
         $button.removeClass('disabled');
         // Fail silently
       },

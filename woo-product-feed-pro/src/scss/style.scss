@@ -71,6 +71,7 @@
 
   border-style: solid;
   text-decoration: none;
+  white-space: nowrap;
 
   &:disabled {
     @apply adt-tw-bg-gray-200 adt-tw-text-gray-400 !important;

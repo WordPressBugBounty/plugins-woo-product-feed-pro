@@ -16,6 +16,7 @@ use AdTribes\PFP\Classes\Notices;
 
 // Updates.
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
+use AdTribes\PFP\Updates\Version_13_4_8_Update;
 
 /**
  * Activation class.
@@ -76,6 +77,14 @@ class Activation extends Abstract_Class {
          * This version is the custom post type update.
          */
         ( new Version_13_3_5_Update() )->run();
+
+        /***************************************************************************
+         * Version 13.4.8 Update
+         ***************************************************************************
+         *
+         * This version is the option prefix migration update.
+         */
+        ( new Version_13_4_8_Update() )->run();
 
         // Update current installed plugin version.
         update_site_option( ADT_PFP_OPTION_INSTALLED_VERSION, Helper::get_plugin_version() );

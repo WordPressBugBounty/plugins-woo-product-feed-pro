@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { __ } from '@wordpress/i18n';
 import type { ConditionOption } from '../../types';
 
 interface Props {
@@ -8,7 +9,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: 'Select condition',
+  placeholder: __('Select condition', 'woo-product-feed-pro'),
 });
 
 const emit = defineEmits<{

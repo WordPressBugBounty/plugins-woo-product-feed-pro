@@ -53,6 +53,7 @@ class Formatting {
                 'google_local_products',
                 'google_product_review',
                 'google_shopping_promotions',
+                'pinterest',
             )
         );
 
@@ -134,6 +135,7 @@ class Formatting {
                     'google_local_products',
                     'google_product_review',
                     'google_shopping_promotions',
+                    'pinterest',
                 )
             );
 

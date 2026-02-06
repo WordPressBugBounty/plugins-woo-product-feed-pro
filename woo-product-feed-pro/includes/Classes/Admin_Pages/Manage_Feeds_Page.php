@@ -11,6 +11,7 @@ use AdTribes\PFP\Abstracts\Admin_Page;
 use AdTribes\PFP\Factories\Vite_App;
 use AdTribes\PFP\Traits\Singleton_Trait;
 use AdTribes\PFP\Helpers\Helper;
+use AdTribes\PFP\Classes\Notices;
 
 /**
  * Manage_Feeds_Page class.
@@ -40,7 +41,7 @@ class Manage_Feeds_Page extends Admin_Page {
      */
     public function init() {
         $this->page_title = apply_filters( 'adt_admin_plugin_page_title', __( 'Product Feed Pro for WooCommerce', 'woo-product-feed-pro' ) );
-        $this->menu_title = apply_filters( 'adt_admin_plugin_menu_title', __( 'Product Feed Pro', 'woo-product-feed-pro' ) );
+        $this->menu_title = apply_filters( 'adt_admin_plugin_menu_title', __( 'Product Feed', 'woo-product-feed-pro' ) );
         $this->capability = apply_filters( 'adt_pfp_admin_capability', 'manage_options' );
         $this->menu_slug  = self::MENU_SLUG;
         $this->template   = 'manage-feeds.php';
@@ -67,14 +68,15 @@ class Manage_Feeds_Page extends Admin_Page {
     public function enqueue_scripts() {
         $l10n = Helper::vite_app_common_l10n(
             array(
-                'adtNonce' => wp_create_nonce( 'adt_nonce' ),
+                'adtNonce'            => wp_create_nonce( 'adt_nonce' ),
+                'feedPollingInterval' => apply_filters( 'adt_pfp_feed_polling_interval', 5000 ),
             )
         );
 
         $app = new Vite_App(
             'adt-manage-feeds-script',
             'src/vanilla/manage-feeds/index.ts',
-            array( 'jquery', 'wp-i18n', 'select2' ),
+            array( 'jquery', 'wp-i18n', Helper::get_wc_script_handle( 'select2' ) ),
             $l10n,
             'adtObj',
             array( 'woocommerce_admin_styles' )
@@ -99,6 +101,40 @@ class Manage_Feeds_Page extends Admin_Page {
             array( $this, 'load_admin_page' ),
             10
         );
+
+        // Add notification badge to menu.
+        $this->add_notification_badge_to_menu();
+    }
+
+    /**
+     * Add notification badge to menu title.
+     *
+     * @since 13.4.5
+     * @return void
+     */
+    private function add_notification_badge_to_menu() {
+        global $menu;
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        $notices      = Notices::instance();
+        $unread_count = $notices->get_unread_count();
+
+        if ( $unread_count > 0 ) {
+            foreach ( $menu as $key => $item ) {
+                if ( isset( $item[2] ) && self::MENU_SLUG === $item[2] ) {
+                    // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Intentionally modifying menu item for notification badge.
+                    $menu[ $key ][0] .= sprintf(
+                        ' <span class="update-plugins count-%1$d"><span class="update-count">%2$d</span></span>',
+                        $unread_count,
+                        $unread_count
+                    );
+                    break;
+                }
+            }
+        }
     }
 
     /**

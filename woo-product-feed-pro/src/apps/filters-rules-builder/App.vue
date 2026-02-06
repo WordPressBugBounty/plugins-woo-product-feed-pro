@@ -7,6 +7,7 @@
  *
  */
 import { ref, onMounted, watch, computed } from 'vue';
+import { __ } from '@wordpress/i18n';
 import { useFiltersStore } from './stores/filtersStore';
 import { useRulesStore } from './stores/rulesStore';
 import { useValidation } from './composables/useValidation';
@@ -135,12 +136,17 @@ const showValidationFeedback = () => {
     document.body.appendChild(messageElement);
   }
   
+  const message = __('Please fill in all required fields before submitting.', 'woo-product-feed-pro');
   messageElement.innerHTML = `
     <div class="adt-tw-flex adt-tw-items-center">
       <span class="adt-tw-icon-[lucide--alert-circle] adt-tw-size-4 adt-tw-mr-2"></span>
-      <span>Please fill in all required fields before submitting.</span>
+      <span></span>
     </div>
   `;
+  const messageSpan = messageElement.querySelector('span:last-child');
+  if (messageSpan) {
+    messageSpan.textContent = message;
+  }
   
   // Auto-hide after 5 seconds
   setTimeout(() => {

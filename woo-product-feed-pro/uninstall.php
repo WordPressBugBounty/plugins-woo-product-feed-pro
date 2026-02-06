@@ -62,7 +62,7 @@ function aft_pfp_unregister_custom_capabilities( $sitewide = false ) {
  * @since 13.4.7
  */
 function adt_pfp_delete_all_plugin_options() {
-    // Some weird options without prefixes.
+    // Legacy options (unprefixed).
     delete_option( 'last_order_id' );
     delete_option( 'product_changes' );
     delete_option( 'channel_attributes' );
@@ -74,11 +74,36 @@ function adt_pfp_delete_all_plugin_options() {
     delete_option( 'add_all_shipping' );
     delete_option( 'free_shipping' );
     delete_option( 'remove_free_shipping' );
+    delete_option( 'remove_local_pickup' );
     delete_option( 'local_pickup_shipping' );
+    delete_option( 'show_only_basis_attributes' );
+    delete_option( 'enable_logging' );
     delete_option( 'add_facebook_pixel' );
+    delete_option( 'facebook_pixel_id' );
     delete_option( 'add_facebook_pixel_content_ids' );
     delete_option( 'add_remarketing' );
+    delete_option( 'adwords_conversion_id' );
     delete_option( 'add_batch' );
+    delete_option( 'batch_size' );
+
+    // New prefixed options (explicit deletion for clarity, also caught by wildcard below).
+    delete_option( 'adt_use_parent_variable_product_image' );
+    delete_option( 'adt_add_all_shipping' );
+    delete_option( 'adt_remove_other_shipping_classes_on_free_shipping' );
+    delete_option( 'adt_remove_free_shipping' );
+    delete_option( 'adt_remove_local_pickup_shipping' );
+    delete_option( 'adt_show_only_basis_attributes' );
+    delete_option( 'adt_enable_logging' );
+    delete_option( 'adt_add_facebook_pixel' );
+    delete_option( 'adt_facebook_pixel_id' );
+    delete_option( 'adt_facebook_pixel_content_ids' );
+    delete_option( 'adt_add_remarketing' );
+    delete_option( 'adt_adwords_conversion_id' );
+    delete_option( 'adt_enable_batch' );
+    delete_option( 'adt_batch_size' );
+    delete_option( 'adt_last_order_id' );
+    delete_option( 'adt_cron_projects' );
+    delete_option( 'adt_product_changes' );
 
     global $wpdb;
 

@@ -52,10 +52,10 @@ class Shipping_Data extends Abstract_Class {
 
         // Get shipping options.
         $options = array(
-            'add_all_shipping'               => get_option( 'add_all_shipping', 'no' ),
-            'only_free_shipping'             => get_option( 'free_shipping', 'no' ), // Only include free shipping if free shipping is met.
-            'remove_free_shipping'           => get_option( 'remove_free_shipping', 'no' ),  // Remove free shipping method.
-            'remove_local_pickup_shipping'   => get_option( 'local_pickup_shipping', 'no' ), // Remove local pickup shipping method.
+            'add_all_shipping'               => get_option( 'adt_add_all_shipping', 'no' ),
+            'only_free_shipping'             => get_option( 'adt_remove_other_shipping_classes_on_free_shipping', 'no' ), // Only include free shipping if free shipping is met.
+            'remove_free_shipping'           => get_option( 'adt_remove_free_shipping', 'no' ),  // Remove free shipping method.
+            'remove_local_pickup_shipping'   => get_option( 'adt_remove_local_pickup_shipping', 'no' ), // Remove local pickup shipping method.
             'include_all_shipping_countries' => ( true === $feed->include_all_shipping_countries || 'yes' === $feed->include_all_shipping_countries ) ? 'yes' : 'no',
         );
 
@@ -244,7 +244,9 @@ class Shipping_Data extends Abstract_Class {
         }
 
         // Get and filter shipping methods.
-        $methods = $this->_get_filtered_shipping_methods( $shipping_zone, $options );
+        $methods_data      = $this->_get_filtered_shipping_methods( $shipping_zone, $options );
+        $methods           = $methods_data['methods'];
+        $has_free_shipping = $methods_data['has_free_shipping'];
 
         if ( 'yes' === $options['add_all_shipping'] || ( 'yes' === $options['include_all_shipping_countries'] && $feed_country_not_set ) ) {
             // Feed country is not in the zone, but add all shipping is enabled OR include all shipping countries is enabled AND feed country is not set.
@@ -261,7 +263,7 @@ class Shipping_Data extends Abstract_Class {
                         $zone_data['package'],
                         $zone_data['zone'],
                         $options,
-                        $zone_data['has_free_shipping'],
+                        $has_free_shipping,
                         $shipping_currency,
                         $feed,
                         $shipping_zones_data
@@ -282,7 +284,7 @@ class Shipping_Data extends Abstract_Class {
                             $zone_data['package'],
                             $zone_data['zone'],
                             $options,
-                            $zone_data['has_free_shipping'],
+                            $has_free_shipping,
                             $shipping_currency,
                             $feed,
                             $shipping_zones_data
@@ -299,7 +301,7 @@ class Shipping_Data extends Abstract_Class {
                             $zone_data['package'],
                             $zone_data['zone'],
                             $options,
-                            $zone_data['has_free_shipping'],
+                            $has_free_shipping,
                             $shipping_currency,
                             $feed,
                             $shipping_zones_data
@@ -320,7 +322,7 @@ class Shipping_Data extends Abstract_Class {
                         $zone_data['package'],
                         $zone_data['zone'],
                         $options,
-                        $zone_data['has_free_shipping'],
+                        $has_free_shipping,
                         $shipping_currency,
                         $feed,
                         $shipping_zones_data
@@ -339,7 +341,7 @@ class Shipping_Data extends Abstract_Class {
                         $zone_data['package'],
                         $zone_data['zone'],
                         $options,
-                        $zone_data['has_free_shipping'],
+                        $has_free_shipping,
                         $shipping_currency,
                         $feed,
                         $shipping_zones_data
@@ -356,7 +358,7 @@ class Shipping_Data extends Abstract_Class {
                     $zone_data['package'],
                     $zone_data['zone'],
                     $options,
-                    $zone_data['has_free_shipping'],
+                    $has_free_shipping,
                     $shipping_currency,
                     $feed,
                     $shipping_zones_data
@@ -375,7 +377,7 @@ class Shipping_Data extends Abstract_Class {
      *
      * @param array $shipping_zone The shipping zone data.
      * @param array $options       The shipping options.
-     * @return array Filtered shipping methods.
+     * @return array Array containing 'methods' and 'has_free_shipping'.
      */
     private function _get_filtered_shipping_methods( $shipping_zone, $options ) {
         $wc_shipping_zone = new \WC_Shipping_Zone( $shipping_zone['id'] );
@@ -406,7 +408,10 @@ class Shipping_Data extends Abstract_Class {
             $methods = $this->_sort_free_shipping_method( $methods );
         }
 
-        return $methods;
+        return array(
+            'methods'           => $methods,
+            'has_free_shipping' => $has_free_shipping,
+        );
     }
 
     /**
@@ -434,9 +439,8 @@ class Shipping_Data extends Abstract_Class {
         $package['destination']['postcode'] = '';
 
         return array(
-            'zone'              => $zone,
-            'package'           => $package,
-            'has_free_shipping' => false, // This will be set by the caller.
+            'zone'    => $zone,
+            'package' => $package,
         );
     }
 
@@ -536,6 +540,67 @@ class Shipping_Data extends Abstract_Class {
             $shipping['service']  = $shipping_zone['zone_name'] . ' ' . $rate->get_label();
             $shipping['service'] .= ! empty( $zone['country'] ) ? ' ' . $zone['country'] : '';
 
+            // Initialize transit time variables.
+            $min_transit_time = '';
+            $max_transit_time = '';
+
+            // Check for static transit time values in feed configuration FIRST (highest priority).
+            $feed_attributes = $feed->attributes ?? array();
+            foreach ( $feed_attributes as $attr ) {
+                $is_static  = isset( $attr['static_value'] ) && 'true' === $attr['static_value'];
+                $attr_name  = $attr['attribute'] ?? '';
+                $attr_value = $attr['mapfrom'] ?? '';
+                // Apply static min_transit_time (takes priority).
+                if ( $is_static && 'g:min_transit_time' === $attr_name && ! empty( $attr_value ) ) {
+                    $min_transit_time = $attr_value;
+                }
+                // Apply static max_transit_time (takes priority).
+                if ( $is_static && 'g:max_transit_time' === $attr_name && ! empty( $attr_value ) ) {
+                    $max_transit_time = $attr_value;
+                }
+            }
+
+            // Get transit time fields from flat_rate shipping settings (only if not already set by static values).
+            if ( 'flat_rate' === $method->id ) {
+                if ( empty( $min_transit_time ) ) {
+                    $min_transit_time = $method->get_option( 'min_transit_time', '' );
+                }
+                if ( empty( $max_transit_time ) ) {
+                    $max_transit_time = $method->get_option( 'max_transit_time', '' );
+                }
+            }
+
+            /**
+             * Filter the transit time fields.
+             *
+             * @since 13.5.0
+             *
+             * @param array  $transit_times Array containing min and max transit times.
+             * @param object $method        The shipping method object.
+             * @param object $rate          The shipping rate object.
+             * @param object $feed          The feed object.
+             * @return array
+             */
+            $transit_times = apply_filters(
+                'adt_product_feed_shipping_transit_times',
+                array(
+                    'min_transit_time' => $min_transit_time,
+                    'max_transit_time' => $max_transit_time,
+                ),
+                $method,
+                $rate,
+                $feed
+            );
+
+            // Merge transit times into shipping array (for all shipping methods).
+            if ( ! empty( $transit_times['min_transit_time'] ) ) {
+                $shipping['min_transit_time'] = $transit_times['min_transit_time'];
+            }
+
+            if ( ! empty( $transit_times['max_transit_time'] ) ) {
+                $shipping['max_transit_time'] = $transit_times['max_transit_time'];
+            }
+
             // Get the shipping cost.
             $shipping_cost = (float) $rate->get_cost();
 
@@ -580,7 +645,7 @@ class Shipping_Data extends Abstract_Class {
             // Heureka: remove the currency from the price.
             $shipping['price'] = $feed->ship_suffix || 'heureka' === $feed_channel['fields']
                 ? $shipping_cost
-                : $shipping_currency . ' ' . $shipping_cost;
+                : $shipping_cost . ' ' . $shipping_currency;
 
             /**
              * Filter the shipping array.
@@ -589,14 +654,49 @@ class Shipping_Data extends Abstract_Class {
              * @since 13.3.9.
              *
              * @param array  $shipping The shipping data.
-             * @param object $shipping The shipping data.
+             * @param object $rate     The shipping rate object.
              * @param object $feed     The feed object.
+             * @param array  $package  The package data containing product information.
              * @return array
              */
-            $shipping_method_data[] = apply_filters( 'adt_product_feed_shipping_array', array_filter( $shipping ), $rate, $feed );
+            $shipping_method_data[] = apply_filters( 'adt_product_feed_shipping_array', array_filter( $shipping ), $rate, $feed, $package );
         }
 
         return $shipping_method_data;
+    }
+
+    /**
+     * Exclude transit time attributes from feed configuration.
+     *
+     * When min_transit_time and max_transit_time are configured in the feed configuration,
+     * remove them from the attributes array to prevent them from being processed
+     * as separate fields in the feed.
+     *
+     * @since 13.5.0
+     * @access public
+     *
+     * @param array $attributes The feed attributes array.
+     * @return array
+     */
+    public function exclude_transit_time_attributes( $attributes ) {
+        if ( empty( $attributes ) || ! is_array( $attributes ) ) {
+            return $attributes;
+        }
+
+        // Filter out transit time attributes that are configured in the feed configuration.
+        $filtered_attributes = array();
+        foreach ( $attributes as $key => $attr ) {
+            $attr_name = $attr['attribute'] ?? '';
+
+            // Skip transit time attributes when they're configured in the feed configuration.
+            if ( 'g:min_transit_time' === $attr_name || 'g:max_transit_time' === $attr_name ) {
+                continue;
+            }
+
+            $filtered_attributes[ $key ] = $attr;
+        }
+
+        return $filtered_attributes;
     }
 
     /**
@@ -719,5 +819,8 @@ class Shipping_Data extends Abstract_Class {
      * @codeCoverageIgnore
      * @since 13.4.0
      */
-    public function run() {}
+    public function run() {
+        // Register filter to exclude transit time attributes from feed configuration.
+        add_filter( 'adt_feed_get_attributes', array( $this, 'exclude_transit_time_attributes' ), 10, 1 );
+    }
 }

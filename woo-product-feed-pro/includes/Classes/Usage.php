@@ -118,18 +118,18 @@ class Usage extends Abstract_Class {
         global $wpdb;
 
         $option_keys = array(
-            'add_mother_image',
-            'add_all_shipping',
-            'free_shipping',
-            'remove_free_shipping',
-            'local_pickup_shipping',
-            'add_woosea_basic',
-            'add_woosea_logging',
-            'add_facebook_pixel',
-            'add_facebook_pixel_content_ids',
-            'add_remarketing',
-            'add_batch',
-            'woosea_batch_size',
+            'adt_use_parent_variable_product_image',
+            'adt_add_all_shipping',
+            'adt_remove_other_shipping_classes_on_free_shipping',
+            'adt_remove_free_shipping',
+            'adt_remove_local_pickup_shipping',
+            'adt_show_only_basis_attributes',
+            'adt_enable_logging',
+            'adt_add_facebook_pixel',
+            'adt_facebook_pixel_content_ids',
+            'adt_add_remarketing',
+            'adt_enable_batch',
+            'adt_batch_size',
         );
 
         $data['settings'] = array();

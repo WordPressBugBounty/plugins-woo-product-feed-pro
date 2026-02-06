@@ -56,7 +56,7 @@ class Version_13_3_5_Update extends Abstract_Class {
      * @since 13.3.5
      */
     public function update() {
-        $cron_projects = maybe_unserialize( get_option( 'cron_projects' ), array() );
+        $cron_projects = maybe_unserialize( get_option( 'adt_cron_projects' ), array() );
         if ( $cron_projects ) {
             foreach ( $cron_projects as $key => $project_data ) {
 
@@ -96,7 +96,6 @@ class Version_13_3_5_Update extends Abstract_Class {
                         'utm_source'                 => $project_data['utm_source'] ?? '',
                         'utm_medium'                 => $project_data['utm_medium'] ?? '',
                         'utm_campaign'               => $project_data['utm_campaign'] ?? '',
-                        'utm_term'                   => $project_data['utm_term'] ?? '',
                         'utm_content'                => $project_data['utm_content'] ?? '',
                         'utm_total_product_orders_lookback' => $project_data['total_product_orders_lookback'] ?? '',
                         'legacy_project_hash'        => $project_data['project_hash'] ?? '',
@@ -110,7 +109,7 @@ class Version_13_3_5_Update extends Abstract_Class {
             }
 
             // Update the cron_projects option.
-            update_option( 'cron_projects', $cron_projects, false );
+            update_option( 'adt_cron_projects', $cron_projects, false );
         } else {
             // Revert deleted old options, for backward compatibility.
             $this->_revert_legacy_options();

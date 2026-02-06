@@ -87,8 +87,6 @@ body[class*=" product-feed-pro_page"] #wpwrap {
   -ms-flex-positive: 1;
   flex-grow: 1;
   max-width: 100%;
-  margin-left: 2em;
-  margin-right: 2em;
 }
 
 .pfp-page h1.page-title {

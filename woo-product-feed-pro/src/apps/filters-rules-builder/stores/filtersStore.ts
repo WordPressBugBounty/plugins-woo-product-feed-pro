@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { __ } from '@wordpress/i18n';
 import api from '@/api';
 
 // Types specific to Filters
@@ -548,19 +549,19 @@ export const useFiltersStore = defineStore('filters', () => {
 
       // Validate attribute (required) - check inside data
       if (!data.attribute || data.attribute.trim() === '') {
-        errors.push('Attribute is required');
+        errors.push(__('Attribute is required', 'woo-product-feed-pro'));
       }
 
       // Validate condition (required)
       if (!data.condition || data.condition.trim() === '') {
-        errors.push('Condition is required');
+        errors.push(__('Condition is required', 'woo-product-feed-pro'));
       }
 
       // Validate value (required for most conditions)
       const noValueConditions = ['is_empty', 'is_not_empty'];
       if (data.condition && !noValueConditions.includes(data.condition)) {
         if (!data.value || (typeof data.value === 'string' && data.value.trim() === '')) {
-          errors.push('Value is required');
+          errors.push(__('Value is required for this condition', 'woo-product-feed-pro'));
         }
       }
     }

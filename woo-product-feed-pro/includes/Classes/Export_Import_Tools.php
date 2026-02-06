@@ -69,6 +69,10 @@ class Export_Import_Tools extends Abstract_Class {
             wp_send_json_error( __( 'Invalid nonce', 'woo-product-feed-pro' ) );
         }
 
+        if ( ! Helper::is_current_user_allowed() ) {
+            wp_send_json_error( __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) );
+        }
+
         switch ( $action ) {
             case 'export_all_feeds':
                 $this->export_feeds();
@@ -277,7 +281,6 @@ class Export_Import_Tools extends Abstract_Class {
             'utm_source',
             'utm_medium',
             'utm_campaign',
-            'utm_term',
             'utm_content',
             'utm_total_product_orders_lookback',
             'attributes',

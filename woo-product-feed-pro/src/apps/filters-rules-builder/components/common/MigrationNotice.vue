@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { __ } from '@wordpress/i18n';
 
 const props = defineProps<{
   type: 'filters' | 'rules';
@@ -7,13 +8,15 @@ const props = defineProps<{
 }>();
 
 const title = computed(() => {
-  return props.type === 'filters' ? 'Filters Successfully Migrated' : 'Rules Successfully Migrated';
+  return props.type === 'filters' 
+    ? __('Filters Successfully Migrated', 'woo-product-feed-pro') 
+    : __('Rules Successfully Migrated', 'woo-product-feed-pro');
 });
 
 const description = computed(() => {
   return props.type === 'filters'
-    ? `Your existing filters have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your filter rules.`
-    : `Your existing rules have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your rules.`;
+    ? __('Your existing filters have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your filter rules.', 'woo-product-feed-pro')
+    : __('Your existing rules have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your rules.', 'woo-product-feed-pro');
 });
 </script>
 
@@ -32,7 +35,7 @@ const description = computed(() => {
       <div class="adt-tw-flex-shrink-0">
         <button
           class="adt-tw-bg-transparent adt-tw-border-0 adt-tw-text-yellow-700 hover:adt-tw-text-yellow-600 adt-tw-text-lg adt-tw-cursor-pointer adt-tw-transition-colors"
-          aria-label="Close notification"
+          :aria-label="__('Close notification', 'woo-product-feed-pro')"
           @click="props.closeMigrationNotice"
         >
           <span class="adt-tw-text-lg adt-tw-icon-[lucide--x] adt-tw-text-yellow-700 adt-tw-transition-colors"></span>

@@ -75,6 +75,7 @@ class Product_Feed_Attributes extends Abstract_Class {
             'currency'                        => 'Currency',
             'categories'                      => 'Category',
             'raw_categories'                  => 'Category (not used for mapping)',
+            'categories_comma_separated'      => 'Category (comma separated)',
             'google_category'                 => 'Google category (for rules and filters only)',
             'category_link'                   => 'Category link',
             'category_path'                   => 'Category path',
@@ -195,19 +196,28 @@ class Product_Feed_Attributes extends Abstract_Class {
             'google_category' => 'Google category',
         ),
         'Other fields'             => array(
-            'product_tag'       => 'Product tags',
-            'product_tag_space' => 'Product tags space',
-            'menu_order'        => 'Menu order',
-            'reviews'           => 'Reviews',
-            'review_rating'     => 'Review rating',
-            'author'            => 'Author',
-            'installment'       => 'Installment',
-            'calculated'        => 'Plugin calculation',
-            'product_highlight' => 'Product highlight',
-            'consumer_notice_1' => 'Consumer notice 1',
-            'consumer_notice_2' => 'Consumer notice 2',
-            'consumer_notice_3' => 'Consumer notice 3',
-            'static_value'      => 'Static value',
+            'site_url'                => 'Site URL',
+            'site_title'              => 'Site Title',
+            'shop_url'                => 'Shop URL',
+            'terms_condtion_page_url' => 'Terms and Conditions page URL (WooCommerce)',
+            'privacy_policy_page_url' => 'Privacy Policy page URL (WordPress)',
+            'boolean_true'            => 'True (Boolean)',
+            'boolean_false'           => 'False (Boolean)',
+            'product_tag'             => 'Product tags',
+            'product_tag_space'       => 'Product tags space',
+            'menu_order'              => 'Menu order',
+            'reviews'                 => 'Reviews',
+            'review_rating'           => 'Review rating',
+            'author'                  => 'Author',
+            'installment'             => 'Installment',
+            'calculated'              => 'Plugin calculation',
+            'product_highlight'       => 'Product highlight',
+            'consumer_notice_1'       => 'Consumer notice 1',
+            'consumer_notice_2'       => 'Consumer notice 2',
+            'consumer_notice_3'       => 'Consumer notice 3',
+            'static_value'            => 'Static value',
+            'page_url'                => 'Page URL',
+            'post_url'                => 'Post URL',
         ),
     );
 
@@ -441,7 +451,7 @@ class Product_Feed_Attributes extends Abstract_Class {
      */
     protected function get_products_meta_keys_for_custom_attributes() {
         global $wpdb;
-        $show_only_basis_attributes = get_option( 'add_woosea_basic', 'no' );
+        $show_only_basis_attributes = get_option( 'adt_show_only_basis_attributes', 'no' );
         $limit_clause               = 'yes' === $show_only_basis_attributes ? 'LIMIT 1' : '';
 
         $query = "SELECT DISTINCT pm.meta_key
@@ -478,7 +488,7 @@ class Product_Feed_Attributes extends Abstract_Class {
     protected function get_product_variations_attributes_for_custom_attributes() {
         global $wpdb;
         $product_variations_attributes = array();
-        $show_only_basis_attributes    = get_option( 'add_woosea_basic', 'no' );
+        $show_only_basis_attributes    = get_option( 'adt_show_only_basis_attributes', 'no' );
         $limit_clause                  = 'yes' === $show_only_basis_attributes ? 'LIMIT 1' : '';
 
         $query = "SELECT DISTINCT pm.meta_value

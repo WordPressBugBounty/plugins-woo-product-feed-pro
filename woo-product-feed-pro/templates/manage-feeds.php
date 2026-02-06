@@ -370,4 +370,6 @@ $feeds_query = new Product_Feed_Query(
     <span class="adt-tw-icon-[lucide--refresh-cw]"></span>
     <span class="adt-tw-icon-[lucide--x]"></span>
     <span class="adt-tw-icon-[lucide--calendar-clock]"></span>
+    <span class="adt-tw-icon-[lucide--download]"></span>
+    <span class="adt-tw-icon-[lucide--loader-circle]"></span>
 </div>

@@ -145,7 +145,7 @@ class Edit_Feed_Page extends Admin_Page {
         $app = new Vite_App(
             'adt-edit-feed-script',
             'src/vanilla/edit-feed/index.ts',
-            array( 'jquery', 'wp-i18n', 'select2' ),
+            array( 'jquery', 'wp-i18n', Helper::get_wc_script_handle( 'select2' ) ),
             $l10n,
             'adtObj',
             array()
@@ -586,6 +586,8 @@ class Edit_Feed_Page extends Admin_Page {
 
             $cleaned_rule = array();
 
+            $cleaned_rule['name'] = $rule['name'] ?? '';
+
             // Process IF conditions.
             $cleaned_rule['if'] = $this->clean_rule_conditions( $rule['if'], $valid_conditions );
 
@@ -866,6 +868,9 @@ class Edit_Feed_Page extends Admin_Page {
         // Get the current feed.
         $feed_before = clone $feed;
 
+        // Process total_product_orders_lookback field - preserve empty strings.
+        $total_product_orders_lookback = isset( $_POST['total_product_orders_lookback'] ) ? sanitize_text_field( wp_unslash( $_POST['total_product_orders_lookback'] ) ) : '';
+        $total_product_orders_lookback = '' !== trim( $total_product_orders_lookback ) ? absint( $total_product_orders_lookback ) : '';
         // Process form data.
         $props_to_update = array(
             'title'                                  => isset( $_POST['projectname'] ) ? sanitize_text_field( wp_unslash( $_POST['projectname'] ) ) : '',
@@ -878,7 +883,7 @@ class Edit_Feed_Page extends Admin_Page {
             'include_all_shipping_countries'         => isset( $_POST['include_all_shipping_countries'] ) ? 'yes' : 'no',
             'create_preview'                         => isset( $_POST['preview_feed'] ) ? 'yes' : 'no',
             'refresh_only_when_product_changed'      => isset( $_POST['products_changed'] ) ? 'yes' : 'no',
-            'utm_total_product_orders_lookback'      => isset( $_POST['total_product_orders_lookback'] ) ? intval( $_POST['total_product_orders_lookback'] ) : '',
+            'utm_total_product_orders_lookback'      => $total_product_orders_lookback,
         );
 
         // Allow updating the countries for all feeds channel.
@@ -934,6 +939,14 @@ class Edit_Feed_Page extends Admin_Page {
 
         // Process field mapping data.
         $attributes = isset( $_POST['attributes'] ) ? Sanitization::sanitize_array( $_POST['attributes'] ) : array(); // phpcs:ignore
+
+        // Clean up attributes: remove static_value flag if it's not actually a static value.
+        foreach ( $attributes as $key => $attribute ) {
+            // If static_value flag is not 'true', remove it from the attribute.
+            if ( isset( $attribute['static_value'] ) && 'true' !== $attribute['static_value'] ) {
+                unset( $attributes[ $key ]['static_value'] );
+            }
+        }
 
         $props_to_update = array(
             'attributes' => $attributes,
@@ -1155,7 +1168,6 @@ class Edit_Feed_Page extends Admin_Page {
             'utm_source'   => isset( $_POST['utm_source'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_source'] ) ) : '',
             'utm_medium'   => isset( $_POST['utm_medium'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_medium'] ) ) : '',
             'utm_campaign' => isset( $_POST['utm_campaign'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_campaign'] ) ) : '',
-            'utm_term'     => isset( $_POST['utm_term'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_term'] ) ) : '',
             'utm_content'  => isset( $_POST['utm_content'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_content'] ) ) : '',
         );
 
@@ -1252,7 +1264,6 @@ class Edit_Feed_Page extends Admin_Page {
                     'utm_source'                        => $feed_data['utm_source'] ?? '',
                     'utm_medium'                        => $feed_data['utm_medium'] ?? '',
                     'utm_campaign'                      => $feed_data['utm_campaign'] ?? '',
-                    'utm_term'                          => $feed_data['utm_term'] ?? '',
                     'utm_content'                       => $feed_data['utm_content'] ?? '',
                     'utm_total_product_orders_lookback' => $feed_data['total_product_orders_lookback'] ?? '',
                     'legacy_project_hash'               => $feed_data['project_hash'] ?? '',

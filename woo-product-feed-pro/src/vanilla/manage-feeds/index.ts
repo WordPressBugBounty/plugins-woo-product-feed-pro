@@ -389,6 +389,8 @@ import './style.scss';
       // Start the polling interval - check immediately first
       checkFeedStatus(feedIds);
 
+      const feedPollingInterval = w.adtObj.feedPollingInterval ?? 5000;
+
       // Then set up interval for continuous polling
       refreshIntervalId = window.setInterval(() => {
         if (isRefreshRunning) {
@@ -404,7 +406,7 @@ import './style.scss';
         } else {
           stopFeedStatusPolling();
         }
-      }, 1000); // Check every 1 second
+      }, feedPollingInterval);
     }
 
     // Function to get all currently processing feed IDs

@@ -21,11 +21,11 @@ class Google_Product_Taxonomy_Fetcher extends Abstract_Class {
 
     const GOOGLE_PRODUCT_TAXONOMY_FILE_NAME = 'taxonomy-with-ids.en-US.txt';
 
-    const GOOGLE_PRODUCT_TAXONOMY_SERVER_URL = 'https://adtribes.b-cdn.net/' . self::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME;
+    const GOOGLE_PRODUCT_TAXONOMY_SERVER_URL = 'https://adtribes.io/' . self::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME;
 
-    const GOOGLE_PRODUCT_TAXONOMY_FILE_PATH = ADT_PFP_PLUGIN_DIR_PATH . self::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME;
+    const GOOGLE_PRODUCT_TAXONOMY_FILE_PATH = WP_CONTENT_DIR . '/uploads/woo-product-feed-pro/' . self::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME;
 
-    const GOOGLE_PRODUCT_TAXONOMY_FILE_URL = ADT_PFP_PLUGIN_URL . '/' . self::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME;
+    const GOOGLE_PRODUCT_TAXONOMY_FILE_URL = WP_CONTENT_URL . '/uploads/woo-product-feed-pro/' . self::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME;
 
     /**
      * Register the action.
@@ -82,13 +82,22 @@ class Google_Product_Taxonomy_Fetcher extends Abstract_Class {
             require_once ABSPATH . 'wp-admin/includes/file.php';
         }
 
-        WP_Filesystem();
+        // Initialize the WordPress filesystem, return if failed.
+        if ( ! WP_Filesystem() ) {
+            return;
+        }
 
-        // Define the file path.
-        $upload_dir = self::GOOGLE_PRODUCT_TAXONOMY_FILE_PATH;
+        // Define the file path and ensure directory exists.
+        $upload_dir = WP_CONTENT_DIR . '/uploads/woo-product-feed-pro/';
+        $file_path  = $upload_dir . self::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME;
+
+        // Create directory if it doesn't exist.
+        if ( ! $wp_filesystem->is_dir( $upload_dir ) ) {
+            $wp_filesystem->mkdir( $upload_dir, FS_CHMOD_DIR );
+        }
 
         // Create and write to the file using WP_Filesystem.
-        $wp_filesystem->put_contents( $upload_dir, $body, FS_CHMOD_FILE );
+        $wp_filesystem->put_contents( $file_path, $body, FS_CHMOD_FILE );
     }
 
     /**
@@ -122,7 +131,7 @@ class Google_Product_Taxonomy_Fetcher extends Abstract_Class {
         $action = as_get_scheduled_actions(
             array(
                 'hook'   => ADT_PFP_AS_FETCH_GOOGLE_PRODUCT_TAXONOMY,
-                'status' => array( \ActionScheduler_Store::STATUS_RUNNING, \ActionScheduler_Store::STATUS_PENDING ),
+                'status' => array( \ActionScheduler_Store::STATUS_RUNNING ),
             )
         );
         if ( ! empty( $action ) ) {

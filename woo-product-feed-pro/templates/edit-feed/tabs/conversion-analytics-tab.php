@@ -25,7 +25,6 @@ if ( $feed_id ) {
         $utm_campaign                  = $feed->utm_campaign;
         $utm_enabled                   = $feed->utm_enabled;
         $utm_medium                    = $feed->utm_medium;
-        $utm_term                      = $feed->utm_term;
         $utm_content                   = $feed->utm_content;
         $total_product_orders_lookback = $feed->utm_total_product_orders_lookback;
 
@@ -41,7 +40,6 @@ if ( $feed_id ) {
     $utm_medium                    = 'cpc';
     $utm_campaign                  = $feed['projectname'] ?? '';
     $utm_enabled                   = true;
-    $utm_term                      = '';
     $utm_content                   = '';
     $total_product_orders_lookback = '';
 }
@@ -62,8 +60,8 @@ do_action( 'adt_before_product_feed_manage_page', 5, $project_hash, $feed );
         $admin_notice = new Admin_Notice(
             '<p>' . __('<strong>Google Analytics UTM codes:</strong><br/>Adding Google Analytics UTM codes is not mandatory, it will however enable you to get detailed insights into how your products are performing in Google Analytics reporting and allow you to tweak and tune your campaign making it more profitable. We strongly advise you to add the Google Analytics tracking. When enabled the plugin will append the Google Analytics UTM parameters to your landingpage URL\'s.', 'woo-product-feed-pro') . '</p>',
             'info',
-            'html',
-            false
+            false,
+            true
         );
         $admin_notice->run();
         ?>
@@ -95,10 +93,6 @@ do_action( 'adt_before_product_feed_manage_page', 5, $project_hash, $feed );
                 <tr>
                     <td><span><?php esc_html_e( 'Google Analytics campaign name (utm_campaign)', 'woo-product-feed-pro' ); ?>:</span></td>
                     <td><input type="text" class="input-field" name="utm_campaign" value="<?php echo esc_attr( $utm_campaign ); ?>" /></td>
-                </tr>
-                <tr>
-                    <td><span><?php esc_html_e( 'Google Analytics campaign term (utm_term)', 'woo-product-feed-pro' ); ?>:</span></td>
-                    <td><input type="hidden" name="utm_term" value="id"><input type="text" class="input-field" value="adtribes" disabled/></td>
                 </tr>
                 <tr>
                     <td><span><?php esc_html_e( 'Google Analytics campaign content (utm_content)', 'woo-product-feed-pro' ); ?>:</span></td>

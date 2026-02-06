@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { __ } from '@wordpress/i18n';
 import { useFiltersStore } from '../../stores/filtersStore';
 import FilterItem from '../items/FilterItem.vue';
 import LogicOperator from '../common/LogicOperator.vue';
@@ -30,7 +31,7 @@ const store = useFiltersStore();
           <button 
             type="button"
             class="adt-remove-filter-group adt-tw-p-0 adt-tw-m-0 adt-tw-mb-2 adt-tw-bg-transparent adt-tw-border-none adt-tw-cursor-pointer adt-tw-z-10"
-            aria-label="Remove filter group"
+            :aria-label="__('Remove filter group', 'woo-product-feed-pro')"
             @click="store.removeFilterGroup(props.section, props.group.id)"
           >
             <span class="adt-tw-icon-[lucide--trash-2] adt-tw-size-4 adt-tw-text-gray-400 adt-tw-transition-colors hover:adt-tw-text-red-500"></span>
@@ -55,7 +56,7 @@ const store = useFiltersStore();
             class="adt-add-new-filter adt-tw-border-none adt-tw-cursor-pointer adt-tw-flex adt-tw-items-center adt-tw-px-3 adt-tw-py-1.5 adt-tw-bg-blue-500 adt-tw-text-white adt-tw-rounded-md hover:adt-tw-bg-blue-600 adt-tw-transition-colors adt-tw-text-xs adt-tw-focus-outline-none adt-tw-focus-ring-2 adt-tw-focus-ring-blue-500 adt-tw-focus-ring-offset-1"
           >
             <span class="adt-tw-icon-[lucide--plus-circle] adt-tw-mr-1"></span>
-            Add New "AND" Filter
+            {{ __('Add New "AND" Filter', 'woo-product-feed-pro') }}
           </button>
         </div>
       </div>

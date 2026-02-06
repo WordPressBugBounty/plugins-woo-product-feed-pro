@@ -67,8 +67,10 @@ class App {
 
         register_deactivation_hook( ADT_PFP_PLUGIN_FILE, array( $this, 'deactivation_actions' ) );
 
-        // Check plugin dependencies.
+        // Check plugin dependencies early (before classes are loaded).
         if ( ! $this->_check_dependencies() ) {
+            // Show admin notices on admin_notices hook (after textdomain is loaded).
+            add_action( 'admin_notices', array( $this, 'display_dependency_notices' ) );
             return;
         }
 
@@ -115,6 +117,35 @@ class App {
         ( new Activation( $sitewide ) )->run();
 
         flush_rewrite_rules();
+    }
+
+    /**
+     * Display dependency failure notices with translations.
+     *
+     * @since 13.3.7
+     * @access public
+     */
+    public function display_dependency_notices() {
+        if ( ! empty( $this->_failed_dependencies['missing_plugins'] ) ) {
+            $admin_notice = new Admin_Notice(
+                sprintf(
+                    /* translators: %1$s = opening <strong> tag; %2$s = closing </strong> tag; %3$s = opening <p> tag; %4$s = closing </p> tag */
+                    esc_html__(
+                        '%3$s%1$sProduct Feed Pro for WooCommerce %2$splugin missing dependency.%4$s',
+                        'woo-product-feed-pro'
+                    ),
+                    '<strong>',
+                    '</strong>',
+                    '<p>',
+                    '</p>'
+                ),
+                'failed_dependency',
+                'html',
+                true,
+                $this->_failed_dependencies
+            );
+            $admin_notice->run();
+        }
     }
 
     /**
@@ -198,41 +229,14 @@ class App {
      *
      * @since 13.3.7
      * @access private
+     *
+     * @return bool True if all dependencies are met, false otherwise.
      */
     private function _check_dependencies() {
-        $admin_notice                                  = null;
         $this->_failed_dependencies['missing_plugins'] = $this->_check_missing_required_plugins();
+
+        // Return false if there are any failed dependencies.
         if ( ! empty( $this->_failed_dependencies['missing_plugins'] ) ) {
-
-            // Initialize the missing required plugins admin notice.
-            $admin_notice = new Admin_Notice(
-                sprintf(/* translators: %1$s = opening <strong> tag; %2$s = closing </strong> tag; %3$s = opening <p> tag; %4$s = closing </p> tag */
-                    esc_html__(
-                        '%3$s%1$sProduct Feed Pro for WooCommerce %2$splugin missing dependency.%4$s',
-                        'woo-product-feed-pro'
-                    ),
-                    '<strong>',
-                    '</strong>',
-                    '<p>',
-                    '</p>'
-                ),
-                'failed_dependency',
-                'html',
-                true,
-                $this->_failed_dependencies
-            );
-        }
-
-        /***************************************************************************
-         * Required plugins check failed
-         ***************************************************************************
-         *
-         * Display the admin notice if the required plugins check failed
-         * and bail out.
-         */
-        if ( null !== $admin_notice ) {
-            $admin_notice->run();
-
             return false;
         }
 

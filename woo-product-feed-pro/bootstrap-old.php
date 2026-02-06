@@ -70,7 +70,7 @@ function woosea_add_facebook_pixel( $product = null ) {
         return;  
     }
 
-    $add_facebook_pixel = get_option( 'add_facebook_pixel' );
+    $add_facebook_pixel = get_option( 'adt_add_facebook_pixel' );
     $add_facebook_capi  = get_option( 'add_facebook_capi' );
 
     if ( $add_facebook_pixel == 'yes' ) {
@@ -78,8 +78,8 @@ function woosea_add_facebook_pixel( $product = null ) {
         $viewContent           = '';
         $event_id              = uniqid( rand(), true );
         $currency              = get_woocommerce_currency();
-            $facebook_pixel_id = get_option( 'woosea_facebook_pixel_id' );
-        $facebook_capi_token   = get_option( 'woosea_facebook_capi_token' );
+        $facebook_pixel_id = get_option( 'adt_facebook_pixel_id' );
+        $facebook_capi_token   = get_option( 'adt_facebook_capi_token' );
 
         // Add vulnerability check.
         if ( ! is_numeric( $facebook_pixel_id ) ) {
@@ -174,7 +174,7 @@ function woosea_add_facebook_pixel( $product = null ) {
                                 // Since these are not allowed in the feed, at the variations product ID's.
                                 // Get children product variation IDs in an array.
                                 $woosea_content_ids = 'variation';
-                                $woosea_content_ids = get_option( 'add_facebook_pixel_content_ids' );
+                                $woosea_content_ids = get_option( 'adt_facebook_pixel_content_ids' );
 
                                 if ( $woosea_content_ids == 'variation' ) {
                                     $children_ids = $product->get_children();
@@ -353,44 +353,45 @@ function woosea_add_facebook_pixel( $product = null ) {
                 $fb_capi_data['custom_data']['content_ids']  = $ids;
                 $fb_capi_data['custom_data']['content_type'] = 'product';
 
-            } elseif ( $fb_pagetype == 'searchresults' ) {
-                $term                  = get_queried_object();
-                        $search_string = sanitize_text_field( $_GET['s'] );
+        } elseif ( $fb_pagetype == 'searchresults' ) {
+            $term          = get_queried_object();
+            $search_string = isset( $_GET['s'] ) ? sanitize_text_field( $_GET['s'] ) : '';
 
-                global $wp_query;
-                $ids       = wp_list_pluck( $wp_query->posts, 'ID' );
-                $fb_prodid = '';
+            global $wp_query;
+            $ids       = wp_list_pluck( $wp_query->posts, 'ID' );
+            $fb_prodid = '';
 
-                foreach ( $ids as $id ) {
-                    $_product = wc_get_product( $id );
-                    if ( ! $_product ) {
-                        return -1;
-                    }
+            foreach ( $ids as $id ) {
+                $_product = wc_get_product( $id );
+                if ( ! $_product ) {
+                    return -1;
+                }
 
-                    $ptype = $_product->get_type();
-                    if ( $ptype == 'simple' ) {
-                        // Add the simple product ID.
+                $ptype = $_product->get_type();
+                if ( $ptype == 'simple' ) {
+                    // Add the simple product ID.
+                    $fb_prodid .= '\'' . $id . '\',';
+                } else {
+                    // This is a variable product, add variation product ID's.
+                    $children_ids = $_product->get_children();
+                    foreach ( $children_ids as $id ) {
                         $fb_prodid .= '\'' . $id . '\',';
-                    } else {
-                        // This is a variable product, add variation product ID's.
-                        $children_ids = $_product->get_children();
-                        foreach ( $children_ids as $id ) {
-                            $fb_prodid .= '\'' . $id . '\',';
-                        }
                     }
                 }
-                        $fb_prodid = rtrim( $fb_prodid, ',' );
-                $viewContent       = "fbq(\"trackCustom\",\"Search\",{search_string:\"$search_string\", content_type:\"product\", content_ids:\"[$fb_prodid]\"},{eventID:\"$event_id\"});";
-
-                // Facebook CAPI data.
-                $fb_capi_data['event_name']                  = 'Search';
-                $fb_capi_data['custom_data']['content_ids']  = $ids;
-                $fb_capi_data['custom_data']['content_type'] = 'product';
-            } else {
-                // This is another page than a product page.
-                $fb_capi_data['event_name'] = 'ViewContent';
-                $viewContent                = '';
             }
+
+            $fb_prodid = rtrim( $fb_prodid, ',' );
+            $viewContent       = "fbq(\"trackCustom\",\"Search\",{search_string:\"$search_string\", content_type:\"product\", content_ids:\"[$fb_prodid]\"},{eventID:\"$event_id\"});";
+
+            // Facebook CAPI data.
+            $fb_capi_data['event_name']                  = 'Search';
+            $fb_capi_data['custom_data']['content_ids']  = $ids;
+            $fb_capi_data['custom_data']['content_type'] = 'product';
+        } else {
+            // This is another page than a product page.
+            $fb_capi_data['event_name'] = 'ViewContent';
+            $viewContent                = '';
+        }
         ?>
         <!-- Facebook Pixel Code - Product Feed Pro for WooCommerce by AdTribes.io -->
         <!------------------------------------------------------------------------------
@@ -477,10 +478,10 @@ function woosea_add_remarketing_tags( $product = null ) {
     }  
 
     $ecomm_pagetype  = WooSEA_Google_Remarketing::woosea_google_remarketing_pagetype();
-    $add_remarketing = get_option( 'add_remarketing' );
+    $add_remarketing = get_option( 'adt_add_remarketing' );
 
     if ( $add_remarketing == 'yes' ) {
-        $adwords_conversion_id = get_option( 'woosea_adwords_conversion_id' );
+        $adwords_conversion_id = get_option( 'adt_adwords_conversion_id' );
 
         // Add vulnerability check, unset when no proper comversion ID was inserted.
         if ( ! is_numeric( $adwords_conversion_id ) ) {
@@ -645,24 +646,6 @@ function woosea_add_remarketing_tags( $product = null ) {
 add_action( 'wp_footer', 'woosea_add_remarketing_tags' );
 
 /**
- * Close the get Elite activation notification.
- **/
-function woosea_getelite_active_notification() {
-    if ( ! wp_verify_nonce( $_REQUEST['security'], 'woosea_ajax_nonce' ) ) {
-        wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
-    }
-
-    if ( Helper::is_current_user_allowed() ) {
-        $get_elite_notice = array(
-            'show'      => 'no',
-            'timestamp' => date( 'd-m-Y' ),
-        );
-        update_option( 'woosea_getelite_active_notification', $get_elite_notice, false );
-    }
-}
-add_action( 'wp_ajax_woosea_getelite_active_notification', 'woosea_getelite_active_notification' );
-
-/**
  * Add some JS and mark-up code on every front-end page in order to get the conversion tracking to work.
  */
 function woosea_hook_header() {
@@ -685,7 +668,7 @@ function woosea_inject_ajax( $order_id ) {
     $customer_id = $order->get_user_id();
     $total       = $order->get_total();
 
-    update_option( 'last_order_id', $order_id, false );
+    update_option( 'adt_last_order_id', $order_id, false );
 }
 add_action( 'woocommerce_thankyou', 'woosea_inject_ajax' );
 
@@ -939,8 +922,8 @@ function woosea_before_product_save( $post_id ) {
                 'parent_id'         => $product->get_parent_id(),
             );
 
-            if ( ! get_option( 'product_changes' ) ) {
-                update_option( 'product_changes', $before, false );
+            if ( ! get_option( 'adt_product_changes' ) ) {
+                update_option( 'adt_product_changes', $before, false );
             }
         }
     }
@@ -989,8 +972,8 @@ function woosea_on_product_save( $product_id ) {
         );
 
         if ( is_array( $product_data ) ) {
-            if ( get_option( 'product_changes' ) ) {
-                $before = get_option( 'product_changes' );
+            if ( get_option( 'adt_product_changes' ) ) {
+                $before = get_option( 'adt_product_changes' );
                 $diff   = array_diff( $after, $before );
 
                 if ( ! $diff ) {
@@ -1000,7 +983,7 @@ function woosea_on_product_save( $product_id ) {
                     update_option( 'woosea_allow_update', false );
                 }
 
-                delete_option( 'product_changes' );
+                delete_option( 'adt_product_changes' );
             } else {
                 // Enable the product changed flag.
                 update_option( 'woosea_allow_update', false );

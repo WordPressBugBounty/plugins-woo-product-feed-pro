@@ -75,8 +75,8 @@ do_action( 'adt_before_product_feed_manage_page', 4, $project_hash, $feed );
     $admin_notice = new Admin_Notice(
         $message,
         'info',
-        'html',
-        false
+        false,
+        true
     );
     $admin_notice->run();
     ?>

@@ -15,8 +15,6 @@ class WooSEA_google_shopping { // phpcs:ignore
      * Get the channel attributes
      */
     public static function get_channel_attributes() {
-        $sitename = get_option( 'blogname' );
-
         $google_attributes = array(
             'Basic product data'           => array(
                 'Product ID'             => array(
@@ -99,6 +97,7 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'feed_name'   => 'g:price',
                     'format'      => 'required',
                     'woo_suggest' => 'price',
+                    'suffix'      => ' {{CURRENCY}}',
                 ),
                 'Sale price'                => array(
                     'name'        => 'sale_price',
@@ -402,11 +401,6 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'feed_name' => 'g:free_shipping_threshold',
                     'format'    => 'optional',
                 ),
-                'Transit time label'      => array(
-                    'name'      => 'transit_time_label',
-                    'feed_name' => 'g:transit_time_label',
-                    'format'    => 'optional',
-                ),
                 'Minimum handling time'   => array(
                     'name'      => 'min_handling_time',
                     'feed_name' => 'g:min_handling_time',
@@ -415,6 +409,16 @@ class WooSEA_google_shopping { // phpcs:ignore
                 'Maximum handling time'   => array(
                     'name'      => 'max_handling_time',
                     'feed_name' => 'g:max_handling_time',
+                    'format'    => 'optional',
+                ),
+                'Minimum Transit Time'    => array(
+                    'name'      => 'min_transit_time',
+                    'feed_name' => 'g:min_transit_time',
+                    'format'    => 'optional',
+                ),
+                'Maximum Transit Time'    => array(
+                    'name'      => 'max_transit_time',
+                    'feed_name' => 'g:max_transit_time',
                     'format'    => 'optional',
                 ),
                 'Ships from country'      => array(

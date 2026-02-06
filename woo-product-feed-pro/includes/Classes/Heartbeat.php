@@ -100,6 +100,29 @@ class Heartbeat extends Abstract_Class {
             return;
         }
 
+        /**
+         * Check if HTTP-based feed generation should be disabled.
+         *
+         * When batch processing is enabled, we should not run Action Scheduler via HTTP requests
+         * as this can overload the server (especially on NGINX/PHP-FPM setups).
+         * Instead, rely on WordPress cron or OS-level cron to process the feed.
+         *
+         * @see https://wordpress.org/support/topic/bug-stuck-feed-generation-on-manage-feeds-page/
+         * @since 13.4.10
+         */
+        $disable_http_processing = get_option( 'adt_disable_http_feed_generation', 'no' );
+
+        // If explicitly disabled via setting, return early.
+        if ( 'yes' === $disable_http_processing ) {
+            return;
+        }
+
+        // Also check if batch processing is enabled - if yes, disable HTTP processing by default.
+        $batch_enabled = get_option( 'adt_enable_batch', 'no' );
+        if ( 'yes' === $batch_enabled ) {
+            return;
+        }
+
         $schedules = $this->query_feed_batch_action_schedules( $feed_id );
 
         if ( empty( $schedules ) ) {

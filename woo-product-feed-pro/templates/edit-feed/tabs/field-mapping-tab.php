@@ -99,8 +99,8 @@ if (file_exists($channel_class_file)) {
             esc_url( Helper::get_utm_url( '/how-to-use-static-values-and-create-fake-content-for-your-product-feed', 'pfp', 'fieldmappingnotice', 'learnstaticvalues' ) )
         ),
         'info',
-        'html',
-        false
+        false,
+        true
     );
     $admin_notice->run();
     ?>
@@ -129,141 +129,136 @@ if (file_exists($channel_class_file)) {
                         foreach ( $channel_attributes as $row_key => $row_value ) {
                             foreach ( $row_value as $row_k => $row_v ) {
                                 if ( $row_v['format'] == 'required' ) {
-                                ?>
-                                    <tr class="rowCount <?php echo "$c"; ?>">
-                                        <td><input type="hidden" name="attributes[<?php echo "$c"; ?>][rowCount]" value="<?php echo "$c"; ?>">
-                                            <input type="checkbox" name="record" class="checkbox-field">
-                                        </td>
-                                        <td>
-                                            <select name="attributes[<?php echo "$c"; ?>][attribute]" class="select-field woo-sea-select2">
-                                                <?php
-                                                foreach ( $channel_attributes as $key => $value ) {
-                                                    echo "<optgroup label='$key'><strong>$key</strong>";
+                                    // Prepare selected values
+                                    $suggested_attribute = array_key_exists( 'woo_suggest', $row_v ) ? $row_v['woo_suggest'] : '';
+                                    $value        = '';
+                                    
+                                    // If static value then extract the value from the static_value key. eg. static_value:price
+                                    if ( strpos( $suggested_attribute, 'static_value:' ) !== false ) {
+                                        $value        = str_replace( 'static_value:', '', $suggested_attribute );
+                                        $suggested_attribute = 'static_value';
+                                    } elseif ( strpos( $suggested_attribute, 'page:' ) !== false ) {
+                                        $value        = str_replace( 'page:', '', $suggested_attribute );
+                                        $suggested_attribute = 'page_url';
+                                    } elseif ( strpos( $suggested_attribute, 'post:' ) !== false ) {
+                                        $value        = str_replace( 'post:', '', $suggested_attribute );
+                                        $suggested_attribute = 'post_url';
+                                    }
 
-                                                    foreach ( $value as $k => $v ) {
-                                                        if ( $v['feed_name'] == $row_v['feed_name'] ) {
-                                                            if ( array_key_exists( 'name', $v ) ) {
-                                                                $dialog_value = $v['feed_name'];
-                                                                echo "<option value='$v[feed_name]' selected>$k ($v[name])</option>";
-                                                            } else {
-                                                                echo "<option value='$v[feed_name]' selected>$k</option>";
-                                                            }
-                                                        } elseif ( array_key_exists( 'name', $v ) ) {
-                                                            echo "<option value='$v[feed_name]'>$k ($v[name])</option>";
-                                                        } else {
-                                                            echo "<option value='$v[feed_name]'>$k</option>";
-                                                        }
-                                                    }
-                                                }
-                                                ?>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <?php
-                                            if ( $row_v['feed_name'] == 'g:price' ) {
-                                                echo "<input type='text' name='attributes[$c][prefix]' value='$currency ' class='input-field-medium'>";
-                                            } else {
-                                                echo "<input type='text' name='attributes[$c][prefix]' class='input-field-medium'>";
-                                            }
-                                            ?>
-                                        </td>
-                                        <td>
-                                            <select name="attributes[<?php echo "$c"; ?>][mapfrom]" class="select-field woo-sea-select2">
-                                                <option></option>
-                                                <?php
-                                                if ( ! empty( $attribute_dropdown ) ) :
-                                                    foreach ( $attribute_dropdown as $group_name => $attribute ) :
-                                                    ?>
-                                                        <optgroup label='<?php echo esc_html( $group_name ); ?>'>
-                                                        <?php
-                                                        if ( ! empty( $attribute ) ) :
-                                                            foreach ( $attribute as $attr => $attr_label ) :
-                                                            ?>
-                                                                <option 
-                                                                    value="<?php echo esc_attr( $attr ); ?>"
-                                                                    <?php echo array_key_exists( 'woo_suggest', $row_v ) && $row_v['woo_suggest'] == $attr ? 'selected' : ''; ?>
-                                                                >
-                                                                    <?php echo esc_html( $attr_label ); ?>
-                                                                </option>
-                                                                <?php
-                                                            endforeach;
-                                                        endif;
-                                                    endforeach;
-                                                endif;
-                                                ?>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <input type="text" name="attributes[<?php echo "$c"; ?>][suffix]" class="input-field-medium">
-                                        </td>
-                                    </tr>
-                            <?php
+                                    $prefix = '';
+                                    $suffix = '';
+
+                                    // Replcate the placeholders for the prefix.
+                                    if ( isset( $row_v['prefix'] ) ) {
+                                        $prefix_replace = array(
+                                            '{{CURRENCY}}' => $currency,
+                                        );
+
+                                        /**
+                                         * Replace the placeholders for the prefix.
+                                         *
+                                         * @since 13.4.9
+                                         *
+                                         * @param array $prefix_replace The array of placeholders to replace.
+                                         * @param string $prefix The prefix to replace the placeholders for.
+                                         * @param array|Product_Feed|null $feed The feed data.
+                                         * @return array The array of placeholders to replace.
+                                         */
+                                        $prefix_replace = apply_filters( 'adt_product_feed_field_mapping_prefix_replace', $prefix_replace, $row_v['prefix'], $feed );
+                                        $prefix = str_replace( array_keys( $prefix_replace ), array_values( $prefix_replace ), $row_v['prefix'] );
+                                    }
+
+                                    // Replcate the placeholders for the suffix.
+                                    if ( isset( $row_v['suffix'] ) ) {
+                                        $suffix_replace = array(
+                                            '{{CURRENCY}}' => $currency,
+                                        );
+
+                                        /**
+                                         * Replace the placeholders for the suffix.
+                                         *
+                                         * @since 13.4.9
+                                         *
+                                         * @param array $suffix_replace The array of placeholders to replace.
+                                         * @param string $suffix The suffix to replace the placeholders for.
+                                         * @param array|Product_Feed|null $feed The feed data.
+                                         * @return array The array of placeholders to replace.
+                                         */
+                                        $suffix_replace = apply_filters( 'adt_product_feed_field_mapping_suffix_replace', $suffix_replace, $row_v['suffix'], $feed );
+                                        $suffix = str_replace( array_keys( $suffix_replace ), array_values( $suffix_replace ), $row_v['suffix'] );
+                                    }
+
+                                    // Use field mapping row template
+                                    Helper::locate_admin_template(
+                                        'edit-feed/partials/field-mapping-row.php',
+                                        true,
+                                        false,
+                                        array(
+                                            'row_index'          => $c,
+                                            'is_own_mapping'     => false,
+                                            'field_options'      => $channel_attributes,
+                                            'attribute_dropdown' => $attribute_dropdown,
+                                            'selected_values'    => array(
+                                                'attribute' => $row_v['feed_name'] ?? '',
+                                                'prefix'    => $prefix ?? '',
+                                                'mapfrom'   => $suggested_attribute ?? '',
+                                                'suffix'    => $suffix ?? '',
+                                                'value'     => $value ?? '',
+                                            ),
+                                        )
+                                    );
+
                                     ++$c;
                                 }
                             }
                         }
                     } else {
                         foreach ( $feed_attributes as $attribute_key => $attribute_array ) {
-                            if ( isset( $feed_attributes[ $attribute_key ]['prefix'] ) ) {
-                                $prefix = $feed_attributes[ $attribute_key ]['prefix'];
+                            $prefix = $attribute_array['prefix'] ?? '';
+                            $suffix = $attribute_array['suffix'] ?? '';
+                            $selected_attribute = $attribute_array['mapfrom'] ?? '';
+                            $value = '';
+                            
+                            // Handle special attribute types
+                            if ( array_key_exists( 'static_value', $attribute_array ) ) {
+                                $selected_attribute = 'static_value';
+                                $value = $attribute_array['mapfrom'];
+                            } elseif ( $attribute_array['mapfrom'] == 'page_url' ) {
+                                $value = $attribute_array['value'];
+                            } elseif ( $attribute_array['mapfrom'] == 'post_url' ) {
+                                $value = $attribute_array['value'];
                             }
-                            if ( isset( $feed_attributes[ $attribute_key ]['suffix'] ) ) {
-                                $suffix = $feed_attributes[ $attribute_key ]['suffix'];
-                            }
-                            ?>
-                            <tr class="rowCount <?php echo "$attribute_key"; ?>">
-                                <td><input type="hidden" name="attributes[<?php echo "$attribute_key"; ?>][rowCount]" value="<?php echo "$attribute_key"; ?>">
-                                    <input type="checkbox" name="record" class="checkbox-field">
-                                </td>
-                                <td>
-                                    <select name="attributes[<?php echo "$attribute_key"; ?>][attribute]" class="select-field">
-                                        <?php
-                                        echo "<option value=\"$attribute_array[attribute]\">$attribute_array[attribute]</option>";
-                                        ?>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" name="attributes[<?php echo "$attribute_key"; ?>][prefix]" class="input-field-medium" value="<?php echo "$prefix"; ?>">
-                                </td>
-                                <td>
-                                    <?php
-                                    if ( array_key_exists( 'static_value', $attribute_array ) ) {
-                                        echo "<input type=\"text\" name=\"attributes[$attribute_key][mapfrom]\" class=\"input-field-midsmall\" value=\"$attribute_array[mapfrom]\"><input type=\"hidden\" name=\"attributes[$attribute_key][static_value]\" value=\"true\">";
-                                    } else {
-                                    ?>
-                                        <select name="attributes[<?php echo "$attribute_key"; ?>][mapfrom]" class="select-field woo-sea-select2">
-                                            <option></option>
-                                            <?php
-                                            if ( ! empty( $attribute_dropdown ) ) :
-                                                foreach ( $attribute_dropdown as $group_name => $attribute ) :
-                                                ?>
-                                                    <optgroup label='<?php echo esc_html( $group_name ); ?>'>
-                                                    <?php
-                                                    if ( ! empty( $attribute ) ) :
-                                                        foreach ( $attribute as $attr => $attr_label ) :
-                                                        ?>
-                                                            <option 
-                                                                value="<?php echo esc_attr( $attr ); ?>"
-                                                                <?php echo $feed_attributes[ $attribute_key ]['mapfrom'] === $attr ? 'selected' : ''; ?>
-                                                            >
-                                                                <?php echo esc_html( $attr_label ); ?>
-                                                            </option>
-                                                            <?php
-                                                        endforeach;
-                                                    endif;
-                                                endforeach;
-                                            endif;
-                                            ?>
-                                        </select>
-                                    <?php
+
+                            // Determine if this is a custom field or regular field
+                            $is_custom_field = true;
+                            foreach ( $channel_attributes as $group ) {
+                                foreach ( $group as $attr ) {
+                                    if ( isset( $attr['feed_name'] ) && $attr['feed_name'] === $attribute_array['attribute'] ) {
+                                        $is_custom_field = false;
+                                        break 2;
                                     }
-                                    ?>
-                                </td>
-                                <td>
-                                    <input type="text" name="attributes[<?php echo "$attribute_key"; ?>][suffix]" class="input-field-medium" value="<?php echo "$suffix"; ?>">
-                                </td>
-                            </tr>
-                        <?php
+                                }
+                            }
+
+                            // Use field mapping row template
+                            Helper::locate_admin_template(
+                                'edit-feed/partials/field-mapping-row.php',
+                                true,
+                                false,
+                                array(
+                                    'row_index'          => $attribute_key,
+                                    'is_own_mapping'     => $is_custom_field,
+                                    'field_options'      => $channel_attributes,
+                                    'attribute_dropdown' => $attribute_dropdown,
+                                    'selected_values'    => array(
+                                        'attribute'    => $attribute_array['attribute'] ?? '',
+                                        'prefix'       => $prefix,
+                                        'mapfrom'      => $selected_attribute,
+                                        'suffix'       => $suffix,
+                                        'value'        => $value ?? '',
+                                    ),
+                                )
+                            );
                         }
                     }
                 } else {
@@ -278,37 +273,76 @@ if (file_exists($channel_class_file)) {
                 ?>
             </tbody>
 
-            <tr>
-                <td colspan="6">
-                    <div class="adt-edit-feed-form-buttons adt-tw-flex adt-tw-gap-2 adt-tw-items-center">
-                        <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
-                        <?php if ( $edit_feed ) : ?>
-                            <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                            <input type="hidden" name="addrow" id="addrow" value="1">
-                            <button type="button" class="adt-button adt-button-sm delete-field-mapping">- <?php esc_attr_e( 'Delete', 'woo-product-feed-pro' ); ?></button>
-                            <button type="button" class="adt-button adt-button-sm add-field-mapping">+ <?php esc_attr_e( 'Add field mapping', 'woo-product-feed-pro' ); ?></button>
-                            <button type="button" class="adt-button adt-button-sm add-own-mapping">+ <?php esc_attr_e( 'Add custom field', 'woo-product-feed-pro' ); ?></button>
-                            <button type="submit" class="adt-button adt-button-sm adt-button-primary" id="savebutton">
-                                <?php esc_attr_e( 'Save Changes', 'woo-product-feed-pro' ); ?>
-                            </button>
-                        <?php else : ?>
-                            <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
-                            <input type="hidden" name="addrow" id="addrow" value="1">
-                            <button type="button" class="adt-button adt-button-sm delete-field-mapping">- <?php esc_attr_e( 'Delete', 'woo-product-feed-pro' ); ?></button>
-                            <button type="button" class="adt-button adt-button-sm add-field-mapping">+ <?php esc_attr_e( 'Add field mapping', 'woo-product-feed-pro' ); ?></button>
-                            <button type="button" class="adt-button adt-button-sm add-own-mapping">+<?php esc_attr_e( 'Add custom field', 'woo-product-feed-pro' ); ?></button>
-                            <?php
-                            // Check if channel has taxonomy
-                            $has_taxonomy = isset($channel_data['taxonomy']) && $channel_data['taxonomy'] !== 'none';
-                            $next_step = $has_taxonomy ? __('Category Mapping', 'woo-product-feed-pro') : __('Filters & Rules', 'woo-product-feed-pro');
-                            ?>
-                            <button type="submit" class="adt-button adt-button-sm adt-button-primary" id="savebutton">
-                                <?php esc_attr_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>
-                            </button>
-                        <?php endif; ?>
-                    </div>
-                </td>
-            </tr>
+            <tfoot>
+                <tr>
+                    <td colspan="6">
+                        <div class="adt-edit-feed-form-buttons adt-tw-flex adt-tw-gap-2 adt-tw-items-center">
+                            <input type="hidden" id="channel_hash" name="channel_hash" value="<?php echo esc_attr( $channel_hash ); ?>">
+                            <?php if ( $edit_feed ) : ?>
+                                <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                                <input type="hidden" name="addrow" id="addrow" value="1">
+                                <button type="button" class="adt-button adt-button-sm delete-field-mapping">- <?php esc_attr_e( 'Delete', 'woo-product-feed-pro' ); ?></button>
+                                <button type="button" class="adt-button adt-button-sm add-field-mapping">+ <?php esc_attr_e( 'Add field mapping', 'woo-product-feed-pro' ); ?></button>
+                                <button type="button" class="adt-button adt-button-sm add-own-mapping">+ <?php esc_attr_e( 'Add custom field', 'woo-product-feed-pro' ); ?></button>
+                                <button type="submit" class="adt-button adt-button-sm adt-button-primary" id="savebutton">
+                                    <?php esc_attr_e( 'Save Changes', 'woo-product-feed-pro' ); ?>
+                                </button>
+                            <?php else : ?>
+                                <input type="hidden" name="project_hash" value="<?php echo esc_attr( $project_hash ); ?>">
+                                <input type="hidden" name="addrow" id="addrow" value="1">
+                                <button type="button" class="adt-button adt-button-sm delete-field-mapping">- <?php esc_attr_e( 'Delete', 'woo-product-feed-pro' ); ?></button>
+                                <button type="button" class="adt-button adt-button-sm add-field-mapping">+ <?php esc_attr_e( 'Add field mapping', 'woo-product-feed-pro' ); ?></button>
+                                <button type="button" class="adt-button adt-button-sm add-own-mapping">+<?php esc_attr_e( 'Add custom field', 'woo-product-feed-pro' ); ?></button>
+                                <?php
+                                // Check if channel has taxonomy
+                                $has_taxonomy = isset($channel_data['taxonomy']) && $channel_data['taxonomy'] !== 'none';
+                                $next_step = $has_taxonomy ? __('Category Mapping', 'woo-product-feed-pro') : __('Filters & Rules', 'woo-product-feed-pro');
+                                ?>
+                                <button type="submit" class="adt-button adt-button-sm adt-button-primary" id="savebutton">
+                                    <?php esc_attr_e( 'Save & Continue', 'woo-product-feed-pro' ); ?>
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
         </table>
     </form>
+
+
+    <!-- Template for regular field mapping rows -->
+    <template id="adt-field-mapping-row-template">
+        <?php
+        Helper::locate_admin_template(
+            'edit-feed/partials/field-mapping-row.php',
+            true,
+            false,
+            array(
+                'row_index'          => '{{ROW_INDEX}}',
+                'is_own_mapping'     => false,
+                'field_options'      => $channel_attributes,
+                'attribute_dropdown' => $attribute_dropdown,
+                'selected_values'    => array(),
+            )
+        );
+        ?>
+    </template>
+
+    <!-- Template for custom field mapping rows -->
+    <template id="adt-custom-field-mapping-row-template">
+        <?php
+        Helper::locate_admin_template(
+            'edit-feed/partials/field-mapping-row.php',
+            true,
+            false,
+            array(
+                'row_index'          => '{{ROW_INDEX}}',
+                'is_own_mapping'     => true,
+                'field_options'      => array(),
+                'attribute_dropdown' => $attribute_dropdown,
+                'selected_values'    => array(),
+            )
+        );
+        ?>
+    </template>
 </div>
