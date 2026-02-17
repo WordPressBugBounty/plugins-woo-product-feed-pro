@@ -4,8 +4,8 @@ License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
-Tested up to: 6.9
-Stable tag: 13.5.2
+Tested up to: 6.9.1
+Stable tag: trunk
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -388,6 +388,13 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Feed actions & scheduling – From the feed list you can copy/open the feed URL, trigger a manual refresh, and control refresh frequency for each feed.
 
 === Changelog ===
+
+= 13.5.2.1 (2026-02-17) =
+* Bug Fix: Filter `raw_description` and `raw_short_description` should work with 'is equal to'.
+* Bug Fix: CSRF and arbitrary WordPress option update vulnerability in adt_pfp_update_settings.
+* Improvement: Add a Tooltip on Rules Section that it applies to the mapped value, not the attribute.
+* Improvement: Add a new 'Tax class name' attribute.
+* Improvement: Improve XML Feed Formatting for Large Product Feeds Using XMLWriter.
 
 = 13.5.2 (2026-01-27) =
 * Bug Fix: "Remove products that did not have sales in the last days" field cannot be disabled

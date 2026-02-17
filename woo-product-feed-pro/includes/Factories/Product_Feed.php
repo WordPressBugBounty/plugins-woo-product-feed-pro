@@ -1145,6 +1145,25 @@ class Product_Feed {
             return;
         }
 
+        // Format XML file with proper indentation before moving (for large feeds).
+        if ( 'xml' === $this->file_format ) {
+            $get_products = new \WooSEA_Get_Products();
+            if ( ! $get_products->woosea_format_xml_file( $tmp_file ) ) {
+                // Log warning but continue - unformatted XML is still valid.
+                if ( function_exists( 'wc_get_logger' ) ) {
+                    $logger = wc_get_logger();
+                    $logger->warning(
+                        'XML formatting failed, proceeding with unformatted file',
+                        array(
+                            'source'   => 'woo-product-feed-pro',
+                            'feed_id'  => $this->id,
+                            'tmp_file' => $tmp_file,
+                        )
+                    );
+                }
+            }
+        }
+
         // Move the temporary file to the final file.
         if ( copy( $tmp_file, $new_file ) ) {
             wp_delete_file( $tmp_file );

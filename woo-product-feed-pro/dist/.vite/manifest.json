@@ -1,17 +1,17 @@
 {
   "src/apps/filters-rules-builder/index-legacy.ts": {
-    "file": "apps/filters-rules-builder/index-legacy.pA94xvxx.js",
+    "file": "apps/filters-rules-builder/index-legacy.DDe9VNgd.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index-legacy.ts",
     "isEntry": true
   },
   "src/apps/filters-rules-builder/index.ts": {
-    "file": "apps/filters-rules-builder/index.BtodGOm-.js",
+    "file": "apps/filters-rules-builder/index.BEgklyaV.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index.ts",
     "isEntry": true,
     "css": [
-      "css/index.DfK48USf.css"
+      "css/index.CfwDpozO.css"
     ]
   },
   "src/vanilla/edit-feed/index-legacy.ts": {
@@ -102,18 +102,18 @@
     "isEntry": true
   },
   "src/vanilla/index-legacy.ts": {
-    "file": "vanilla/index-legacy.Jsi6ZYrb.js",
+    "file": "vanilla/index-legacy.DgAVzldD.js",
     "name": "vanilla/index",
     "src": "src/vanilla/index-legacy.ts",
     "isEntry": true
   },
   "src/vanilla/index.ts": {
-    "file": "vanilla/index.DVT9fnMe.js",
+    "file": "vanilla/index.C9QkfZ38.js",
     "name": "vanilla/index",
     "src": "src/vanilla/index.ts",
     "isEntry": true,
     "css": [
-      "css/index.YQXeoxRc.css"
+      "css/index.BGpC8Q8_.css"
     ]
   },
   "src/vanilla/manage-feeds/index-legacy.ts": {

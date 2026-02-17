@@ -294,6 +294,7 @@ class WP_Admin extends Abstract_Class {
      * Update settings via AJAX.
      *
      * @since 13.3.4
+     * @since 13.5.2.1 - Added CSRF protection and allowed settings validation.
      * @access public
      */
     public function ajax_adt_pfp_update_settings() {
@@ -301,7 +302,8 @@ class WP_Admin extends Abstract_Class {
             wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
         }
 
-        if ( isset( $_REQUEST['security'] ) && ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'woosea_ajax_nonce' ) ) {
+        // CSRF protection is now mandatory - nonce must be present and valid.
+        if ( ! isset( $_REQUEST['security'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'woosea_ajax_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
@@ -315,6 +317,14 @@ class WP_Admin extends Abstract_Class {
         // Only validate required fields (setting and type), allow empty values.
         if ( empty( $setting ) || empty( $type ) ) {
             wp_send_json_error( array( 'message' => __( 'Invalid request.', 'woo-product-feed-pro' ) ) );
+        }
+
+        // Allowlist of plugin settings that can be updated via AJAX.
+        // This prevents arbitrary WordPress option updates.
+        $allowed_settings = $this->get_allowed_ajax_settings();
+
+        if ( ! in_array( $setting, $allowed_settings, true ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid setting parameter.', 'woo-product-feed-pro' ) ) );
         }
 
         // Process value based on type.
@@ -342,6 +352,90 @@ class WP_Admin extends Abstract_Class {
         update_option( $setting, $value );
 
         wp_send_json_success( array( 'message' => __( 'Settings updated.', 'woo-product-feed-pro' ) ) );
+    }
+
+    /**
+     * Get allowed settings that can be updated via AJAX.
+     *
+     * @since 13.5.2.1
+     * @access private
+     * @return array List of allowed option names.
+     */
+    private function get_allowed_ajax_settings() {
+        // Define allowlist of plugin-specific settings that can be updated via AJAX.
+        // Only plugin-owned settings are allowed to prevent arbitrary WordPress option updates.
+        $allowed = array(
+            // General settings from Settings_Page::get_general_settings().
+            'adt_use_parent_variable_product_image',
+            'adt_add_all_shipping',
+            'adt_remove_other_shipping_classes_on_free_shipping',
+            'adt_remove_free_shipping',
+            'adt_remove_local_pickup_shipping',
+            'adt_show_only_basis_attributes',
+            'adt_enable_logging',
+            'adt_add_facebook_pixel',
+            'adt_facebook_pixel_id',
+            'adt_facebook_pixel_content_ids',
+            'adt_add_remarketing',
+            'adt_adwords_conversion_id',
+            'adt_enable_batch',
+            'adt_batch_size',
+            'adt_disable_http_feed_generation',
+            // Other settings from Settings_Page::get_other_settings().
+            'adt_use_legacy_filters_and_rules',
+            defined( 'ADT_PFP_CLEAN_UP_PLUGIN_OPTIONS' ) ? (string) ADT_PFP_CLEAN_UP_PLUGIN_OPTIONS : 'adt_clean_up_plugin_data',
+            // Elite general settings.
+            'adt_structured_data_fix',
+            'adt_structured_vat',
+            'adt_enable_data_manipulation_support',
+            'adt_enable_wpml_support',
+            'adt_enable_aelia_support',
+            'adt_enable_curcy_support',
+            'adt_enable_polylang_support',
+            'adt_enable_translatepress_support',
+            'adt_enable_facebook_capi',
+            'adt_facebook_capi_token',
+        );
+
+        /**
+         * Filter the list of allowed AJAX settings.
+         *
+         * This filter allows extending the allowlist for child plugins (like Elite version).
+         * All added settings must use the 'adt_' prefix to ensure they are plugin-owned.
+         *
+         * WARNING: Be extremely careful when adding settings to this list.
+         * Never allow core WordPress options like 'default_role', 'users_can_register',
+         * 'admin_email', 'siteurl', 'home', etc.
+         *
+         * Example usage (in Elite plugin):
+         * add_filter('adt_pfp_allowed_ajax_settings', function($allowed) {
+         *     return array_merge($allowed, array(
+         *         'adt_structured_data_fix',
+         *         'adt_enable_wpml_support',
+         *     ));
+         * });
+         *
+         * @since 13.5.2.1
+         * @param array $allowed Array of allowed option names.
+         * @return array List of allowed option names.
+         */
+        $filtered = apply_filters( 'adt_pfp_allowed_ajax_settings', $allowed );
+
+        // Validate filtered result is an array to prevent PHP errors.
+        // Falls back to original allowlist if filter returns invalid type.
+        if ( ! is_array( $filtered ) ) {
+            $filtered = $allowed;
+        }
+
+        // Enforce prefix requirement to prevent arbitrary option updates.
+        $allowed = array_filter(
+            $filtered,
+            function ( $value ) {
+                return is_string( $value ) && 0 === strpos( $value, 'adt_' );
+            }
+        );
+
+        return array_values( $allowed );
     }
 
     /**

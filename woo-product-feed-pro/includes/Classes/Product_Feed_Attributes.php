@@ -71,6 +71,7 @@ class Product_Feed_Attributes extends Abstract_Class {
             'featured'                        => 'Featured',
             'tax_status'                      => 'Tax status',
             'tax_class'                       => 'Tax class',
+            'tax_class_name'                  => 'Tax class name',
             'vat'                             => 'VAT',
             'currency'                        => 'Currency',
             'categories'                      => 'Category',

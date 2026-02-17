@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-01-27T07:42:27+00:00\n"
+"POT-Creation-Date: 2026-02-17T05:13:52+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woo-product-feed-pro\n"
@@ -139,22 +139,22 @@ msgid "Conversion & Google Analytics"
 msgstr ""
 
 #. translators: %s: WooCommerce Product Feed PRO plugin rating link
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:706
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:707
 #: includes/Classes/Admin_Pages/Settings_Page.php:398
 #, php-format
 msgid "If you like our %1$s plugin please leave us a %2$s rating. Thanks in advance!"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:727
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:728
 msgid "You do not have permission to edit feeds"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:738
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:739
 #: includes/REST/Filters_Rules.php:226
 msgid "Feed not found"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1211
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1212
 #: includes/Classes/Heartbeat.php:45
 #: includes/Classes/Heartbeat.php:182
 #: includes/Classes/Product_Feed_Admin.php:41
@@ -164,67 +164,67 @@ msgstr ""
 #: includes/Classes/Product_Feed_Admin.php:314
 #: includes/Classes/Usage.php:760
 #: includes/Classes/Usage.php:790
-#: includes/Classes/WP_Admin.php:305
-#: includes/Classes/WP_Admin.php:359
-#: includes/Classes/WP_Admin.php:387
-#: includes/Classes/WP_Admin.php:410
-#: includes/Classes/WP_Admin.php:489
-#: includes/Classes/WP_Admin.php:568
+#: includes/Classes/WP_Admin.php:307
+#: includes/Classes/WP_Admin.php:453
+#: includes/Classes/WP_Admin.php:481
+#: includes/Classes/WP_Admin.php:504
+#: includes/Classes/WP_Admin.php:583
+#: includes/Classes/WP_Admin.php:662
 msgid "Invalid security token"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1215
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1216
 #: includes/Classes/Heartbeat.php:49
 #: includes/Classes/Product_Feed_Admin.php:45
 #: includes/Classes/Product_Feed_Admin.php:96
 #: includes/Classes/Product_Feed_Admin.php:230
 #: includes/Classes/Product_Feed_Admin.php:266
-#: includes/Classes/Product_Feed_Attributes.php:593
+#: includes/Classes/Product_Feed_Attributes.php:594
 msgid "You do not have permission to manage product feed."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1340
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1341
 #: includes/Classes/Export_Import_Tools.php:73
 #: includes/Classes/Usage.php:756
 #: includes/Classes/Usage.php:786
-#: includes/Classes/WP_Admin.php:301
-#: includes/Classes/WP_Admin.php:355
-#: includes/Classes/WP_Admin.php:383
-#: includes/Classes/WP_Admin.php:406
-#: includes/Classes/WP_Admin.php:518
+#: includes/Classes/WP_Admin.php:302
+#: includes/Classes/WP_Admin.php:449
+#: includes/Classes/WP_Admin.php:477
+#: includes/Classes/WP_Admin.php:500
+#: includes/Classes/WP_Admin.php:612
 msgid "You do not have permission to perform this action."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1341
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1342
 #: includes/Classes/Notices.php:740
 msgid "Permission denied."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1352
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1353
 msgid "Feed title is required."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1357
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1358
 msgid "Channel field is required."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1362
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1363
 msgid "Field mapping is empty or you haven't saved the field mapping. Go to the Field Mapping tab and save the field mapping."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1369
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1370
 msgid "Required feed configuration fields are missing."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1378
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1379
 msgid "All required fields are filled."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1402
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1403
 msgid "Feed settings updated successfully."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1406
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1407
 msgid "Failed to update feed settings."
 msgstr ""
 
@@ -517,7 +517,7 @@ msgid "Product URL"
 msgstr ""
 
 #: includes/Classes/Heartbeat.php:53
-#: includes/Classes/WP_Admin.php:317
+#: includes/Classes/WP_Admin.php:319
 msgid "Invalid request."
 msgstr ""
 
@@ -812,15 +812,15 @@ msgstr ""
 msgid "Feed deactivated successfully."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:599
+#: includes/Classes/Product_Feed_Attributes.php:600
 msgid "No attributes found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:607
+#: includes/Classes/Product_Feed_Attributes.php:608
 msgid "No channel data found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:613
+#: includes/Classes/Product_Feed_Attributes.php:614
 msgid "Channel file not found."
 msgstr ""
 
@@ -959,56 +959,60 @@ msgstr ""
 msgid "You're using Product Feed Pro FREE VERSION. To unlock more features consider %1$supgrading to Elite%2$s."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:344
+#: includes/Classes/WP_Admin.php:327
+msgid "Invalid setting parameter."
+msgstr ""
+
+#: includes/Classes/WP_Admin.php:354
 msgid "Settings updated."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:372
+#: includes/Classes/WP_Admin.php:466
 msgid "Migration successful."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:392
+#: includes/Classes/WP_Admin.php:486
 msgid "Custom attributes cache cleared."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:394
+#: includes/Classes/WP_Admin.php:488
 msgid "Custom attributes cache not found."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:471
+#: includes/Classes/WP_Admin.php:565
 msgid "Feed URLs updated to lowercase in database. Some files could not be renamed due to permission issues."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:477
+#: includes/Classes/WP_Admin.php:571
 msgid "Feed URLs and files successfully updated to lowercase."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:493
-#: includes/Classes/WP_Admin.php:572
+#: includes/Classes/WP_Admin.php:587
+#: includes/Classes/WP_Admin.php:666
 msgid "You do not have permission to do this"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:501
+#: includes/Classes/WP_Admin.php:595
 msgid "Legacy filters and rules enabled"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:503
+#: includes/Classes/WP_Admin.php:597
 msgid "Legacy filters and rules disabled"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:506
+#: includes/Classes/WP_Admin.php:600
 msgid "Error enabling legacy filters and rules"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:556
+#: includes/Classes/WP_Admin.php:650
 msgid "Duplicated feed fixed."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:576
+#: includes/Classes/WP_Admin.php:670
 msgid "Notification dismissed"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:578
+#: includes/Classes/WP_Admin.php:672
 msgid "Error dismissing notification"
 msgstr ""
 
@@ -1489,9 +1493,9 @@ msgstr ""
 #: templates/edit-feed/tabs/category-mapping-tab.php:123
 #: templates/edit-feed/tabs/field-mapping-tab.php:302
 #: templates/edit-feed/tabs/filters-rules-tab.php:203
-#: templates/edit-feed/tabs/filters-tab.php:34
+#: templates/edit-feed/tabs/filters-tab.php:50
 #: templates/edit-feed/tabs/general-tab.php:315
-#: templates/edit-feed/tabs/rules-tab.php:34
+#: templates/edit-feed/tabs/rules-tab.php:50
 msgid "Save & Continue"
 msgstr ""
 
@@ -1636,11 +1640,21 @@ msgstr ""
 msgid "Filter Builder"
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-tab.php:11
+#: templates/edit-feed/tabs/filters-tab.php:12
 msgid "Create complex filters by combining different conditions"
 msgstr ""
 
-#: templates/edit-feed/tabs/filters-tab.php:32
+#: templates/edit-feed/tabs/filters-tab.php:14
+msgid "Help: Filter target fields"
+msgstr ""
+
+#. translators: %1s is a line break.
+#: templates/edit-feed/tabs/filters-tab.php:20
+#, php-format
+msgid "Filters apply to the mapped field values, not the original attributes.%1$sFor example:%1$s if you mapped Product ID to Custom Field, you should target Custom Field in your filters, not Product ID."
+msgstr ""
+
+#: templates/edit-feed/tabs/filters-tab.php:48
 msgid "Save Filters"
 msgstr ""
 
@@ -1721,11 +1735,21 @@ msgstr ""
 msgid "Rules Builder"
 msgstr ""
 
-#: templates/edit-feed/tabs/rules-tab.php:11
+#: templates/edit-feed/tabs/rules-tab.php:12
 msgid "Create complex rules by combining different conditions"
 msgstr ""
 
-#: templates/edit-feed/tabs/rules-tab.php:32
+#: templates/edit-feed/tabs/rules-tab.php:14
+msgid "Help: Rules target fields"
+msgstr ""
+
+#. translators: %1s is a line break.
+#: templates/edit-feed/tabs/rules-tab.php:20
+#, php-format
+msgid "Rules apply to the mapped field values, not the original attributes.%1$sFor example:%1$s if you mapped Product ID to Custom Field, you should target Custom Field in your rules, not Product ID."
+msgstr ""
+
+#: templates/edit-feed/tabs/rules-tab.php:48
 msgid "Save Rules"
 msgstr ""
 
@@ -2391,115 +2415,115 @@ msgstr ""
 msgid "Local time is:"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:232
 #: i18n.js:283
 msgid "Attribute is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:235
 #: i18n.js:286
 msgid "Condition is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:238
 #: i18n.js:289
 msgid "Value is required for this condition"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:241
 #: i18n.js:262
 msgid "Action attribute is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:244
 #: i18n.js:265
 msgid "Action find text is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:256
 #: i18n.js:277
 msgid "Invalid numeric value"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:259
 #: i18n.js:280
 msgid "Division by zero is not allowed"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:250
 #: i18n.js:271
 msgid "Invalid decimal format. Use period (.) instead of comma (,) for decimal numbers (e.g., 2.5 instead of 2,5)"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:253
 #: i18n.js:274
 msgid "Invalid numeric value. Only numbers with period (.) as decimal separator are allowed"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:247
 #: i18n.js:268
 msgid "Action value is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:298
 #: i18n.js:334
 msgid "Enter value"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:337
 msgid "Filters Successfully Migrated"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:340
 msgid "Rules Successfully Migrated"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:343
 msgid "Your existing filters have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your filter rules."
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:346
 msgid "Your existing rules have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your rules."
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:295
 msgid "Enter numeric value (e.g., 2.5)"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.pA94xvxx.js:43
-#: dist/apps/filters-rules-builder/index.BtodGOm-.js:33
+#: dist/apps/filters-rules-builder/index-legacy.DDe9VNgd.js:43
+#: dist/apps/filters-rules-builder/index.BEgklyaV.js:33
 #: i18n.js:229
 msgid "Please fill in all required fields before submitting."
 msgstr ""

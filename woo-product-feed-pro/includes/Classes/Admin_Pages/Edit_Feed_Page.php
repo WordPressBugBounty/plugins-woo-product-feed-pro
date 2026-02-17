@@ -340,7 +340,7 @@ class Edit_Feed_Page extends Admin_Page {
      *
      * @since 13.4.4
      * @param string|array $json_data The JSON data to decode.
-     * @return array The decoded and sanitized data.
+     * @return array The decoded data.
      */
     private function decode_json_data( $json_data ) {
         // Handle JSON string input.
@@ -353,15 +353,10 @@ class Edit_Feed_Page extends Admin_Page {
 
             $decoded_data = json_decode( $json_data, true );
             if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded_data ) ) {
-                return Sanitization::sanitize_array( $decoded_data );
+                return $decoded_data;
             } else {
                 return array();
             }
-        }
-
-        // If it's already an array, just sanitize it.
-        if ( is_array( $json_data ) ) {
-            return Sanitization::sanitize_array( $json_data );
         }
 
         return array();
@@ -380,7 +375,10 @@ class Edit_Feed_Page extends Admin_Page {
         }
 
         // First, sanitize the entire array structure using Helper method.
-        $filters_data = Sanitization::sanitize_array( $filters_data );
+        $filters_data = Sanitization::sanitize_array(
+            $filters_data,
+            array( 'allow_html' => true )
+        );
 
         $cleaned_data     = array();
         $valid_conditions = Filters::instance()->get_conditions( true );
@@ -571,7 +569,10 @@ class Edit_Feed_Page extends Admin_Page {
         }
 
         // First, sanitize the entire array structure.
-        $rules_data = Sanitization::sanitize_array( $rules_data );
+        $rules_data = Sanitization::sanitize_array(
+            $rules_data,
+            array( 'allow_html' => true )
+        );
 
         $cleaned_rules    = array();
         $valid_conditions = Rules::instance()->get_conditions( true );

@@ -8,7 +8,23 @@ $feed_id = isset( $_GET['id'] ) ? sanitize_text_field( wp_unslash( $_GET['id'] )
 ?>
 <div class="tab-content-header">
     <h1><?php esc_html_e( 'Filter Builder', 'woo-product-feed-pro' ); ?></h1>
-    <p><?php esc_html_e( 'Create complex filters by combining different conditions', 'woo-product-feed-pro' ); ?></p>
+    <p class="adt-tw-flex adt-tw-items-center">
+        <?php esc_html_e( 'Create complex filters by combining different conditions', 'woo-product-feed-pro' ); ?>
+        <span class="adt-tooltip adt-tw-inline-flex">
+            <span class="adt-tw-icon-[lucide--info] adt-tw-size-4 adt-tw-text-gray-500 adt-tw-cursor-help adt-tw-ml-2" tabindex="0" aria-label="<?php esc_attr_e( 'Help: Filter target fields', 'woo-product-feed-pro' ); ?>"></span>
+            <span class="adt-tooltip-content">
+                <?php
+                echo wp_kses_post(
+                    sprintf(
+                        // translators: %1s is a line break.
+                        __( 'Filters apply to the mapped field values, not the original attributes.%1$sFor example:%1$s if you mapped Product ID to Custom Field, you should target Custom Field in your filters, not Product ID.', 'woo-product-feed-pro' ),
+                        '<br/>'
+                    )
+                );
+                ?>
+            </span>
+        </span>
+    </p>
 </div>
 
 <div class="tab-content-body adt-edit-feed-tab-content-body-filters adt-tw-max-w-screen-2xl">

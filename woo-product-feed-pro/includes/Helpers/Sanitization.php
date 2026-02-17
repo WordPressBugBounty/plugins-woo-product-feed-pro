@@ -272,6 +272,8 @@ class Sanitization {
      * Sanitize raw HTML for raw_* fields: remove script, style, iframe tags but keep other HTML.
      *
      * @since 13.4.6
+     * @since 13.5.3 Removed wp_autop(), WooCommerce descriptions come from WordPress's visual editor, which already applies wpautop() when saving.
+     *               This is for raw HTML content - we shouldn't be auto-formatting it and removes the source of trailing newlines.
      *
      * @param string $html_content The string to sanitize.
      * @return string The sanitized string.
@@ -280,8 +282,8 @@ class Sanitization {
         if ( empty( $html_content ) ) {
             return $html_content;
         }
-        // Expand shortcodes and auto-format paragraphs first.
-        $html_content = do_shortcode( wpautop( $html_content ) );
+        // Expand shortcodes (content from WooCommerce is already HTML-formatted).
+        $html_content = do_shortcode( $html_content );
         // Remove script, style, and iframe tags and their content.
         $html_content = preg_replace( '@<(script|style|iframe)[^>]*?>.*?</\1>@si', '', $html_content );
         // Remove self-closing script, style, and iframe tags.
@@ -312,18 +314,19 @@ class Sanitization {
      *
      * @since 13.4.4
      * @param array $array_data The array to sanitize.
+     * @param mixed ...$args Additional arguments to pass to the callback.
      * @return array
      */
-    public static function sanitize_array( $array_data ) {
+    public static function sanitize_array( $array_data, ...$args ) {
         if ( ! is_array( $array_data ) ) {
-            return self::sanitize_text_field( $array_data );
+            return self::sanitize_text_field( $array_data, null, ...$args );
         }
 
         foreach ( $array_data as $key => $value ) {
             if ( is_array( $value ) ) {
-                $array_data[ $key ] = self::sanitize_array( $value );
+                $array_data[ $key ] = self::sanitize_array( $value, ...$args );
             } else {
-                $array_data[ $key ] = self::sanitize_text_field( $value, $key );
+                $array_data[ $key ] = self::sanitize_text_field( $value, $key, ...$args );
             }
         }
 
@@ -333,37 +336,67 @@ class Sanitization {
     /**
      * Custom sanitize callback that preserves whitespace.
      *
+     * Uses wp_kses() for secure HTML sanitization when allow_html is enabled.
+     *
      * @since 13.3.9
+     * @since 13.5.3 Updated to use wp_kses() for secure HTML sanitization.
+     *               Added 'allow_html' and 'allowed_tags' arguments.
      * @access public
      *
      * @param string $str     The value to sanitize.
      * @param string $key     The key of the value being sanitized.
      * @param mixed  ...$args Additional arguments to pass to the callback.
+     *                        Supported options:
+     *                        - 'allow_html' (bool): If true, uses wp_kses() to preserve HTML while removing dangerous content.
+     *                                              Filters out event attributes (onclick, onerror), javascript: URLs, and other XSS vectors.
+     *                        - 'allowed_tags' (string|null): Custom allowed HTML tags (e.g., '<p><br><strong>').
+     *                                                        If null (default), uses wp_kses_post() allowing all post content tags.
+     *                                                        If specified, only the listed tags and their safe attributes are preserved.
      *
      * @return string
      */
-    public static function sanitize_text_field( $str, $key = null, ...$args ) { // phpcs:ignore
+    public static function sanitize_text_field( $str, $key = null, ...$args ) {
         if ( is_object( $str ) || is_array( $str ) ) {
             return '';
         }
 
         $str = (string) $str;
 
+        // Parse optional arguments.
+        $options      = isset( $args[0] ) && is_array( $args[0] ) ? $args[0] : array();
+        $allow_html   = isset( $options['allow_html'] ) ? (bool) $options['allow_html'] : false;
+        $allowed_tags = isset( $options['allowed_tags'] ) ? $options['allowed_tags'] : null;
+
         $filtered = wp_check_invalid_utf8( $str );
 
         if ( str_contains( $filtered, '<' ) ) {
-            $filtered = wp_pre_kses_less_than( $filtered );
-            // This will strip extra whitespace for us.
-            $filtered = wp_strip_all_tags( $filtered, false );
+            if ( $allow_html ) {
+                // When HTML is allowed, use wp_kses for secure sanitization.
+                if ( ! is_null( $allowed_tags ) ) {
+                    // Convert allowed_tags string to wp_kses format.
+                    $allowed_html = self::parse_allowed_tags( $allowed_tags );
+                    $filtered     = wp_kses( $filtered, $allowed_html );
+                } else {
+                    // Allow all safe HTML tags (uses WordPress post content rules).
+                    $filtered = wp_kses_post( $filtered );
+                }
+            } else {
+                // Default behavior: strip all HTML tags.
+                $filtered = wp_pre_kses_less_than( $filtered );
+                // This will strip extra whitespace for us.
+                $filtered = wp_strip_all_tags( $filtered, false );
 
-            /*
-             * Use HTML entities in a special case to make sure that
-             * later newline stripping stages cannot lead to a functional tag.
-             */
-            $filtered = str_replace( "<\n", "&lt;\n", $filtered );
+                /*
+                 * Use HTML entities in a special case to make sure that
+                 * later newline stripping stages cannot lead to a functional tag.
+                 */
+                $filtered = str_replace( "<\n", "&lt;\n", $filtered );
+            }
         }
 
-        $filtered = preg_replace( '/[\r\n\t ]+/', ' ', $filtered );
+        if ( ! $allow_html ) {
+            $filtered = preg_replace( '/[\r\n\t ]+/', ' ', $filtered );
+        }
 
         if ( ! is_null( $key ) && ! in_array( $key, array( 'prefix', 'suffix' ), true ) ) {
             $filtered = trim( $filtered );
@@ -385,5 +418,53 @@ class Sanitization {
         }
 
         return $filtered;
+    }
+
+    /**
+     * Parse allowed tags string into wp_kses compatible format.
+     *
+     * @since 13.5.3
+     * @access private
+     *
+     * @param string $allowed_tags String of allowed tags (e.g., '<p><br><strong>').
+     * @return array Array format compatible with wp_kses.
+     */
+    private static function parse_allowed_tags( $allowed_tags ) {
+        // Extract tag names from the string.
+        preg_match_all( '/<(\w+)>/', $allowed_tags, $matches );
+
+        if ( empty( $matches[1] ) ) {
+            return array();
+        }
+
+        $allowed_html = array();
+        foreach ( $matches[1] as $tag ) {
+            // Define safe attributes for each tag.
+            switch ( $tag ) {
+                case 'a':
+                    $allowed_html[ $tag ] = array(
+                        'href'   => true,
+                        'title'  => true,
+                        'target' => true,
+                        'rel'    => true,
+                    );
+                    break;
+                case 'img':
+                    $allowed_html[ $tag ] = array(
+                        'src'    => true,
+                        'alt'    => true,
+                        'title'  => true,
+                        'width'  => true,
+                        'height' => true,
+                    );
+                    break;
+                default:
+                    // For most formatting tags, no attributes needed.
+                    $allowed_html[ $tag ] = array();
+                    break;
+            }
+        }
+
+        return $allowed_html;
     }
 }

@@ -72,58 +72,6 @@ class Cron extends Abstract_Class {
     }
 
     /**
-     * Move the feed file to the final file.
-     *
-     * @since 13.4.1
-     * @access public
-     *
-     * @param Product_Feed $feed The feed data object.
-     */
-    public function move_feed_file_to_final( $feed ) {
-        $upload_dir = wp_upload_dir();
-        $base       = $upload_dir['basedir'];
-        $path       = $base . '/woo-product-feed-pro/' . $feed->file_format;
-        $tmp_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '_tmp.' . $feed->file_format;
-        $new_file   = $path . '/' . sanitize_file_name( $feed->file_name ) . '.' . $feed->file_format;
-
-        // Check if temporary file exists before attempting to copy.
-        if ( ! file_exists( $tmp_file ) ) {
-            if ( function_exists( 'wc_get_logger' ) ) {
-                $logger = wc_get_logger();
-                $logger->warning(
-                    'Temporary feed file does not exist',
-                    array(
-                        'source'      => 'woo-product-feed-pro',
-                        'feed_id'     => $feed->id,
-                        'feed_title'  => $feed->title,
-                        'tmp_file'    => $tmp_file,
-                        'file_format' => $feed->file_format,
-                    )
-                );
-            }
-            return;
-        }
-
-        // Move the temporary file to the final file.
-        if ( copy( $tmp_file, $new_file ) ) {
-            wp_delete_file( $tmp_file );
-        } elseif ( function_exists( 'wc_get_logger' ) ) {
-            $logger = wc_get_logger();
-            $logger->error(
-                'Failed to copy temporary feed file to final location',
-                array(
-                    'source'      => 'woo-product-feed-pro',
-                    'feed_id'     => $feed->id,
-                    'feed_title'  => $feed->title,
-                    'tmp_file'    => $tmp_file,
-                    'new_file'    => $new_file,
-                    'file_format' => $feed->file_format,
-                )
-            );
-        }
-    }
-
-    /**
      * Schedule the next batch.
      *
      * @since 13.4.1
