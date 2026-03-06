@@ -1,3 +1,7 @@
+= 13.5.2.2 (2026-03-05) =
+* Bug Fix: CSRF vulnerability — nonce bypass on multiple AJAX endpoints (Wordfence report)
+* Improvement: Support JSONL.GZ and CSV.GZ file format for OpenAI Feeds
+
 = 13.5.2.1 (2026-02-17) =
 * Bug Fix: Filter `raw_description` and `raw_short_description` should be working with "is equal to"
 * Bug Fix: Security: CSRF + Arbitrary WordPress Option Update Vulnerability in adt_pfp_update_settings

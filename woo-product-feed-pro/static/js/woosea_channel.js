@@ -52,7 +52,7 @@ jQuery(document).ready(function ($) {
       'Fashionchick.nl': ['csv', 'txt'],
       'Bol.com': ['csv', 'txt'],
       'Snapchat Product Catalog': ['csv'],
-      'OpenAI Product Feed': ['xml', 'csv', 'txt', 'tsv', 'jsonl'],
+      'OpenAI Product Feed': ['jsonl.gz', 'csv.gz'],
     };
     const selected_channel = $table.find('#channel_hash option:selected').text();
 

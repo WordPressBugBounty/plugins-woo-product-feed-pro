@@ -491,6 +491,27 @@ class Product_Feed {
     }
 
     /**
+     * Get the base file format, stripping any .gz suffix.
+     *
+     * For compressed formats like 'jsonl.gz' or 'csv.gz', returns the underlying
+     * format ('jsonl' or 'csv') used for directory naming and temp-file extensions.
+     * Declared static so it can be reused across classes without duplicating
+     * the stripping logic (e.g. Product_Feed::get_base_file_format( $feed->file_format )).
+     *
+     * @since 13.5.2
+     * @access public
+     *
+     * @param string $format The file format string to evaluate.
+     * @return string
+     */
+    public static function get_base_file_format( $format ) {
+        if ( substr( $format, -3 ) === '.gz' ) {
+            return substr( $format, 0, -3 );
+        }
+        return $format;
+    }
+
+    /**
      * Get product feed file format.
      *
      * @since 13.3.5
@@ -499,9 +520,10 @@ class Product_Feed {
      * @return string
      */
     public function get_file_url() {
-        $upload_dir = wp_upload_dir();
-        $base_url   = set_url_scheme( $upload_dir['baseurl'], is_ssl() ? 'https' : 'http' );
-        return $base_url . '/' . self::UPLOAD_SUB_DIR . '/' . $this->file_format . '/' . $this->file_name . '.' . $this->file_format;
+        $upload_dir  = wp_upload_dir();
+        $base_url    = set_url_scheme( $upload_dir['baseurl'], is_ssl() ? 'https' : 'http' );
+        $base_format = self::get_base_file_format( $this->file_format );
+        return $base_url . '/' . self::UPLOAD_SUB_DIR . '/' . $base_format . '/' . $this->file_name . '.' . $this->file_format;
     }
 
     /**
@@ -513,9 +535,9 @@ class Product_Feed {
      * @return string
      */
     public function get_file_path() {
-        $upload_dir = wp_upload_dir();
-        $asd        = $upload_dir['basedir'] . '/' . self::UPLOAD_SUB_DIR . '/' . $this->file_format . '/' . $this->file_name . '.' . $this->file_format;
-        return $asd;
+        $upload_dir  = wp_upload_dir();
+        $base_format = self::get_base_file_format( $this->file_format );
+        return $upload_dir['basedir'] . '/' . self::UPLOAD_SUB_DIR . '/' . $base_format . '/' . $this->file_name . '.' . $this->file_format;
     }
 
     /**
@@ -1121,11 +1143,15 @@ class Product_Feed {
      * @access public
      */
     public function move_feed_file_to_final() {
-        $upload_dir = wp_upload_dir();
-        $base       = $upload_dir['basedir'];
-        $path       = $base . '/woo-product-feed-pro/' . $this->file_format;
-        $tmp_file   = $path . '/' . sanitize_file_name( $this->file_name ) . '_tmp.' . $this->file_format;
-        $new_file   = $path . '/' . sanitize_file_name( $this->file_name ) . '.' . $this->file_format;
+        $upload_dir  = wp_upload_dir();
+        $base        = $upload_dir['basedir'];
+        $base_format = self::get_base_file_format( $this->file_format );
+        $is_gz       = self::get_base_file_format( $this->file_format ) !== $this->file_format;
+
+        // For gz formats the tmp file uses the base format (e.g. _tmp.jsonl for jsonl.gz).
+        $path     = $base . '/woo-product-feed-pro/' . $base_format;
+        $tmp_file = $path . '/' . sanitize_file_name( $this->file_name ) . '_tmp.' . $base_format;
+        $new_file = $path . '/' . sanitize_file_name( $this->file_name ) . '.' . $this->file_format;
 
         // Check if temporary file exists before attempting to copy.
         if ( ! file_exists( $tmp_file ) ) {
@@ -1142,6 +1168,75 @@ class Product_Feed {
                     )
                 );
             }
+            return;
+        }
+
+        if ( $is_gz ) {
+            // Compress the plain tmp file into a gzip-compressed final file.
+            $gz_handle    = gzopen( $new_file, 'wb9' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+            $plain_handle = fopen( $tmp_file, 'rb' );   // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+
+            if ( false === $gz_handle || false === $plain_handle ) {
+                if ( $gz_handle ) {
+                    gzclose( $gz_handle );
+                }
+                if ( $plain_handle ) {
+                    fclose( $plain_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+                }
+                if ( function_exists( 'wc_get_logger' ) ) {
+                    $logger = wc_get_logger();
+                    $logger->error(
+                        'Failed to open files for gzip compression',
+                        array(
+                            'source'      => 'woo-product-feed-pro',
+                            'feed_id'     => $this->id,
+                            'feed_title'  => $this->title,
+                            'tmp_file'    => $tmp_file,
+                            'new_file'    => $new_file,
+                            'file_format' => $this->file_format,
+                        )
+                    );
+                }
+                return;
+            }
+
+            $write_error = false;
+            while ( ! feof( $plain_handle ) ) {
+                $data = fread( $plain_handle, 65536 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+                if ( false === $data ) {
+                    $write_error = true;
+                    break;
+                }
+                $bytes_written = gzwrite( $gz_handle, $data );
+                if ( false === $bytes_written || ( 0 === $bytes_written && strlen( $data ) > 0 ) ) {
+                    $write_error = true;
+                    break;
+                }
+            }
+
+            fclose( $plain_handle );  // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+            gzclose( $gz_handle );
+
+            if ( $write_error ) {
+                wp_delete_file( $new_file );
+                if ( function_exists( 'wc_get_logger' ) ) {
+                    $logger = wc_get_logger();
+                    $logger->error(
+                        'Gzip compression failed during feed file write',
+                        array(
+                            'source'      => 'woo-product-feed-pro',
+                            'feed_id'     => $this->id,
+                            'feed_title'  => $this->title,
+                            'tmp_file'    => $tmp_file,
+                            'new_file'    => $new_file,
+                            'file_format' => $this->file_format,
+                        )
+                    );
+                }
+                return;
+            }
+
+            wp_delete_file( $tmp_file );
             return;
         }
 

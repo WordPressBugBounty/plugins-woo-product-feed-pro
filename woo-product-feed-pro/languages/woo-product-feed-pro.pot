@@ -2,14 +2,14 @@
 # This file is distributed under the GPL3.
 msgid ""
 msgstr ""
-"Project-Id-Version: Product Feed PRO for WooCommerce 13.5.2\n"
+"Project-Id-Version: Product Feed PRO for WooCommerce 13.5.2.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woo-product-feed-pro\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-02-17T05:13:52+00:00\n"
+"POT-Creation-Date: 2026-03-05T08:54:29+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woo-product-feed-pro\n"
@@ -169,7 +169,8 @@ msgstr ""
 #: includes/Classes/WP_Admin.php:481
 #: includes/Classes/WP_Admin.php:504
 #: includes/Classes/WP_Admin.php:583
-#: includes/Classes/WP_Admin.php:662
+#: includes/Classes/WP_Admin.php:616
+#: includes/Classes/WP_Admin.php:666
 msgid "Invalid security token"
 msgstr ""
 
@@ -988,7 +989,7 @@ msgid "Feed URLs and files successfully updated to lowercase."
 msgstr ""
 
 #: includes/Classes/WP_Admin.php:587
-#: includes/Classes/WP_Admin.php:666
+#: includes/Classes/WP_Admin.php:670
 msgid "You do not have permission to do this"
 msgstr ""
 
@@ -1004,15 +1005,15 @@ msgstr ""
 msgid "Error enabling legacy filters and rules"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:650
+#: includes/Classes/WP_Admin.php:654
 msgid "Duplicated feed fixed."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:670
+#: includes/Classes/WP_Admin.php:674
 msgid "Notification dismissed"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:672
+#: includes/Classes/WP_Admin.php:676
 msgid "Error dismissing notification"
 msgstr ""
 

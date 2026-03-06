@@ -196,7 +196,7 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                             <td>
                                 <select name="fileformat" id="fileformat" class="select-field">
                                     <?php
-                                    $format_arr = array( 'xml', 'csv', 'txt', 'tsv', 'jsonl' );
+                                    $format_arr = array( 'xml', 'csv', 'txt', 'tsv', 'jsonl', 'jsonl.gz', 'csv.gz' );
                                     foreach ( $format_arr as $format ) :
                                         $selected = '';
                                         if ( $edit_feed ) {

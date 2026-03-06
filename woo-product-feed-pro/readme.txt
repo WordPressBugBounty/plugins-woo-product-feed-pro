@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 6.9.1
-Stable tag: trunk
+Stable tag: 13.5.2.2
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -389,19 +389,23 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 
 === Changelog ===
 
+= 13.5.2.2 (2026-03-05) =
+* Bug Fix: CSRF vulnerability — nonce bypass on multiple AJAX endpoints (Wordfence report)
+* Improvement: Support JSONL.GZ and CSV.GZ file format for OpenAI Feeds
+
 = 13.5.2.1 (2026-02-17) =
-* Bug Fix: Filter `raw_description` and `raw_short_description` should work with 'is equal to'.
-* Bug Fix: CSRF and arbitrary WordPress option update vulnerability in adt_pfp_update_settings.
-* Improvement: Add a Tooltip on Rules Section that it applies to the mapped value, not the attribute.
-* Improvement: Add a new 'Tax class name' attribute.
-* Improvement: Improve XML Feed Formatting for Large Product Feeds Using XMLWriter.
+* Bug Fix: Filter `raw_description` and `raw_short_description` should be working with "is equal to"
+* Bug Fix: Security: CSRF + Arbitrary WordPress Option Update Vulnerability in adt_pfp_update_settings
+* Improvement: Add a ToolTip on Rules Section that it applies on the Mapped Value not Attribute
+* Improvement: Add new "Tax class name" attribute
+* Improvement: Improve XML Feed Formatting for Large Product Feeds Using XMLWriter
 
 = 13.5.2 (2026-01-27) =
-* Bug Fix: "Remove products that did not have sales in the last days" field cannot be disabled
-* Bug Fix: Force Pinterest feeds to follow ISO-4217 format
-* Bug Fix: Unable to select file formats other than XML for Google Shopping feeds
-* Improvement: Add support for Min/Max handling time in shipping data
-* Improvement: PHP 8.5 compatibility
+* Bug Fix: "Remove products that did not have sales in the last days" Field Cannot Be Disabled
+* Bug Fix: Force Pinterest Feeds to Follow ISO-4217 Format
+* Bug Fix: Unable to Select File Formats Other Than XML for Google Shopping Feeds
+* Improvement: Add Support for Min/Max Handling Time in Shipping Data
+* Improvement: PHP 8.5 Compatibility
 
 = 13.5.1 (2025-12-15) =
 * Bug Fix: "Remove All Other Shipping Options" Setting Doesn't Work

@@ -3,6 +3,7 @@
 use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Classes\Shipping_Data;
+use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Helpers\Formatting;
 use AdTribes\PFP\Helpers\Sanitization;
 
@@ -2465,14 +2466,16 @@ class WooSEA_Get_Products {
      * Returns relative and absolute file path
      */
     public function woosea_create_csvtxt_feed( $products, $feed, $header ) {
-        $upload_dir = wp_upload_dir();
-        $base       = $upload_dir['basedir'];
-        $path       = $base . '/woo-product-feed-pro/' . $feed->file_format;
-        $file       = $path . '/' . sanitize_file_name( $feed->file_name ) . '_tmp.' . $feed->file_format;
+        $upload_dir  = wp_upload_dir();
+        $base        = $upload_dir['basedir'];
+        // For csv.gz, write the plain CSV tmp file under the 'csv' directory.
+        $base_format = Product_Feed::get_base_file_format( $feed->file_format );
+        $path        = $base . '/woo-product-feed-pro/' . $base_format;
+        $file        = $path . '/' . sanitize_file_name( $feed->file_name ) . '_tmp.' . $base_format;
 
-        // External location for downloading the file
+        // External location for downloading the file (points to the final compressed file if gz).
         $external_base = $upload_dir['baseurl'];
-        $external_path = $external_base . '/woo-product-feed-pro/' . $feed->file_format;
+        $external_path = $external_base . '/woo-product-feed-pro/' . $base_format;
         $external_file = $external_path . '/' . sanitize_file_name( $feed->file_name ) . '.' . $feed->file_format;
 
         // Check if directory in uploads exists, if not create one
@@ -2637,7 +2640,7 @@ class WooSEA_Get_Products {
         
         foreach ( $pieces as $k_inner => $v ) {
             // For CSV fileformat the keys need to get stripped of the g:
-            if ( $header === 'true' && in_array( $feed->file_format, array( 'csv', 'txt', 'tsv' ), true ) ) {
+            if ( $header === 'true' && in_array( $feed->file_format, array( 'csv', 'txt', 'tsv', 'csv.gz' ), true ) ) {
                 $v = str_replace( 'g:', '', $v );
             }
 
@@ -2706,7 +2709,7 @@ class WooSEA_Get_Products {
          * Construct header line for CSV ans TXT files, for XML create the XML root and header
          */
         $products = array();
-        if ( $file_format == 'jsonl' ) {
+        if ( $file_format == 'jsonl' || $file_format == 'jsonl.gz' ) {
             // Initialize JSONL feed (no header needed for JSONL format).
             $jsonl_writer = \AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_JSONL::instance();
             $file         = $jsonl_writer->write_feed( array(), $feed, true );
@@ -5103,7 +5106,7 @@ class WooSEA_Get_Products {
                     $products[] = array( $attr_line );
 
                     // Track preview mode product count (CSV/TXT feeds only)
-                    if ( $is_preview_mode && $file_format != 'xml' && $file_format != 'jsonl' ) {
+                    if ( $is_preview_mode && $file_format != 'xml' && $file_format != 'jsonl' && $file_format != 'jsonl.gz' ) {
                         $preview_found_count++;
                         // Exit the inner while loop if we have enough CSV products
                         if ( $preview_found_count >= $preview_target_count ) {
@@ -5127,7 +5130,7 @@ class WooSEA_Get_Products {
                     $products[] = array( $attr_line );
 
                     // Track preview mode product count (CSV/TXT feeds only)
-                    if ( $is_preview_mode && $file_format != 'xml' && $file_format != 'jsonl' ) {
+                    if ( $is_preview_mode && $file_format != 'xml' && $file_format != 'jsonl' && $file_format != 'jsonl.gz' ) {
                         $preview_found_count++;
                         // Exit the inner while loop if we have enough CSV products
                         if ( $preview_found_count >= $preview_target_count ) {
@@ -5406,11 +5409,25 @@ class WooSEA_Get_Products {
                         $xml_piece[ $product->get_id() ] = $xml_product;
                     }
                 } else {
+                    // For JSONL formats, allow channel-specific product-level transformations
+                    // (e.g. shipping parsing and HTML entity decoding for OpenAI).
+                    if ( $file_format === 'jsonl' || $file_format === 'jsonl.gz' ) {
+                        /**
+                         * Filter a single JSONL product array before it is added to the batch.
+                         *
+                         * @since 13.5.2
+                         *
+                         * @param array  $xml_product  The product data key/value array.
+                         * @param array  $feed_channel The active channel configuration.
+                         * @param object $feed         The feed object.
+                         */
+                        $xml_product = apply_filters( 'adt_product_feed_jsonl_product', $xml_product, $feed_channel, $feed );
+                    }
                     $xml_piece[] = $xml_product;
                 }
 
                 // Track preview mode product count (XML/JSONL feeds only)
-                if ( $is_preview_mode && ( $file_format == 'xml' || $file_format == 'jsonl' ) ) {
+                if ( $is_preview_mode && ( $file_format == 'xml' || $file_format == 'jsonl' || $file_format == 'jsonl.gz' ) ) {
                     $preview_found_count++;
                     // Exit the inner while loop if we have enough products
                     if ( $preview_found_count >= $preview_target_count ) {
@@ -5456,7 +5473,7 @@ class WooSEA_Get_Products {
         /**
          * Write row to CSV/TXT or XML or JSONL file
          */
-        if ( $file_format == 'jsonl' && is_array( $xml_piece ) && ! empty( $xml_piece ) ) {
+        if ( ( $file_format == 'jsonl' || $file_format == 'jsonl.gz' ) && is_array( $xml_piece ) && ! empty( $xml_piece ) ) {
             $jsonl_writer = \AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_JSONL::instance();
             $file         = $jsonl_writer->write_feed( array_filter( $xml_piece ), $feed, false );
             unset( $xml_piece );
