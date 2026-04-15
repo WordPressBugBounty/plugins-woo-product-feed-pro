@@ -77,6 +77,17 @@ class Sanitization {
         // Remove any remaining shortcodes if any.
         $html_content = preg_replace( '/\[(.*?)\]/', ' ', $html_content );
 
+        // Remove CSS selectors and rules (e.g., "#gap-1977033722 { padding-top: 30px;}" from Flatsome UX Builder).
+        // Pattern matches: #prefix-123 { property: value; }.
+        $html_content = preg_replace( '/#[a-z]+-\d+\s*\{[^}]*?\}/s', '', $html_content );
+
+        // Then remove other CSS-like patterns, but only if they contain valid CSS property syntax (colon).
+        // WARNING: This may remove legitimate text resembling CSS selectors if it contains colons.
+        // Ensure product descriptions don't contain patterns like "#text-123 {property: value}".
+        // The lookbehind ensures the pattern starts after whitespace, start of string, or HTML tag end.
+        // Requiring a colon reduces false positives with text like "Product #SKU-123 {Limited Edition}".
+        $html_content = preg_replace( '/(?<=^|>|\s)[#\.][a-zA-Z0-9_-]+\s*\{[^}]*?:[^}]*?\}/s', '', $html_content );
+
         return $html_content;
     }
 
@@ -106,14 +117,28 @@ class Sanitization {
         // Remove all tags except allowed formatting tags.
         $html_content = strip_tags( $html_content, $allowed_tags );
 
-        // Clean up any empty tags that might have been left.
-        $html_content = preg_replace( '/<([^>]*?)\s*\/?>/', '<$1>', $html_content );
-        $html_content = preg_replace( '/<([^>]*?)\s*\/?>\s*<\/\1>/', '', $html_content );
+        // Remove empty paired tags and tags that only contain whitespace/nbsp (handles nested empty tags).
+        // This handles tags like <strong class="rating"></strong> or <i class="icon"></i>.
+        // Loop until no more empty tags are found (handles nested cases like <strong><em></em></strong>).
+        // Iteration limit prevents DoS attacks via deeply nested malicious HTML.
+        // Note: This regex only targets paired tags (opening + closing). Void elements like <br>
+        // are intentionally preserved as they have semantic meaning (line breaks, etc.).
+        $max_iterations = 10;
+        $iterations     = 0;
+        do {
+            $before = $html_content;
+            // Remove paired tags that are completely empty or only contain whitespace/nbsp entities.
+            $html_content = preg_replace( '/<([a-z]+)[^>]*>(\s|&nbsp;|&#160;|&#xa0;)*<\/\1>/i', '', $html_content );
+            ++$iterations;
+        } while ( $before !== $html_content && $iterations < $max_iterations );
 
-        // Remove new line breaks and non-breaking spaces.
+        // Remove new line breaks and HTML entity non-breaking spaces.
         $html_content = str_replace( array( "\r", "\n", '&#xa0;' ), '', $html_content );
 
-        // Clean up multiple spaces.
+        // Remove any remaining standalone &nbsp; entities.
+        $html_content = str_replace( '&nbsp;', ' ', $html_content );
+
+        // Clean up multiple spaces (do once after all replacements to avoid redundant processing).
         $html_content = preg_replace( '/\s+/', ' ', $html_content );
 
         return trim( $html_content );
@@ -402,18 +427,21 @@ class Sanitization {
             $filtered = trim( $filtered );
         }
 
-        // Remove percent-encoded characters.
-        $found = false;
-        while ( preg_match( '/%[a-f0-9]{2}/i', $filtered, $match ) ) {
-            $filtered = str_replace( $match[0], '', $filtered );
-            $found    = true;
-        }
+        // Remove percent-encoded characters (unless explicitly preserved, e.g. for URL-encoded slugs).
+        $preserve_percent = isset( $options['preserve_percent_encoded'] ) ? (bool) $options['preserve_percent_encoded'] : false;
+        if ( ! $preserve_percent ) {
+            $found = false;
+            while ( preg_match( '/%[a-f0-9]{2}/i', $filtered, $match ) ) {
+                $filtered = str_replace( $match[0], '', $filtered );
+                $found    = true;
+            }
 
-        if ( $found ) {
-            // Strip out the whitespace that may now exist after removing percent-encoded characters.
-            $filtered = preg_replace( '/ +/', ' ', $filtered );
-            if ( ! is_null( $key ) && ! in_array( $key, array( 'prefix', 'suffix' ), true ) ) {
-                $filtered = trim( $filtered );
+            if ( $found ) {
+                // Strip out the whitespace that may now exist after removing percent-encoded characters.
+                $filtered = preg_replace( '/ +/', ' ', $filtered );
+                if ( ! is_null( $key ) && ! in_array( $key, array( 'prefix', 'suffix' ), true ) ) {
+                    $filtered = trim( $filtered );
+                }
             }
         }
 

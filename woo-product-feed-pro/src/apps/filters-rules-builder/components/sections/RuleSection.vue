@@ -110,6 +110,10 @@ const updateActionFind = (actionId: string, value: string) => {
   store.updateRuleAction(props.rule.id, actionId, { find: value });
 };
 
+const updateActionCaseSensitive = (actionId: string, checked: boolean) => {
+  store.updateRuleAction(props.rule.id, actionId, { case_sensitive: checked });
+};
+
 const removeAction = (actionId: string) => {
   store.removeRuleAction(props.rule.id, actionId);
 };
@@ -287,23 +291,44 @@ const cancelEditRuleName = () => {
                   />
                 </template>
                 <template v-if="!['exclude', 'set_attribute'].includes(action.action)">
-                  <div v-if="action.action === 'findreplace'">
+                  <div v-if="action.action === 'findreplace'" class="adt-tw-flex adt-tw-items-center adt-tw-gap-2 adt-tw-mb-2">
                     <input
                       type="text"
                       :value="action.find || ''"
-                      :class="getActionErrorClasses('adt-tw-w-full adt-tw-mb-2 adt-tw-px-2 adt-tw-py-1 adt-tw-border adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-text-sm adt-tw-focus-ring-2 adt-tw-focus-ring-blue-500 adt-tw-focus-border-blue-500 adt-tw-focus-outline-none', action.id)"
+                      :class="getActionErrorClasses('adt-tw-flex-1 adt-tw-px-2 adt-tw-py-1 adt-tw-border adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-text-sm adt-tw-focus-ring-2 adt-tw-focus-ring-blue-500 adt-tw-focus-border-blue-500 adt-tw-focus-outline-none', action.id)"
                       placeholder="Enter find text"
                       @input="updateActionFind(action.id, ($event.target as HTMLInputElement).value)"
                     />
+                    <div class="adt-tw-flex adt-tw-items-center adt-tw-gap-1 adt-case-sensitive-container" :title="__('Case Sensitive', 'woo-product-feed-pro')">
+                      <input
+                        type="checkbox"
+                        :id="`action_case_sensitive_${action.id}`"
+                        :checked="action.case_sensitive ?? true"
+                        class="adt-tw-text-blue-600 adt-tw-rounded adt-tw-border-gray-300 adt-tw-focus-ring-blue-500"
+                        @change="updateActionCaseSensitive(action.id, ($event.target as HTMLInputElement).checked)"
+                      />
+                      <label
+                        :for="`action_case_sensitive_${action.id}`"
+                        class="adt-tw-text-xs adt-tw-text-gray-600 adt-tw-whitespace-nowrap adt-tw-cursor-pointer"
+                      >
+                        Aa
+                      </label>
+                    </div>
                   </div>
-  
-                  <input
-                    type="text"
-                    :value="action.value || ''"
-                    :placeholder="getValuePlaceholder(action)"
-                    :class="getActionErrorClasses('adt-tw-w-full adt-tw-px-2 adt-tw-py-1 adt-tw-border adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-text-sm adt-tw-focus-ring-2 adt-tw-focus-ring-blue-500 adt-tw-focus-border-blue-500 adt-tw-focus-outline-none', action.id)"
-                    @input="updateActionValue(action.id, ($event.target as HTMLInputElement).value)"
-                  />
+
+                  <div :class="action.action === 'findreplace' ? 'adt-tw-flex adt-tw-gap-2' : ''">
+                    <input
+                      type="text"
+                      :value="action.value || ''"
+                      :placeholder="getValuePlaceholder(action)"
+                      :class="getActionErrorClasses('adt-tw-flex-1 adt-tw-px-2 adt-tw-py-1 adt-tw-border adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-text-sm adt-tw-focus-ring-2 adt-tw-focus-ring-blue-500 adt-tw-focus-border-blue-500 adt-tw-focus-outline-none', action.id)"
+                      @input="updateActionValue(action.id, ($event.target as HTMLInputElement).value)"
+                    />
+                    <div v-if="action.action === 'findreplace'" class="adt-tw-invisible adt-tw-flex adt-tw-items-center adt-tw-gap-1 adt-case-sensitive-container" aria-hidden="true">
+                      <div class="adt-tw-w-4 adt-tw-h-4"></div>
+                      <span class="adt-tw-text-xs adt-tw-whitespace-nowrap">Aa</span>
+                    </div>
+                  </div>
                 </template>
               </div>
 

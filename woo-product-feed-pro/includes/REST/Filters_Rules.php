@@ -162,7 +162,7 @@ class Filters_Rules extends Abstract_REST {
             'adt_pfp_get_categories_dropdown_args',
             array(
                 'taxonomy'   => 'product_cat',
-                'hide_empty' => 'false',
+                'hide_empty' => false,
             ),
             $filter_feed_id
         );
@@ -187,7 +187,7 @@ class Filters_Rules extends Abstract_REST {
             foreach ( $product_categories as $category ) {
                 $formatted_categories[] = array(
                     'value' => $category->slug,
-                    'label' => $category->name . ' (' . $category->slug . ')',
+                    'label' => $category->name . ' (' . urldecode( $category->slug ) . ')',
                     'name'  => $category->name,
                     'slug'  => $category->slug,
                 );

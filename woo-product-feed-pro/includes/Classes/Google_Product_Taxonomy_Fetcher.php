@@ -33,6 +33,8 @@ class Google_Product_Taxonomy_Fetcher extends Abstract_Class {
      * @since 13.3.4
      */
     public function register_action() {
+        $this->unregister_action();
+
         // Start at random time today at midnight in range of 1-3 hours.
         $timestamp = strtotime( gmdate( 'Y-m-d 00:00:00', strtotime( '+1 day' ) ) ) + wp_rand( 1 * HOUR_IN_SECONDS, 3 * HOUR_IN_SECONDS );
 
@@ -40,7 +42,10 @@ class Google_Product_Taxonomy_Fetcher extends Abstract_Class {
         as_schedule_recurring_action(
             $timestamp,
             WEEK_IN_SECONDS,
-            ADT_PFP_AS_FETCH_GOOGLE_PRODUCT_TAXONOMY
+            ADT_PFP_AS_FETCH_GOOGLE_PRODUCT_TAXONOMY,
+            array(),
+            '',
+            true
         );
     }
 

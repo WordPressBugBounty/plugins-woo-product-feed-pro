@@ -389,7 +389,7 @@ class Settings_Page extends Admin_Page {
      **/
     public function settings_page_footer_text( $default_text ) {
         $screen = get_current_screen();
-        if ( strpos( $screen->id, 'woosea_manage_settings' ) === false ) {
+        if ( ! str_contains( $screen->id, 'woosea_manage_settings' ) ) {
             return $default_text;
         }
 

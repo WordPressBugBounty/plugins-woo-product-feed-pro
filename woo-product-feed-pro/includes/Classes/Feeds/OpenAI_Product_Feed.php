@@ -112,13 +112,13 @@ class OpenAI_Product_Feed extends Abstract_Class {
             $shipping_pieces = explode( ':', $shipping );
 
             foreach ( $shipping_pieces as $piece ) {
-                if ( strpos( $piece, 'WOOSEA_COUNTRY##' ) !== false ) {
+                if ( str_contains( $piece, 'WOOSEA_COUNTRY##' ) ) {
                     $country = str_replace( 'WOOSEA_COUNTRY##', '', $piece );
-                } elseif ( strpos( $piece, 'WOOSEA_REGION##' ) !== false ) {
+                } elseif ( str_contains( $piece, 'WOOSEA_REGION##' ) ) {
                     $region = str_replace( 'WOOSEA_REGION##', '', $piece );
-                } elseif ( strpos( $piece, 'WOOSEA_SERVICE##' ) !== false ) {
+                } elseif ( str_contains( $piece, 'WOOSEA_SERVICE##' ) ) {
                     $service = str_replace( 'WOOSEA_SERVICE##', '', $piece );
-                } elseif ( strpos( $piece, 'WOOSEA_PRICE##' ) !== false ) {
+                } elseif ( str_contains( $piece, 'WOOSEA_PRICE##' ) ) {
                     $price = str_replace( 'WOOSEA_PRICE##', '', $piece );
                 }
             }
@@ -270,7 +270,7 @@ class OpenAI_Product_Feed extends Abstract_Class {
      * array of associative arrays rather than a semicolon-delimited string, which
      * is correct for JSON serialisation.
      *
-     * @since 13.5.2
+     * @since 13.5.2.2
      *
      * @param string $value Raw shipping value in WOOSEA_COUNTRY##…:WOOSEA_SERVICE##…:… format,
      *                      with multiple entries separated by '||'.
@@ -290,13 +290,13 @@ class OpenAI_Product_Feed extends Abstract_Class {
             $shipping_pieces = explode( ':', $shipping );
 
             foreach ( $shipping_pieces as $piece ) {
-                if ( strpos( $piece, 'WOOSEA_COUNTRY##' ) !== false ) {
+                if ( str_contains( $piece, 'WOOSEA_COUNTRY##' ) ) {
                     $country = str_replace( 'WOOSEA_COUNTRY##', '', $piece );
-                } elseif ( strpos( $piece, 'WOOSEA_REGION##' ) !== false ) {
+                } elseif ( str_contains( $piece, 'WOOSEA_REGION##' ) ) {
                     $region = str_replace( 'WOOSEA_REGION##', '', $piece );
-                } elseif ( strpos( $piece, 'WOOSEA_SERVICE##' ) !== false ) {
+                } elseif ( str_contains( $piece, 'WOOSEA_SERVICE##' ) ) {
                     $service = str_replace( 'WOOSEA_SERVICE##', '', $piece );
-                } elseif ( strpos( $piece, 'WOOSEA_PRICE##' ) !== false ) {
+                } elseif ( str_contains( $piece, 'WOOSEA_PRICE##' ) ) {
                     $price = str_replace( 'WOOSEA_PRICE##', '', $piece );
                 }
             }

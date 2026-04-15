@@ -222,7 +222,6 @@
 
 .adt-license-settings .learn-more a {
   display: inline-block;
-  color: #555;
 }
 
 .adt-license-settings .form-row.form-group {
@@ -269,19 +268,26 @@
   flex-direction: initial;
 }
 
-.adt-license-settings .vl-license-notification .notice {
+.adt-license-settings .adt-license-notification .adt-notice {
   display: none;
-  padding-right: 38px;
+  padding: 10px 38px 10px 12px;
   position: relative;
   margin: 0 0 13px 0;
   border-radius: 6px;
-  border-top-color: #e8e8eb;
-  border-right-color: #e8e8eb;
-  border-bottom-color: #e8e8eb;
+  border: 1px solid #e8e8eb;
+  border-left-width: 4px;
 }
 
-.adt-license-settings .vl-license-notification .notice.show {
-  display: block;
+.adt-license-settings .adt-license-notification .adt-notice.notice-success {
+  border-left-color: #6bb738;
+}
+
+.adt-license-settings .adt-license-notification .adt-notice.notice-error {
+  border-left-color: #cc2828;
+}
+
+.adt-license-settings .license-box .row > .col-right.license-status {
+  text-align: right;
 }
 
 @media screen and (max-width: 1132px) {

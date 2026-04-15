@@ -126,7 +126,7 @@ return array(
         'TikTok Product Catalog'               => array(
             'channel_hash' => 'c18b6f285f37a8f4106611c9a247dffc',
             'name'         => 'TikTok Product Catalog',
-            'fields'       => 'snapchat',
+            'fields'       => 'tiktok',
             'taxonomy'     => 'google_shopping',
             'utm_source'   => 'tiktok',
             'type'         => 'Advertising',

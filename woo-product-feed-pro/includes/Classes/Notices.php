@@ -44,6 +44,12 @@ class Notices extends Abstract_Class {
             if ( ! isset( $notice['option'] ) || get_option( $notice['option'] ) === 'dismissed' ) {
                 continue;
             }
+
+            // Skip notices that manage their own scheduling (e.g., addon notices from Elite).
+            if ( ! empty( $notice['skip_cron'] ) ) {
+                continue;
+            }
+
             $this->_schedule_single_notice_cron( $key, $notice['option'], $notice['days'] );
         }
     }
@@ -256,8 +262,6 @@ class Notices extends Abstract_Class {
         } else {
             // Check if there are notices that should show admin-wide.
             foreach ( $notices as $notice_key => $notice_data ) {
-                $notice_data = $this->_notices[ $notice_key ] ?? array();
-
                 if ( isset( $notice_data['show_admin_wide'] ) && $notice_data['show_admin_wide'] && get_option( $notice_data['option'] ) === 'yes' ) {
                     $should_enqueue = true;
                     break;
@@ -306,8 +310,6 @@ class Notices extends Abstract_Class {
         // Count visible notices first to determine if navigation is needed.
         $visible_notices = array();
         foreach ( $notices as $notice_key => $notice_data ) {
-            $notice_data = $this->_notices[ $notice_key ] ?? array();
-
             // display only on eligible screens.
             if ( ! $is_pfp_screen && ! ( isset( $notice_data['show_admin_wide'] ) && $notice_data['show_admin_wide'] ) ) {
                 continue;
@@ -409,16 +411,24 @@ class Notices extends Abstract_Class {
             // Add relative timestamp for display.
             $this->_notices[ $notice_key ]['timestamp'] = $this->get_relative_time( $meta['first_shown_at'] );
 
-            // Add install action nonce for plugin recommendation notices.
-            if ( isset( $notice_data['notice_type'] ) && 'plugin_recommendation' === $notice_data['notice_type'] ) {
-                // Find the key of the actions with class adt-pfp-install-plugin.
-                $actions            = $this->_notices[ $notice_key ]['actions'];
-                $install_action_key = array_search( 'adt-pfp-install-plugin', array_column( $actions, 'class' ), true );
+            // Generate nonces for notice actions.
+            if ( isset( $this->_notices[ $notice_key ]['actions'] ) ) {
+                foreach ( $this->_notices[ $notice_key ]['actions'] as &$action ) {
+                    // Existing: plugin_recommendation install nonce.
+                    if ( isset( $notice_data['notice_type'] )
+                        && 'plugin_recommendation' === $notice_data['notice_type']
+                        && isset( $action['class'] )
+                        && 'adt-pfp-install-plugin' === $action['class']
+                    ) {
+                        $action['nonce'] = wp_create_nonce( 'adt_install_plugin' );
+                    }
 
-                // Only add nonce if the install action was found.
-                if ( false !== $install_action_key ) {
-                    $this->_notices[ $notice_key ]['actions'][ $install_action_key ]['nonce'] = wp_create_nonce( 'adt_install_plugin' );
+                    // Generic: any action can specify its own nonce_action.
+                    if ( ! empty( $action['nonce_action'] ) ) {
+                        $action['nonce'] = wp_create_nonce( $action['nonce_action'] );
+                    }
                 }
+                unset( $action );
             }
         }
 
@@ -485,6 +495,7 @@ class Notices extends Abstract_Class {
                     'actions'         => $notice['actions'] ?? array(),
                     'data'            => $notice['data'] ?? array(),
                     'nonce'           => $notice['nonce'] ?? '',
+                    'notice_type'     => $notice['notice_type'] ?? '',
                     'show_navigation' => $show_navigation,
                 ),
             );

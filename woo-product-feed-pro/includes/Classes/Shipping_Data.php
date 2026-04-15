@@ -802,15 +802,19 @@ class Shipping_Data extends Abstract_Class {
      * Initialize WooCommerce cart session if it doesn't exist
      * This prevents errors when running via cron with table rate shipping.
      *
-     * @since 13.4.3
+     * @since 13.5.4
      * @access private
      */
     private function maybe_init_wc_session() {
-        // Check if WC exists but session is not initialized.
-        if ( wp_doing_cron() && function_exists( 'wc_load_cart' ) && ( ! isset( WC()->session ) || ! is_object( WC()->session ) ) ) {
-            // Use wc_load_cart to initialize session and cart properly.
-            wc_load_cart();
+        if ( ! function_exists( 'wc_load_cart' ) ) {
+            return;
         }
+
+        if ( WC()->cart instanceof \WC_Cart ) {
+            return;
+        }
+
+        wc_load_cart();
     }
 
     /**

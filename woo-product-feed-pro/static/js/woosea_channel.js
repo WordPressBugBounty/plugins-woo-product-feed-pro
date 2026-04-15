@@ -19,7 +19,7 @@ jQuery(document).ready(function ($) {
             '    ' +
               __(
                 'You have multiple shipping zones configured for your shop. Do you want to add all Shipping zones to your product feed or just a one?',
-                'woo-product-feed-pro'
+                'woo-product-feed-pro',
               ),
             '  </td>',
             '  <td valign="top">',
@@ -78,7 +78,7 @@ jQuery(document).ready(function ($) {
 
   jQuery('#countries').on('change', function () {
     var country = this.value;
-    var security = $('#_wpnonce').val();
+    var security = $('form.adt-edit-feed-form#general #_wpnonce').val();
     var td = $('#channel_hash').closest('td');
     var is_new_feed = $(this).data('is_new_feed');
 
@@ -96,7 +96,7 @@ jQuery(document).ready(function ($) {
     // Add a spinner inside the td element
     if ($('#channel-loading-spinner').length === 0) {
       td.append(
-        '<span id="channel-loading-spinner" class="spinner is-active" style="float:none;margin-left:5px;display:inline-block;"></span>'
+        '<span id="channel-loading-spinner" class="spinner is-active" style="float:none;margin-left:5px;display:inline-block;"></span>',
       );
     }
 
@@ -153,7 +153,7 @@ jQuery(document).ready(function ($) {
         $('#file').after(
           '<tr id="delimiter"><td><span>' +
             __('Delimiter:', 'woo-product-feed-pro') +
-            '</span></td><td><select name="delimiter" class="select-field"><option value=",">, comma</option><option value="|">| pipe</option><option value=";">;</option><option value="tab">tab</option><option value="#">#</option></select></td></tr>'
+            '</span></td><td><select name="delimiter" class="select-field"><option value=",">, comma</option><option value="|">| pipe</option><option value=";">;</option><option value="tab">tab</option><option value="#">#</option></select></td></tr>',
         );
       }
     }

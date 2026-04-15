@@ -44,6 +44,8 @@ class Product_Feed_Attributes extends Abstract_Class {
             'mother_title_hyphen'             => 'Product name parent product hyphen',
             'title_lc'                        => 'Product name lowercase',
             'title_lcw'                       => 'Product name uppercase first characters',
+            'raw_title'                       => 'Unfiltered product name',
+            'raw_mother_title'                => 'Unfiltered product name parent product',
             'description'                     => 'Product description',
             'short_description'               => 'Product short description',
             'raw_description'                 => 'Unfiltered product description',

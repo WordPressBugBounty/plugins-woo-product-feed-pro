@@ -124,7 +124,7 @@ class Marketing extends Abstract_Class {
         }
 
         foreach ( $this->marketing_submenus as $submenu ) {
-            if ( strpos( $screen->id, $submenu['slug'] ) !== false ) {
+            if ( str_contains( $screen->id, $submenu['slug'] ) ) {
                 wp_enqueue_style( 'pfp-admin-marketing', ADT_PFP_CSS_URL . 'pfp-admin-marketing.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
                 wp_enqueue_script( 'pfp-admin-marketing', ADT_PFP_JS_URL . 'pfp-admin-marketing.js', array( 'jquery' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
                 wp_localize_script( 'pfp-admin-marketing', 'pfp_admin_marketing', array( 'nonce' => wp_create_nonce( 'pfp-admin-marketing' ) ) );
@@ -152,7 +152,7 @@ class Marketing extends Abstract_Class {
         }
 
         foreach ( $this->marketing_submenus as $submenu ) {
-            if ( strpos( $screen->id, $submenu['slug'] ) !== false ) {
+            if ( str_contains( $screen->id, $submenu['slug'] ) ) {
                 $is_pfp_page = true;
             }
         }
@@ -177,7 +177,7 @@ class Marketing extends Abstract_Class {
         }
 
         foreach ( $this->marketing_submenus as $submenu ) {
-            if ( strpos( $screen->id, $submenu['slug'] ) !== false ) {
+            if ( str_contains( $screen->id, $submenu['slug'] ) ) {
                 $show = false;
             }
         }

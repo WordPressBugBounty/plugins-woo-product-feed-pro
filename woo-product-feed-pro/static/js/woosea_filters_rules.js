@@ -14,7 +14,7 @@ jQuery(document).ready(function ($) {
 
   // Add filter row
   $('.add-filter').on('click', function () {
-    const nonce = $('#_wpnonce').val();
+    const nonce = $('form#filters_rules #_wpnonce').val();
     const rowCount = Math.round(new Date().getTime() + Math.random() * 100);
     const feedType = $('input[name="feed_type"]').val();
 
@@ -53,7 +53,7 @@ jQuery(document).ready(function ($) {
 
   // Add rule row
   $('.add-rule').on('click', function () {
-    const nonce = $('#_wpnonce').val();
+    const nonce = $('form#filters_rules #_wpnonce').val();
     const rowCount = Math.round(new Date().getTime() + Math.random() * 100);
     const feedType = $('input[name="feed_type"]').val();
 
@@ -216,7 +216,7 @@ jQuery(document).ready(function ($) {
   function bindConditionChangeEvents(rowCount) {
     $('#condition_' + rowCount).on('change', function () {
       const condition = $(this).val();
-      const nonce = $('#_wpnonce').val();
+      const nonce = $('form#filters_rules #_wpnonce').val();
 
       $.ajax({
         method: 'POST',
@@ -276,7 +276,7 @@ jQuery(document).ready(function ($) {
   function bindThanAttributeChangeEvents(rowCount) {
     $('#than_attribute_' + rowCount).on('change', function () {
       if ($(this).val() === 'google_category') {
-        const nonce = $('#_wpnonce').val();
+        const nonce = $('form#filters_rules #_wpnonce').val();
 
         $.ajax({
           method: 'POST',

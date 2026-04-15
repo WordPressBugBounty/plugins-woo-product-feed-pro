@@ -82,18 +82,9 @@ class Feed_Writer_JSONL extends Abstract_Class {
      * @return array Array containing local and external file paths.
      */
     private function initialize_file( object $feed, bool $is_header ): array {
-        $upload_dir = wp_upload_dir();
-        $base       = $upload_dir['basedir'];
-        $path       = $base . '/woo-product-feed-pro/jsonl';
-
-        // Sanitize the file name.
-        $sanitized_name = sanitize_file_name( $feed->file_name );
-        $local_file     = $path . '/' . $sanitized_name . '_tmp.jsonl';
-
-        // External location for downloading the file.
-        $external_base = $upload_dir['baseurl'];
-        $external_path = $external_base . '/woo-product-feed-pro/jsonl';
-        $external_file = $external_path . '/' . $sanitized_name . '.jsonl';
+        $path          = $feed->get_file_dir_path();
+        $local_file    = $feed->get_temp_file_path();
+        $external_file = $feed->get_file_url();
 
         // Check if directory exists, if not create one.
         if ( ! file_exists( $path ) ) {

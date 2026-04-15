@@ -81,7 +81,10 @@ $unread_count     = $notices_instance->get_unread_count();
                         }
                         ?>
                         <!-- Notification Item -->
-                        <div class="adt-notification-drawer__item adt-tw-px-6 adt-tw-py-5 adt-tw-bg-white adt-tw-border-b adt-tw-border-gray-100 hover:adt-tw-bg-gray-50 adt-tw-transition-colors" data-notice-id="<?php echo esc_attr( $notice_key ); ?>" data-nonce="<?php echo esc_attr( $notice_data['nonce'] ?? '' ); ?>">
+                        <div class="adt-notification-drawer__item adt-tw-px-6 adt-tw-py-5 adt-tw-bg-white adt-tw-border-b adt-tw-border-gray-100 hover:adt-tw-bg-gray-50 adt-tw-transition-colors" data-notice-id="<?php echo esc_attr( $notice_key ); ?>" data-nonce="<?php echo esc_attr( $notice_data['nonce'] ?? '' ); ?>"
+                        <?php if ( ! empty( $notice_data['notice_type'] ) ) : ?>
+                        data-notice-type="<?php echo esc_attr( $notice_data['notice_type'] ); ?>"
+                        <?php endif; ?>>
                             <div class="adt-tw-flex adt-tw-gap-4">
                                 <!-- Icon -->
                                 <div class="adt-tw-w-12 adt-tw-h-12 adt-tw-rounded-full adt-tw-flex adt-tw-items-center adt-tw-justify-center adt-tw-flex-shrink-0" style="background-color: rgba(230, 61, 120, 0.15); color: #e63d78;">

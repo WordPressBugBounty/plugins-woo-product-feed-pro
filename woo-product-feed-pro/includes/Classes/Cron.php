@@ -119,6 +119,41 @@ class Cron extends Abstract_Class {
             return;
         }
 
+        // Guard: if feed is still processing, check if it's stuck or has active batches.
+        if ( 'processing' === $feed->status ) {
+            $pending_batches = $this->query_pending_batch_actions( $feed_id );
+
+            if ( ! empty( $pending_batches ) ) {
+                // Previous run still has pending batches — skip this scheduled run.
+                if ( function_exists( 'wc_get_logger' ) ) {
+                    wc_get_logger()->warning(
+                        'Skipping scheduled feed generation: previous run still has pending batches',
+                        array(
+                            'source'          => 'woo-product-feed-pro',
+                            'feed_id'         => $feed_id,
+                            'pending_batches' => count( $pending_batches ),
+                        )
+                    );
+                }
+                return;
+            }
+
+            // No pending batches but status is processing — feed is stuck, allow reset.
+            if ( function_exists( 'wc_get_logger' ) ) {
+                wc_get_logger()->info(
+                    'Feed appears stuck (processing with no pending batches), allowing reset',
+                    array(
+                        'source'  => 'woo-product-feed-pro',
+                        'feed_id' => $feed_id,
+                    )
+                );
+            }
+
+            // Reset status so generate() won't be blocked by the guard.
+            $feed->status = 'ready';
+            $feed->save();
+        }
+
         Product_Feed_Helper::disable_cache();
 
         $feed->generate( 'schedule' );
@@ -141,12 +176,12 @@ class Cron extends Abstract_Class {
         }
 
         /**
-         * Check if the feed is stopped.
+         * Check if the feed is still in processing status.
          *
-         * If in the middle of processing a feed and the feed is stopped by the user.
-         * This is to avoid the feed from continuing to process when the user has stopped it.
+         * Skip if the feed was stopped by the user, or if it's no longer processing
+         * (e.g., a stale batch from a previous run arriving after a new run completed).
          */
-        if ( 'stopped' === $feed->status ) {
+        if ( 'processing' !== $feed->status ) {
             return;
         }
 
@@ -176,6 +211,27 @@ class Cron extends Abstract_Class {
         $feed->save();
     }
 
+
+    /**
+     * Query pending batch actions for a given feed.
+     *
+     * @since 13.5.4
+     * @access private
+     *
+     * @param int $feed_id Feed ID.
+     * @return array
+     */
+    private function query_pending_batch_actions( $feed_id ) {
+        return as_get_scheduled_actions(
+            array(
+                'hook'     => ADT_PFP_AS_GENERATE_PRODUCT_FEED_BATCH,
+                'status'   => \ActionScheduler_Store::STATUS_PENDING,
+                'args'     => array( 'feed_id' => intval( $feed_id ) ),
+                'per_page' => 1,
+            ),
+            'ids'
+        );
+    }
 
     /**
      * Run the class

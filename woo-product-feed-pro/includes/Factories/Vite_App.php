@@ -767,7 +767,7 @@ class Vite_App {
              * attributes in production mode.
              */
             foreach ( $this->manifest[ $this->entry_file_path ]['css'] as $style ) {
-                if ( false !== strpos( $href, $style ) ) {
+                if ( str_contains( $href, $style ) ) {
                     $integrity = 'crossorigin="anonymous" ';
                     if ( apply_filters( 'adt_pfp_enable_subresource_integrity_check', defined( 'ADT_PFP_ENABLE_SUBRESOURCE_INTEGRITY_CHECK' ) && ADT_PFP_ENABLE_SUBRESOURCE_INTEGRITY_CHECK ) ) {
                         $integrity = sprintf(

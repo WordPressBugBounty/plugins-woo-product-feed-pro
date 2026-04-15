@@ -554,11 +554,11 @@ class Usage extends Abstract_Class {
         // Don't track anything from our domains.
         $home_url = trailingslashit( home_url() );
         if (
-            strpos( $home_url, 'wholesalesuiteplugin.com' ) !== false
-            || strpos( $home_url, 'advancedcouponsplugin.com' ) !== false
-            || strpos( $home_url, 'adtribes.io' ) !== false
-            || strpos( $home_url, 'wcvendors.com' ) !== false
-            || strpos( $home_url, 'visser.com.au' ) !== false
+            str_contains( $home_url, 'wholesalesuiteplugin.com' )
+            || str_contains( $home_url, 'advancedcouponsplugin.com' )
+            || str_contains( $home_url, 'adtribes.io' )
+            || str_contains( $home_url, 'wcvendors.com' )
+            || str_contains( $home_url, 'visser.com.au' )
         ) {
             return false;
         }

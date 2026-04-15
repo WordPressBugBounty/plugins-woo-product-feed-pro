@@ -3,9 +3,9 @@ Contributors: jkohlbach, RymeraWebCo, Rymera01, smub
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
-Requires at least: 5.4
-Tested up to: 6.9.1
-Stable tag: 13.5.2.2
+Requires at least: 5.9
+Tested up to: 7.0
+Stable tag: trunk
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -389,23 +389,44 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 
 === Changelog ===
 
+= 13.5.3 (2026-04-01) =
+* Bug Fix: Bug: Legacy filters/rules nonce selector picks up wrong #_wpnonce element
+* Bug Fix: Bug: TikTok Product Catalog channel loads Snapchat attribute template instead of its own
+* Bug Fix: Bug: XML attribute values not escaping special character
+* Bug Fix: Category Filter Does Not Work with Non-English Category Names
+* Bug Fix: Duplicate Action Scheduler jobs for taxonomy fetch and product feed generation (activation / unregister)
+* Bug Fix: Fatal error on feed generation: get_cart_contents_weight() on null (cart not loaded under Action Scheduler)
+* Bug Fix: Flatsome UX Product Builder Description Outputting HTML Tags
+* Bug Fix: Old Feeds on automatic refresh has less products
+* Bug Fix: PHP warning: simplexml_load_file() parses CSV temp file in woosea_create_xml_feed() non-google_shopping branch
+* Bug Fix: Product title disappears in feed when Optimized Title is empty
+* Bug Fix: Remove Facebook Pixel and CAPI tracking logic from bootstrap-old.php
+* Bug Fix: Translating Plugin Language to Russian Breaks UI and Functionality
+* Bug Fix: [excluded_destination] attribute requirements not being followed on XML file
+* Bug Fix: fix: Restore woosea_add_remarketing_tags and get_wc_page_type() to PRO plugin
+* Improvement: Add "Case Sensitivity" Option for "Find and Replace" in Rules Builder
+* Improvement: Enhancement: Unified extensible license management page infrastructure
+* Improvement: Introduce "Unfiltered Product Name" Attribute
+* Improvement: Replace strpos() with str_contains() across the codebase
+* Improvement: Restore Facebook Pixel tracking as OOP class
+
 = 13.5.2.2 (2026-03-05) =
 * Bug Fix: CSRF vulnerability — nonce bypass on multiple AJAX endpoints (Wordfence report)
 * Improvement: Support JSONL.GZ and CSV.GZ file format for OpenAI Feeds
 
 = 13.5.2.1 (2026-02-17) =
-* Bug Fix: Filter `raw_description` and `raw_short_description` should be working with "is equal to"
-* Bug Fix: Security: CSRF + Arbitrary WordPress Option Update Vulnerability in adt_pfp_update_settings
-* Improvement: Add a ToolTip on Rules Section that it applies on the Mapped Value not Attribute
-* Improvement: Add new "Tax class name" attribute
-* Improvement: Improve XML Feed Formatting for Large Product Feeds Using XMLWriter
+* Bug Fix: Filter `raw_description` and `raw_short_description` should work with 'is equal to'.
+* Bug Fix: Input validation issue in adt_pfp_update_settings.
+* Improvement: Add a Tooltip on Rules Section that it applies to the mapped value, not the attribute.
+* Improvement: Add a new 'Tax class name' attribute.
+* Improvement: Improve XML Feed Formatting for Large Product Feeds Using XMLWriter.
 
 = 13.5.2 (2026-01-27) =
-* Bug Fix: "Remove products that did not have sales in the last days" Field Cannot Be Disabled
-* Bug Fix: Force Pinterest Feeds to Follow ISO-4217 Format
-* Bug Fix: Unable to Select File Formats Other Than XML for Google Shopping Feeds
-* Improvement: Add Support for Min/Max Handling Time in Shipping Data
-* Improvement: PHP 8.5 Compatibility
+* Bug Fix: "Remove products that did not have sales in the last days" field cannot be disabled
+* Bug Fix: Force Pinterest feeds to follow ISO-4217 format
+* Bug Fix: Unable to select file formats other than XML for Google Shopping feeds
+* Improvement: Add support for Min/Max handling time in shipping data
+* Improvement: PHP 8.5 compatibility
 
 = 13.5.1 (2025-12-15) =
 * Bug Fix: "Remove All Other Shipping Options" Setting Doesn't Work

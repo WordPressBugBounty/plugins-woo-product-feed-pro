@@ -160,7 +160,7 @@ class Admin_Notice extends Abstract_Class {
                     );
                 } else {
                     $message = '';
-                    if ( false !== strpos( $failed_dependency['plugin-base'], 'woocommerce.php' ) ) {
+                    if ( str_contains( $failed_dependency['plugin-base'], 'woocommerce.php' ) ) {
                         $message .= sprintf(/* translators: %1$s = opening <p> tag; %2$s = closing </p> tag; %3$s = Product Feed Pro for WooCommerce */
                             esc_html__(
                                 '%1$sUnable to activate %3$s plugin. Please install and activate WooCoomerce plugin first.%2$s',

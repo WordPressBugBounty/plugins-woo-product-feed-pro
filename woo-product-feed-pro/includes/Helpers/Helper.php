@@ -110,7 +110,23 @@ class Helper {
             return false;
         }
 
-        $is_plugin_page = strpos( $screen->id, 'product-feed_page_' ) !== false || strpos( $screen->id, 'woo-product-feed' ) !== false;
+        $plugin_page_slugs = array(
+            '_page_woo-product-feed',
+            '_page_adt-edit-feed',
+            '_page_woosea_manage_settings',
+            '_page_adt_license_settings_page',
+            '_page_pfp-help-page',
+            '_page_pfp-about-page',
+            '_page_upgrade-to-elite',
+        );
+
+        $is_plugin_page = false;
+        foreach ( $plugin_page_slugs as $slug ) {
+            if ( str_contains( $screen->id, $slug ) ) {
+                $is_plugin_page = true;
+                break;
+            }
+        }
         return apply_filters( 'adt_is_plugin_page', $is_plugin_page );
     }
 
@@ -147,6 +163,37 @@ class Helper {
         );
 
         return in_array( $post_type, $post_types, true ) || in_array( $screen->id, $wc_screens, true );
+    }
+
+    /**
+     * Detect the current WooCommerce page type.
+     *
+     * Returns a string identifier for the current frontend page context.
+     * Used for conditional tracking logic (e.g. Facebook Pixel, Google Remarketing).
+     *
+     * @since 13.5.3
+     * @access public
+     *
+     * @return string One of: 'product', 'cart', 'category', 'home', 'searchresults', 'other'.
+     */
+    public static function get_wc_page_type() {
+        if ( ! function_exists( 'is_product' ) ) {
+            return 'other';
+        }
+
+        if ( is_product() ) {
+            return 'product';
+        } elseif ( is_cart() || is_checkout() ) {
+            return 'cart';
+        } elseif ( is_product_category() ) {
+            return 'category';
+        } elseif ( is_front_page() ) {
+            return 'home';
+        } elseif ( is_search() ) {
+            return 'searchresults';
+        }
+
+        return 'other';
     }
 
     /**
@@ -257,7 +304,7 @@ class Helper {
         $url = strtolower( trim( $url ) );
 
         // Need to get the host...so let's add the scheme so we can use parse_url.
-        if ( false === strpos( $url, 'http://' ) && false === strpos( $url, 'https://' ) ) {
+        if ( ! str_contains( $url, 'http://' ) && ! str_contains( $url, 'https://' ) ) {
             $url = 'http://' . $url;
         }
 
@@ -275,7 +322,7 @@ class Helper {
 
             $tlds_to_check = array( '.local', ':8888', ':8080', ':8081', '.invalid', '.example', '.test' );
             foreach ( $tlds_to_check as $tld ) {
-                if ( false !== strpos( $host, $tld ) ) {
+                if ( str_contains( $host, $tld ) ) {
                     $is_local_url = true;
                     break;
                 }
@@ -309,7 +356,7 @@ class Helper {
 
         $supports_json  = false;
         $db_server_info = is_callable( array( $wpdb, 'db_server_info' ) ) ? $wpdb->db_server_info() : $wpdb->db_version();
-        if ( false !== strpos( $db_server_info, 'MariaDB' ) ) {
+        if ( str_contains( $db_server_info, 'MariaDB' ) ) {
             $supports_json = version_compare(
                 PHP_VERSION_ID >= 80016 ? $wpdb->db_version() : preg_replace( '/[^0-9.].*/', '', str_replace( '5.5.5-', '', $db_server_info ) ),
                 '10.2',
@@ -572,7 +619,7 @@ class Helper {
         // Check if WooCommerce 10.3.0+ is active.
         if ( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '10.3.0', '>=' ) ) {
             // If handle already has 'wc-' prefix, return as-is.
-            if ( strpos( $handle, 'wc-' ) === 0 ) {
+            if ( str_starts_with( $handle, 'wc-' ) ) {
                 return $handle;
             }
 

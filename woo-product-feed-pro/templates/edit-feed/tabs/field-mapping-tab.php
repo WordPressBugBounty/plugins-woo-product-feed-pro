@@ -134,13 +134,13 @@ if (file_exists($channel_class_file)) {
                                     $value        = '';
                                     
                                     // If static value then extract the value from the static_value key. eg. static_value:price
-                                    if ( strpos( $suggested_attribute, 'static_value:' ) !== false ) {
+                                    if ( str_contains( $suggested_attribute, 'static_value:' ) ) {
                                         $value        = str_replace( 'static_value:', '', $suggested_attribute );
                                         $suggested_attribute = 'static_value';
-                                    } elseif ( strpos( $suggested_attribute, 'page:' ) !== false ) {
+                                    } elseif ( str_contains( $suggested_attribute, 'page:' ) ) {
                                         $value        = str_replace( 'page:', '', $suggested_attribute );
                                         $suggested_attribute = 'page_url';
-                                    } elseif ( strpos( $suggested_attribute, 'post:' ) !== false ) {
+                                    } elseif ( str_contains( $suggested_attribute, 'post:' ) ) {
                                         $value        = str_replace( 'post:', '', $suggested_attribute );
                                         $suggested_attribute = 'post_url';
                                     }

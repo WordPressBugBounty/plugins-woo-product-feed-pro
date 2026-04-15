@@ -3,649 +3,6 @@
 use AdTribes\PFP\Helpers\Helper;
 
 /**
- * Get category path for Facebook pixel.
- *
- * @param int    $id The term ID.
- * @param string $taxonomy The taxonomy.
- * @param string $project_taxonomy The project taxonomy.
- * @param bool   $link Whether to link the category.
- * @param bool   $nicename Whether to use the category nicename.
- * @param array  $visited The visited categories.
- *
- * @return string The category path.
- */
-function woosea_get_term_parents( $id, $taxonomy, $project_taxonomy, $link = false, $nicename = false, $visited = array() ) {
-    // Only add Home to the beginning of the chain when we start buildin the chain.
-        if ( empty( $visited ) ) {
-            $chain = 'Home';
-        } else {
-            $chain = '';
-        }
-
-    $parent        = get_term( $id, $taxonomy );
-        $separator = ' > ';
-
-        if ( is_wp_error( $parent ) ) {
-            return $parent;
-        }
-
-        if ( $parent ) {
-            if ( $nicename ) {
-                    $name = $parent->slug;
-                } else {
-                    $name = $parent->name;
-                }
-
-            if ( $parent->parent && ( $parent->parent != $parent->term_id ) && ! in_array( $parent->parent, $visited, true ) ) {
-                    $visited[] = $parent->parent;
-                    $chain    .= woosea_get_term_parents( $parent->parent, $taxonomy, $separator, $link = false, $nicename, $visited );
-            }
-
-            if ( $link ) {
-                    $chain .= $separator . $name;
-                } else {
-                    $chain .= $separator . $name;
-            }
-    }
-    return $chain;
-}
-
-/**
- * Add Facebook pixel.
- *
- * @param object $product The product object.
- */
-function woosea_add_facebook_pixel( $product = null ) {
-    // Check if WooCommerce is loaded and available
-    if ( ! class_exists( 'WooCommerce' ) ) {  
-        return;  
-    }  
-
-    if ( ! is_object( $product ) ) {
-        $post_id = apply_filters( 'adt_facebook_pixel_post_id', get_the_ID() );
-        $product = function_exists( 'wc_get_product' ) ? wc_get_product( $post_id ) : null;  
-    }  
-    
-    if ( ! $product instanceof WC_Product ) {  
-        return;  
-    }
-
-    $add_facebook_pixel = get_option( 'adt_add_facebook_pixel' );
-    $add_facebook_capi  = get_option( 'add_facebook_capi' );
-
-    if ( $add_facebook_pixel == 'yes' ) {
-        $fb_pagetype           = WooSEA_Google_Remarketing::woosea_google_remarketing_pagetype();
-        $viewContent           = '';
-        $event_id              = uniqid( rand(), true );
-        $currency              = get_woocommerce_currency();
-        $facebook_pixel_id = get_option( 'adt_facebook_pixel_id' );
-        $facebook_capi_token   = get_option( 'adt_facebook_capi_token' );
-
-        // Add vulnerability check.
-        if ( ! is_numeric( $facebook_pixel_id ) ) {
-            unset( $facebook_pixel_id );
-        }
-
-        if ( isset( $facebook_pixel_id ) && ( $facebook_pixel_id > 0 ) ) {
-            // Set Facebook conversion API data.
-            define( 'FACEBOOK_APP_ACCESS_TOKEN', $facebook_capi_token );
-            define( 'FACEBOOK_PIXEL_OFFLINE_EVENT_SET_ID', $facebook_pixel_id );
-            $fb_capi_data['match_keys']                     = array();
-            $fb_capi_data['event_time']                     = time();
-            $fb_capi_data['event_id']                       = $event_id;
-            $fb_capi_data['user_data']['client_ip_address'] = WC_Geolocation::get_ip_address();
-            if ( ! isset( $_SERVER['HTTP_USER_AGENT'] ) ) {
-                $_SERVER['HTTP_USER_AGENT'] = 'Unknown';
-            }
-            $fb_capi_data['user_data']['client_user_agent'] = sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] );
-            $fb_capi_data['action_source']                  = 'website';
-            $fb_capi_data['event_source_url']               = sanitize_text_field( home_url( $_SERVER['REQUEST_URI'] ) );
-
-            if ( $fb_pagetype == 'product' ) {
-                if ( ! empty( $product->get_price() ) ) {
-                    $fb_prodid    = get_the_id();
-                    $product_name = $product->get_name();
-                    $product_name = str_replace( '"', '', $product_name );
-                    $product_name = str_replace( "'", '', $product_name );
-
-                    $cats     = '';
-                    $all_cats = get_the_terms( $fb_prodid, 'product_cat' );
-                    if ( ! empty( $all_cats ) ) {
-                            foreach ( $all_cats as $key => $category ) {
-                            $cats .= $category->name . ',';
-                        }
-                    }
-                    // strip last comma.
-                    $cats = rtrim( $cats, ',' );
-                    $cats = str_replace( '&amp;', '&', $cats );
-                    $cats = str_replace( '"', '', $cats );
-                    $cats = str_replace( "'", '', $cats );
-
-                    if ( ! empty( $fb_prodid ) ) {
-                                            if ( ! $product ) {
-                                                    return -1;
-                                            }
-
-                        if ( $product->is_type( 'variable' ) ) {
-                            // We should first check if there are any _GET parameters available.
-                            // When there are not we are on a variable product page but not on a specific variable one.
-                            // In that case we need to put in the AggregateOffer structured data.
-                            $variation_id = woosea_find_matching_product_variation( $product, sanitize_text_field( $_GET ) );
-
-                            $nr_get = count( $_GET );
-
-                            // This is a variant product.
-                            if ( ( $nr_get > 0 ) && ( $variation_id > 0 ) ) {
-                                $variable_product = wc_get_product( $variation_id );
-                                // for variants use the variation_id and not the item_group_id.
-                                // otherwise Google will disapprove the items due to itemID mismatches.
-                                $fb_prodid = $variation_id;
-
-                                if ( is_object( $variable_product ) ) {
-                                    $product_price = $variable_product->get_price();
-                                    $fb_price      = $product_price;
-                                } else {
-                                    // AggregateOffer.
-                                            $prices      = $product->get_variation_prices();
-                                                $lowest  = reset( $prices['price'] );
-                                                $highest = end( $prices['price'] );
-
-                                                if ( $lowest === $highest ) {
-                                                        $fb_price = wc_format_localized_price( $lowest );
-                                                    } else {
-                                                        $fb_lowprice  = wc_format_localized_price( $lowest );
-                                                        $fb_highprice = wc_format_localized_price( $highest );
-                                        $fb_price                     = $fb_lowprice;
-                                    }
-                                }
-                                $fb_price    = floatval( str_replace( ',', '.', str_replace( ',', '.', $fb_price ) ) );
-                                $viewContent = "fbq(\"track\",\"ViewContent\",{content_category:\"$cats\", content_name:\"$product_name\", content_type:\"product\", content_ids:[\"$fb_prodid\"], value:\"$fb_price\", currency:\"$currency\"},{eventID:\"$event_id\"});";
-
-                                // Facebook CAPI data.
-                                $fb_capi_data['event_name']                      = 'ViewContent';
-                                $fb_capi_data['custom_data']['content_ids']      = $fb_prodid;
-                                $fb_capi_data['custom_data']['content_name']     = $product_name;
-                                $fb_capi_data['custom_data']['content_category'] = $cats;
-                                $fb_capi_data['custom_data']['currency']         = $currency;
-                                $fb_capi_data['custom_data']['value']            = $fb_price;
-                                $fb_capi_data['custom_data']['content_type']     = 'product';
-                            } else {
-                                // This is a parent variable product.
-                                // Since these are not allowed in the feed, at the variations product ID's.
-                                // Get children product variation IDs in an array.
-                                $woosea_content_ids = 'variation';
-                                $woosea_content_ids = get_option( 'adt_facebook_pixel_content_ids' );
-
-                                if ( $woosea_content_ids == 'variation' ) {
-                                    $children_ids = $product->get_children();
-                                    $content      = '';
-                                    foreach ( $children_ids as $id ) {
-                                        $content .= '\'' . $id . '\',';
-                                    }
-                                } else {
-                                    $content = '\'' . $fb_prodid . '\'';
-                                }
-
-                                $content = rtrim( $content, ',' );
-                                $prices  = $product->get_variation_prices();
-                                $lowest  = reset( $prices['price'] );
-                                $highest = end( $prices['price'] );
-
-                                if ( $lowest === $highest ) {
-                                    $fb_price = wc_format_localized_price( $lowest );
-                                } else {
-                                    $fb_lowprice  = wc_format_localized_price( $lowest );
-                                    $fb_highprice = wc_format_localized_price( $highest );
-                                    $fb_price     = $fb_lowprice;
-                                }
-                                $fb_price    = floatval( str_replace( ',', '.', str_replace( ',', '.', $fb_price ) ) );
-                                $viewContent = "fbq(\"track\",\"ViewContent\",{content_category:\"$cats\", content_name:\"$product_name\", content_type:\"product_group\", content_ids:[$content], value:\"$fb_price\", currency:\"$currency\"},{eventID:\"$event_id\"});";
-
-                                // Facebook CAPI data.
-                                $fb_capi_data['event_name']                      = 'ViewContent';
-                                $fb_capi_data['custom_data']['content_ids']      = $fb_prodid;
-                                $fb_capi_data['custom_data']['content_name']     = $product_name;
-                                $fb_capi_data['custom_data']['content_category'] = $cats;
-                                $fb_capi_data['custom_data']['currency']         = $currency;
-                                $fb_capi_data['custom_data']['value']            = $fb_price;
-                                $fb_capi_data['custom_data']['content_type']     = 'product_group';
-                            }
-                        } else {
-                            // This is a simple product page.
-                            $fb_price    = wc_format_localized_price( $product->get_price() );
-                            $fb_price    = floatval( str_replace( ',', '.', str_replace( ',', '.', $fb_price ) ) );
-                            $viewContent = "fbq(\"track\",\"ViewContent\",{content_category:\"$cats\", content_name:\"$product_name\", content_type:\"product\", content_ids:[\"$fb_prodid\"], value:\"$fb_price\", currency:\"$currency\"},{eventID:\"$event_id\"});";
-
-                            // Facebook CAPI data.
-                            $fb_capi_data['event_name']                      = 'ViewContent';
-                            $fb_capi_data['custom_data']['content_ids']      = $fb_prodid;
-                            $fb_capi_data['custom_data']['content_name']     = $product_name;
-                            $fb_capi_data['custom_data']['content_category'] = $cats;
-                            $fb_capi_data['custom_data']['currency']         = $currency;
-                            $fb_capi_data['custom_data']['value']            = $fb_price;
-                            $fb_capi_data['custom_data']['content_type']     = 'product';
-                        }
-                    }
-                }
-            } elseif ( $fb_pagetype == 'cart' ) {
-                // This is on the order thank you page.
-                if ( isset( $_GET['key'] ) && is_wc_endpoint_url( 'order-received' ) ) {
-                            $order_string = sanitize_text_field( $_GET['key'] );
-                    if ( ! empty( $order_string ) ) {
-                        $order_id    = wc_get_order_id_by_order_key( $order_string );
-                        $order       = wc_get_order( $order_id );
-                        $order_items = $order->get_items();
-                        $currency    = get_woocommerce_currency();
-                        $contents    = '';
-                        $order_real  = wc_format_localized_price( $order->get_total() );
-
-                        if ( ! is_wp_error( $order_items ) ) {
-                            foreach ( $order_items as $item_id => $order_item ) {
-                                $prod_id      = $order_item->get_product_id();
-                                $variation_id = $order_item->get_variation_id();
-                                if ( $variation_id > 0 ) {
-                                    $prod_id = $variation_id;
-                                }
-                                $prod_quantity = $order_item->get_quantity();
-                                $contents     .= "{'id': '$prod_id', 'quantity': $prod_quantity},";
-                            }
-                        }
-                        $contents    = rtrim( $contents, ',' );
-                        $order_real  = floatval( str_replace( ',', '.', str_replace( ',', '.', $order_real ) ) );
-                        $viewContent = "fbq('track','Purchase',{currency:'$currency', value:'$order_real', content_type:'product', contents:[$contents]},{eventID:\"$event_id\"});";
-
-                        // Facebook CAPI data.
-                        $fb_capi_data['event_name']                  = 'Purchase';
-                        $fb_capi_data['custom_data']['content_ids']  = $prod_id;
-                        $fb_capi_data['custom_data']['currency']     = $currency;
-                        $fb_capi_data['custom_data']['value']        = $order_real;
-                        $fb_capi_data['custom_data']['content_type'] = 'product';
-                    }
-                } else {
-                    // This is on the cart page itself.
-                    $currency      = get_woocommerce_currency();
-                    $cart_items    = WC()->cart->get_cart();
-                    $cart_quantity = count( $cart_items );
-
-                    $cart_real = 0;
-                    $contents  = '';
-
-                    $cart_total_amount = wc_format_localized_price( WC()->cart->get_cart_contents_total() );
-                    $cart_total_amount = floatval( str_replace( ',', '.', str_replace( ',', '.', $cart_total_amount ) ) );
-
-                    $checkoutpage = wc_get_checkout_url();
-                    $current_url  = get_permalink( get_the_ID() );
-
-                    if ( ! empty( $cart_items ) ) {
-                        if ( ! is_wp_error( $cart_items ) ) {
-                            foreach ( $cart_items as $cart_id => $cart_item ) {
-                                $prod_id      = $cart_item['product_id'];
-                                $product      = $cart_item['data'];
-                                $product_name = $product->get_name();
-                                if ( $cart_item['variation_id'] > 0 ) {
-                                    $prod_id = $cart_item['variation_id'];
-                                }
-                                $contents .= '\'' . $prod_id . '\',';
-
-                                $cart_real = wc_format_localized_price( $cart_item['line_total'] );
-                            }
-                            $contents = rtrim( $contents, ',' );
-
-                            // User is on the billing pages.
-                            if ( $checkoutpage == $current_url ) {
-                                $viewContent = "fbq(\"track\",\"InitiateCheckout\",{currency:\"$currency\", value:\"$cart_total_amount\", content_type:\"product\", content_ids:[$contents]},{eventID:\"$event_id\"});";
-
-                                // Facebook CAPI data.
-                                $fb_capi_data['event_name']                  = 'InitiateCheckout';
-                                $fb_capi_data['custom_data']['content_ids']  = $contents;
-                                $fb_capi_data['custom_data']['content_name'] = $product_name;
-                                $fb_capi_data['custom_data']['currency']     = $currency;
-                                $fb_capi_data['custom_data']['value']        = $cart_total_amount;
-                                $fb_capi_data['custom_data']['content_type'] = 'product';
-                            } else {
-                                // User is on the basket page.
-                                $viewContent = "fbq(\"track\",\"AddToCart\",{currency:\"$currency\", value:\"$cart_total_amount\", content_type:\"product\", content_ids:[$contents]},{eventID:\"$event_id\"});";
-
-                                // Facebook CAPI data.
-                                $fb_capi_data['event_name']                  = 'AddToCart';
-                                $fb_capi_data['custom_data']['content_ids']  = $contents;
-                                $fb_capi_data['custom_data']['content_name'] = $product_name;
-                                $fb_capi_data['custom_data']['currency']     = $currency;
-                                $fb_capi_data['custom_data']['value']        = $cart_total_amount;
-                                $fb_capi_data['custom_data']['content_type'] = 'product';
-                            }
-                        }
-                    }
-                }
-            } elseif ( $fb_pagetype == 'category' ) {
-                $term = get_queried_object();
-
-                global $wp_query;
-                $ids       = wp_list_pluck( $wp_query->posts, 'ID' );
-                $fb_prodid = '';
-
-                foreach ( $ids as $id ) {
-                    $_product = wc_get_product( $id );
-                    if ( ! $_product ) {
-                        return -1;
-                    }
-
-                    if ( $_product->is_type( 'simple' ) ) {
-                        // Add the simple product ID.
-                        $fb_prodid .= '\'' . $id . '\',';
-                    } else {
-                        // This is a variable product, add variation product ID's.
-                        $children_ids = $_product->get_children();
-                                        foreach ( $children_ids as $id ) {
-
-                        $fb_prodid     .= '\'' . $id . '\',';
-                            $fb_prodid .= '\'' . $id . '\',';
-                                        }
-                    }
-                }
-                        $fb_prodid             = rtrim( $fb_prodid, ',' );
-                $category_name                 = $term->name;
-                                $category_path = woosea_get_term_parents( $term->term_id, 'product_cat', $project_taxonomy = false, $link = false, $nicename = false, $visited = array() );
-                $viewContent                   = "fbq(\"track\",\"ViewCategory\",{content_category:'$category_path', content_name:'$category_name', content_type:\"product\", content_ids:\"[$fb_prodid]\"},{eventID:\"$event_id\"});";
-
-                // Facebook CAPI data.
-                $fb_capi_data['event_name']                  = 'ViewCategory';
-                $fb_capi_data['custom_data']['content_ids']  = $ids;
-                $fb_capi_data['custom_data']['content_type'] = 'product';
-
-        } elseif ( $fb_pagetype == 'searchresults' ) {
-            $term          = get_queried_object();
-            $search_string = isset( $_GET['s'] ) ? sanitize_text_field( $_GET['s'] ) : '';
-
-            global $wp_query;
-            $ids       = wp_list_pluck( $wp_query->posts, 'ID' );
-            $fb_prodid = '';
-
-            foreach ( $ids as $id ) {
-                $_product = wc_get_product( $id );
-                if ( ! $_product ) {
-                    return -1;
-                }
-
-                $ptype = $_product->get_type();
-                if ( $ptype == 'simple' ) {
-                    // Add the simple product ID.
-                    $fb_prodid .= '\'' . $id . '\',';
-                } else {
-                    // This is a variable product, add variation product ID's.
-                    $children_ids = $_product->get_children();
-                    foreach ( $children_ids as $id ) {
-                        $fb_prodid .= '\'' . $id . '\',';
-                    }
-                }
-            }
-
-            $fb_prodid = rtrim( $fb_prodid, ',' );
-            $viewContent       = "fbq(\"trackCustom\",\"Search\",{search_string:\"$search_string\", content_type:\"product\", content_ids:\"[$fb_prodid]\"},{eventID:\"$event_id\"});";
-
-            // Facebook CAPI data.
-            $fb_capi_data['event_name']                  = 'Search';
-            $fb_capi_data['custom_data']['content_ids']  = $ids;
-            $fb_capi_data['custom_data']['content_type'] = 'product';
-        } else {
-            // This is another page than a product page.
-            $fb_capi_data['event_name'] = 'ViewContent';
-            $viewContent                = '';
-        }
-        ?>
-        <!-- Facebook Pixel Code - Product Feed Pro for WooCommerce by AdTribes.io -->
-        <!------------------------------------------------------------------------------
-        Make sure the g:id value in your Facebook catalogue feed matched with
-        the content of the content_ids parameter in the Facebook Pixel Code
-        ------------------------------------------------------------------------------->
-        <script type="text/javascript">
-            console.log("Facebook Pixel by AdTribes.io");
-            !function(f,b,e,v,n,t,s)
-            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-            n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t,s)}(window, document,'script',
-            'https://connect.facebook.net/en_US/fbevents.js');
-
-            fbq("init", "<?php echo htmlentities( $facebook_pixel_id, ENT_QUOTES, 'UTF-8' ); ?>");
-            fbq("track", "PageView");
-            <?php
-                if ( strlen( $viewContent ) > 2 ) {
-                    echo "$viewContent";
-                }
-            ?>
-        </script>
-        <noscript>
-            <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=
-            <?php
-            echo htmlentities( $facebook_pixel_id, ENT_QUOTES, 'UTF-8' );
-?>
-&ev=PageView&noscript=1&eid=<?php echo "$event_id"; ?>"/>
-        </noscript> 
-        <!-- End Facebook Pixel Code -->
-        <?php
-
-        // POST data to Facebook Conversion API.
-        if ( ( $add_facebook_capi == 'yes' ) && ( ! empty( $facebook_capi_token ) ) ) {
-            // Turn Data to JSON.
-            $data_json = json_encode( array( $fb_capi_data ) );
-
-            // Fill available fields.
-            $fields                 = array();
-            $fields['access_token'] = FACEBOOK_APP_ACCESS_TOKEN;
-            $fields['upload_tag']   = $fb_capi_data['event_name'] . '-' . time(); // You should set a tag here (feel free to adjust)
-            $fields['data']         = $data_json;
-            $url                    = 'https://graph.facebook.com/v11.0/' . FACEBOOK_PIXEL_OFFLINE_EVENT_SET_ID . '/events';
-
-            $args     = array(
-                'timeout'     => 30,
-                'redirection' => 10,
-                'httpversion' => '1.0',
-                'blocking'    => true,
-                'headers'     => array(
-                    'cache-control: no-cache',
-                    'Accept: application/json',
-                ),
-                'body'        => $fields,
-                'cookies'     => array(),
-            );
-            $response = wp_remote_post( $url, $args );
-            }
-        }
-    }
-}
-add_action( 'wp_footer', 'woosea_add_facebook_pixel' );
-
-/**
- * Add Google Adwords Remarketing code to footer.
- *
- * @param object $product The product object.
- */
-function woosea_add_remarketing_tags( $product = null ) {
-    // Check if WooCommerce is loaded and available
-    if ( ! class_exists( 'WooCommerce' ) ) {  
-        return;  
-    }  
-
-    if ( ! is_object( $product ) ) {  
-        $product = function_exists( 'wc_get_product' ) ? wc_get_product( get_the_ID() ) : null;  
-    }  
-    
-    if ( ! $product instanceof WC_Product ) {  
-        return;  
-    }  
-
-    $ecomm_pagetype  = WooSEA_Google_Remarketing::woosea_google_remarketing_pagetype();
-    $add_remarketing = get_option( 'adt_add_remarketing' );
-
-    if ( $add_remarketing == 'yes' ) {
-        $adwords_conversion_id = get_option( 'adt_adwords_conversion_id' );
-
-        // Add vulnerability check, unset when no proper comversion ID was inserted.
-        if ( ! is_numeric( $adwords_conversion_id ) ) {
-            unset( $adwords_conversion_id );
-        }
-
-        if ( ! empty( $adwords_conversion_id ) ) {
-        ?>
-                <!-- Global site tag (gtag.js) - Google Ads: <?php echo htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?> - Added by the Product Feed Pro plugin from AdTribes.io  -->
-                    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-<?php echo htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>"></script>
-                    <script>
-                            window.dataLayer = window.dataLayer || [];
-                            function gtag(){dataLayer.push(arguments);}
-                            gtag('js', new Date());
-
-                            gtag('config', '<?php echo 'AW-' . htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>');
-                    </script>
-        <?php
-            if ( $ecomm_pagetype == 'product' ) {
-                        if ( '' !== $product->get_price() ) {
-                        $ecomm_prodid = get_the_id();
-
-                if ( ! empty( $ecomm_prodid ) ) {
-
-                                        if ( ! $product ) {
-                                                return -1;
-                                        }
-
-                    if ( $product->is_type( 'variable' ) ) {
-                        // We should first check if there are any _GET parameters available.
-                        // When there are not we are on a variable product page but not on a specific variable one.
-                        // In that case we need to put in the AggregateOffer structured data.
-                        $variation_id = woosea_find_matching_product_variation( $product, sanitize_text_field( $_GET ) );
-                        $nr_get       = count( $_GET );
-
-                        if ( $nr_get > 0 ) {
-                            $variable_product = wc_get_product( $variation_id );
-
-                            // for variants use the variation_id and not the item_group_id
-                            // otherwise Google will disapprove the items due to itemID mismatches
-                            $ecomm_prodid = $variation_id;
-
-                            if ( is_object( $variable_product ) ) {
-                                $product_price = $variable_product->get_price();
-
-                                        // ----- remove HTML TAGs -----
-                                $ecomm_price = $product_price;
-                            } else {
-                                // AggregateOffer
-                                        $prices      = $product->get_variation_prices();
-                                            $lowest  = reset( $prices['price'] );
-                                            $highest = end( $prices['price'] );
-
-                                            if ( $lowest === $highest ) {
-                                                    $ecomm_price = wc_format_decimal( $lowest, wc_get_price_decimals() );
-                                                } else {
-                                                    $ecomm_lowprice  = wc_format_decimal( $lowest, wc_get_price_decimals() );
-                                                    $ecomm_highprice = wc_format_decimal( $highest, wc_get_price_decimals() );
-                                }
-                            }
-                        } else {
-                            // When there are no parameters in the URL (so for normal users, not coming via Google Shopping URL's) show the old WooCommwerce JSON.
-                            $prices  = $product->get_variation_prices();
-                            $lowest  = reset( $prices['price'] );
-                            $highest = end( $prices['price'] );
-
-                            if ( $lowest === $highest ) {
-                                $ecomm_price = wc_format_decimal( $lowest, wc_get_price_decimals() );
-                            } else {
-                                $ecomm_lowprice  = wc_format_decimal( $lowest, wc_get_price_decimals() );
-                                $ecomm_highprice = wc_format_decimal( $highest, wc_get_price_decimals() );
-                                $ecomm_price     = $ecomm_lowprice;
-                            }
-                        }
-                    } else {
-                            $ecomm_price = wc_format_decimal( $product->get_price(), wc_get_price_decimals() );
-                        }
-                }
-                if ( isset( $ecomm_price ) ) {
-                    ?>
-                    <script>
-                        gtag('event', 'view_item', {
-                                'send_to'   : '<?php echo 'AW-' . htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>',
-                                'value'     : <?php echo "$ecomm_price"; ?>,
-                                'items'     : [{
-                                            'id': <?php echo "$ecomm_prodid"; ?>,
-                                            'google_business_vertical': 'retail'
-                                        }]
-                        });
-                    </script>
-                <?php
-                }
-            }
-        } elseif ( $ecomm_pagetype == 'cart' ) {
-                                // This is on the order thank you page.
-                                if ( isset( $_GET['key'] ) && is_wc_endpoint_url( 'order-received' ) ) {
-                                        $order_string = sanitize_text_field( $_GET['key'] );
-                                        if ( ! empty( $order_string ) ) {
-                                                $order_id    = wc_get_order_id_by_order_key( $order_string );
-                                                $order       = wc_get_order( $order_id );
-                                                $order_items = $order->get_items();
-                                                $currency    = get_woocommerce_currency();
-                                                $contents    = '';
-                                                $order_real  = wc_format_localized_price( $order->get_total() );
-
-                                                if ( ! is_wp_error( $order_items ) ) {
-                                                        foreach ( $order_items as $item_id => $order_item ) {
-                                                                $prod_id      = $order_item->get_product_id();
-                                                                $variation_id = $order_item->get_variation_id();
-                                                                if ( $variation_id > 0 ) {
-                                                                        $prod_id = $variation_id;
-                                                                }
-                                                                $prod_quantity = $order_item->get_quantity();
-                                                        }
-                                                }
-                                                $order_real = floatval( str_replace( ',', '.', str_replace( ',', '.', $order_real ) ) );
-                                            ?>
-                                            <script>
-                                                    gtag('event', 'purchase', {
-                                                            'send_to'       : '<?php echo 'AW-' . htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>',
-                                                            'value'         : <?php echo "$order_real"; ?>,
-                                                            'items'         : [{
-                                                                            'id': <?php echo "$prod_id"; ?>,
-                                                                            'google_business_vertical': 'retail'
-                                                                    }]
-                                                    });
-                                            </script>
-                                            <?php
-                    }
-                } else {
-                    // This is on the cart page, no purchase yet.
-                    // Get the first product from cart and use that product ID.
-                    foreach ( WC()->cart->get_cart() as $cart_item ) {
-                            $ecomm_prodid = $cart_item['product_id'];
-                            break;
-                    }
-
-                    if ( isset( $ecomm_prodid ) ) {
-                                            $currency          = get_woocommerce_currency();
-                                            $cart_items        = WC()->cart->get_cart();
-                                            $cart_quantity     = count( $cart_items );
-                                            $cart_total_amount = wc_format_localized_price( WC()->cart->get_cart_contents_total() + WC()->cart->tax_total );
-                                            $cart_total_amount = floatval( str_replace( ',', '.', str_replace( ',', '.', $cart_total_amount ) ) );
-                        ?>
-                        <script>
-                            gtag('event', 'add_to_cart', {
-                                    'send_to'   : '<?php echo 'AW-' . htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>',
-                                    'value'     : <?php echo "$cart_total_amount"; ?>,
-                                    'items'     : [{
-                                            'id': <?php echo "$ecomm_prodid"; ?>,
-                                            'google_business_vertical': 'retail'
-                                        }]
-                            });
-                        </script>
-                    <?php
-                    }
-                }
-            }
-        }
-    }
-}
-add_action( 'wp_footer', 'woosea_add_remarketing_tags' );
-
-/**
  * Add some JS and mark-up code on every front-end page in order to get the conversion tracking to work.
  */
 function woosea_hook_header() {
@@ -699,7 +56,7 @@ function woosea_categories_dropdown() {
         $cat_args = apply_filters( 'adt_pfp_get_categories_dropdown_args',
             array(
                 'taxonomy'   => 'product_cat',
-                'hide_empty' => 'false',
+                'hide_empty' => false,
             ),
             $feed_id
         );
@@ -723,7 +80,7 @@ function woosea_categories_dropdown() {
              * For backwards compatibility we also need to check for the category name.
              */
             $selected = ($value === $category->slug || $value === $category->name) ? 'selected' : '';
-            $categories_dropdown .= "<option value=\"" . esc_attr($category->slug) . "\" $selected>" . esc_html($category->name) . " (" . esc_html($category->slug) . ")</option>";
+            $categories_dropdown .= "<option value=\"" . esc_attr($category->slug) . "\" $selected>" . esc_html($category->name) . " (" . esc_html( urldecode( $category->slug ) ) . ")</option>";
         }
         $categories_dropdown .= '</select>';
 
@@ -771,7 +128,7 @@ function woosea_find_matching_product_variation( $product, $attributes ) {
 
     if ( is_array( $attributes ) ) {
             foreach ( $attributes as $key => $value ) {
-                if ( strpos( $key, 'attribute_' ) === 0 ) {
+                if ( str_starts_with( $key, 'attribute_' ) ) {
                         continue;
                 }
                 unset( $attributes[ $key ] );
@@ -992,3 +349,181 @@ function woosea_on_product_save( $product_id ) {
     }
 }
 add_action( 'woocommerce_update_product', 'woosea_on_product_save', 10, 1 );
+
+/**
+ * Add Google Adwords Remarketing code to footer.
+ *
+ * @param object $product The product object.
+ *
+ * @return int The product ID.
+ */
+function woosea_add_remarketing_tags( $product = null ) {
+    if ( ! is_object( $product ) ) {
+        global $product;
+    }
+
+    $ecomm_pagetype  = \AdTribes\PFP\Helpers\Helper::get_wc_page_type();
+    $add_remarketing = get_option( 'adt_add_remarketing' );
+
+    if ( 'yes' === $add_remarketing ) {
+        $adwords_conversion_id = get_option( 'adt_adwords_conversion_id' );
+        $ecomm_price           = '';
+        $ecomm_prodid          = '';
+
+        if ( $adwords_conversion_id > 0 ) {
+            ?>
+            <!-- Global site tag (gtag.js) - Google Ads: <?php echo htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?> - Added by the Product Feed Pro plugin from AdTribes.io  -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=AW-<?php echo htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>"></script>
+            <script>
+                window.dataLayer = window.dataLayer || [];
+
+                function gtag() {
+                    dataLayer.push(arguments);
+                }
+                gtag('js', new Date());
+
+                gtag('config', '<?php echo 'AW-' . htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>');
+            </script>
+            <?php
+
+            if ( $ecomm_pagetype == 'product' ) {
+                if ( '' !== $product->get_price() ) {
+                    $ecomm_prodid = get_the_id();
+
+                    if ( ! empty( $ecomm_prodid ) ) {
+                        if ( ! $product ) {
+                            return -1;
+                        }
+
+                        if ( $product->is_type( 'variable' ) ) {
+                            // We should first check if there are any _GET parameters available.
+                            // When there are not we are on a variable product page but not on a specific variable one.
+                            // In that case we need to put in the AggregateOffer structured data.
+                            $variation_id = woosea_find_matching_product_variation( $product, $_GET );
+                            $nr_get       = count( $_GET );
+
+                            if ( $nr_get > 0 ) {
+                                $variable_product = wc_get_product( $variation_id );
+
+                                // for variants use the variation_id and not the item_group_id.
+                                // otherwise Google will disapprove the items due to itemID mismatches.
+                                $ecomm_prodid = $variation_id;
+
+                                if ( is_object( $variable_product ) ) {
+                                    $product_price = $variable_product->get_price();
+                                    $ecomm_price   = $product_price;
+                                } else {
+                                    // AggregateOffer.
+                                    $prices  = $product->get_variation_prices();
+                                    $lowest  = reset( $prices['price'] );
+                                    $highest = end( $prices['price'] );
+
+                                    if ( $lowest === $highest ) {
+                                        $ecomm_price = wc_format_decimal( $lowest, wc_get_price_decimals() );
+                                    } else {
+                                        $ecomm_lowprice  = wc_format_decimal( $lowest, wc_get_price_decimals() );
+                                        $ecomm_highprice = wc_format_decimal( $highest, wc_get_price_decimals() );
+                                    }
+                                }
+                            } else {
+                                // When there are no parameters in the URL (so for normal users, not coming via Google Shopping URL's) show the old WooCommwerce JSON.
+                                $prices  = $product->get_variation_prices();
+                                $lowest  = reset( $prices['price'] );
+                                $highest = end( $prices['price'] );
+
+                                if ( $lowest === $highest ) {
+                                    $ecomm_price = wc_format_decimal( $lowest, wc_get_price_decimals() );
+                                } else {
+                                    $ecomm_lowprice  = wc_format_decimal( $lowest, wc_get_price_decimals() );
+                                    $ecomm_highprice = wc_format_decimal( $highest, wc_get_price_decimals() );
+                                }
+                            }
+                        } else {
+                            $ecomm_price = wc_format_decimal( $product->get_price(), wc_get_price_decimals() );
+                        }
+                    }
+            ?>
+                    <script>
+                        gtag('event', 'view_item', {
+                            'send_to': '<?php echo 'AW-' . htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>',
+                            'value': <?php print "$ecomm_price"; ?>,
+                            'items': [{
+                                'id': <?php print "$ecomm_prodid"; ?>,
+                                'google_business_vertical': 'retail'
+                            }]
+                        });
+                    </script>
+                    <?php
+                }
+            } elseif ( $ecomm_pagetype == 'cart' ) {
+                // This is on the order thank you page.
+                if ( isset( $_GET['key'] ) && is_wc_endpoint_url( 'order-received' ) ) {
+                    $order_string = sanitize_text_field( $_GET['key'] );
+
+                    if ( ! empty( $order_string ) ) {
+                        $order_id    = wc_get_order_id_by_order_key( $order_string );
+                        $order       = wc_get_order( $order_id );
+                        $order_items = $order->get_items();
+                        $currency    = get_woocommerce_currency();
+                        $contents    = '';
+                        $order_real  = wc_format_localized_price( $order->get_total() );
+
+                        if ( ! is_wp_error( $order_items ) ) {
+                            foreach ( $order_items as $item_id => $order_item ) {
+                                $prod_id      = $order_item->get_product_id();
+                                $variation_id = $order_item->get_variation_id();
+
+                                if ( $variation_id > 0 ) {
+                                    $prod_id = $variation_id;
+                                }
+
+                                $prod_quantity = $order_item->get_quantity();
+                            }
+                        }
+
+                        $order_real = floatval( str_replace( ',', '.', str_replace( ',', '.', $order_real ) ) );
+                    ?>
+                        <script>
+                            gtag('event', 'purchase', {
+                                'send_to': '<?php echo 'AW-' . htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>',
+                                'value': <?php print "$order_real"; ?>,
+                                'items': [{
+                                    'id': <?php print "$prod_id"; ?>,
+                                    'google_business_vertical': 'retail'
+                                }]
+                            });
+                        </script>
+                    <?php
+                    }
+                } else {
+                    // This is on the cart page, no purchase yet.
+                    // Get the first product from cart and use that product ID.
+                    foreach ( WC()->cart->get_cart() as $cart_item ) {
+                        $ecomm_prodid = $cart_item['product_id'];
+                        break;
+                    }
+
+                    $currency          = get_woocommerce_currency();
+                    $cart_items        = WC()->cart->get_cart();
+                    $cart_quantity     = count( $cart_items );
+                    $cart_total_amount = wc_format_localized_price( WC()->cart->get_cart_contents_total() + WC()->cart->tax_total );
+                    $cart_total_amount = floatval( str_replace( ',', '.', str_replace( ',', '.', $cart_total_amount ) ) );
+
+                    ?>
+                    <script>
+                        gtag('event', 'add_to_cart', {
+                            'send_to': '<?php echo 'AW-' . htmlentities( $adwords_conversion_id, ENT_QUOTES, 'UTF-8' ); ?>',
+                            'value': <?php print "$cart_total_amount"; ?>,
+                            'items': [{
+                                'id': <?php print "$ecomm_prodid"; ?>,
+                                'google_business_vertical': 'retail'
+                            }]
+                        });
+                    </script>
+            <?php
+                }
+            }
+        }
+    }
+}
+add_action( 'wp_footer', 'woosea_add_remarketing_tags' );

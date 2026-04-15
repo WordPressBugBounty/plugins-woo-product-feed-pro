@@ -375,9 +375,13 @@ class Edit_Feed_Page extends Admin_Page {
         }
 
         // First, sanitize the entire array structure using Helper method.
+        // preserve_percent_encoded preserves URL-encoded slugs (e.g. non-Latin category slugs).
         $filters_data = Sanitization::sanitize_array(
             $filters_data,
-            array( 'allow_html' => true )
+            array(
+                'allow_html'               => true,
+                'preserve_percent_encoded' => true,
+            )
         );
 
         $cleaned_data     = array();
@@ -569,9 +573,13 @@ class Edit_Feed_Page extends Admin_Page {
         }
 
         // First, sanitize the entire array structure.
+        // preserve_percent_encoded preserves URL-encoded slugs (e.g. non-Latin category slugs).
         $rules_data = Sanitization::sanitize_array(
             $rules_data,
-            array( 'allow_html' => true )
+            array(
+                'allow_html'               => true,
+                'preserve_percent_encoded' => true,
+            )
         );
 
         $cleaned_rules    = array();
@@ -666,10 +674,11 @@ class Edit_Feed_Page extends Admin_Page {
                 continue;
             }
 
-            $attribute   = $action['attribute'];
-            $value       = $action['value'] ?? '';
-            $action_type = $action['action'] ?? 'set_value';
-            $find        = $action['find'] ?? '';
+            $attribute      = $action['attribute'];
+            $value          = $action['value'] ?? '';
+            $action_type    = $action['action'] ?? 'set_value';
+            $find           = $action['find'] ?? '';
+            $case_sensitive = isset( $action['case_sensitive'] ) ? (bool) $action['case_sensitive'] : true;
             if ( ! in_array( $action_type, $valid_actions, true ) ) {
                 $action_type = 'set_value';
             }
@@ -677,10 +686,11 @@ class Edit_Feed_Page extends Admin_Page {
             // Only add actions with valid attributes.
             if ( ! empty( $attribute ) ) {
                 $cleaned_actions[] = array(
-                    'attribute' => $attribute,
-                    'action'    => $action_type,
-                    'value'     => $value,
-                    'find'      => $find,
+                    'attribute'      => $attribute,
+                    'action'         => $action_type,
+                    'value'          => $value,
+                    'find'           => $find,
+                    'case_sensitive' => $case_sensitive,
                 );
             }
         }
@@ -1240,7 +1250,6 @@ class Edit_Feed_Page extends Admin_Page {
                 'adt_create_product_feed_props',
                 array(
                     'title'                             => $feed_data['projectname'] ?? '',
-                    'status'                            => 'processing',
                     'country'                           => $country_code,
                     'channel_hash'                      => $feed_data['channel_hash'] ?? '',
                     'file_name'                         => $feed_data['project_hash'] ?? '',
@@ -1318,7 +1327,7 @@ class Edit_Feed_Page extends Admin_Page {
 
         // Only proceed if we're on the edit feed page and it's the first visit to create a new feed.
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        if ( ( 'product-feed-pro_page_adt-edit-feed' === $screen->id || 'product-feed-elite_page_adt-edit-feed' === $screen->id ) && ! isset( $_GET['id'] ) && ! isset( $_GET['tab'] ) ) {
+        if ( 'product-feed_page_adt-edit-feed' === $screen->id && ! isset( $_GET['id'] ) && ! isset( $_GET['tab'] ) ) {
             // Clear the temporary product feed data.
             delete_option( ADT_OPTION_TEMP_PRODUCT_FEED );
         }

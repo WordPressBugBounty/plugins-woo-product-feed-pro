@@ -33,14 +33,10 @@ import { NotificationHeaderIcon } from './header-icon';
     const hasLink = href && href !== '#';
     const isExternal = $button.attr('target') === '_blank';
 
-    // Check if it's a plugin installation action
-    if ($button.data('plugin_slug')) {
-      e.preventDefault();
-      handlePluginInstall($button, $container, isDrawerItem);
-      return;
-    }
+    const noticeType = $container.data('notice-type');
 
-    // Check if it's a dismiss/response action
+    // Check if it's a dismiss/response action first, before notice-type handlers,
+    // so that the dismiss X button works on all notice types (including addon_install).
     if ($button.data('response') || $button.hasClass('notice-dismiss')) {
       // If it's an external link, let the browser handle it naturally (don't preventDefault)
       // This avoids popup blockers and ensures the link opens
@@ -53,6 +49,28 @@ import { NotificationHeaderIcon } from './header-icon';
       // For non-external links or links without href, prevent default and handle dismiss
       e.preventDefault();
       handleDismiss($button, $container, isDrawerItem);
+      return;
+    }
+
+    // Check if it's an addon installation action (handled by external plugins via custom event).
+    if (noticeType === 'addon_install') {
+      e.preventDefault();
+      const addonEvent: any = $.Event('adt:addon-install');
+      addonEvent.addonData = {
+        softwareKey: $button.data('addon_software_key'),
+        nonce: $button.data('nonce'),
+        button: $button,
+        container: $container,
+        isDrawerItem,
+      };
+      $(document).trigger(addonEvent);
+      return;
+    }
+
+    // Check if it's a plugin installation action
+    if (noticeType === 'plugin_recommendation') {
+      e.preventDefault();
+      handlePluginInstall($button, $container, isDrawerItem);
       return;
     }
 
@@ -231,6 +249,12 @@ import { NotificationHeaderIcon } from './header-icon';
       (window as any).adtNotificationDrawer = drawer;
       (window as any).adtNotificationHeaderIcon = headerIcon;
     }
+
+    // Expose utilities for external plugins (e.g., Elite addon notices).
+    (window as any).adtNotificationUtils = {
+      removeNotification,
+      updateDrawerState,
+    };
 
     bindEvents();
     addNavigationArrows();

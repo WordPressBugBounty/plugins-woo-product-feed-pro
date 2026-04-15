@@ -1,14 +1,14 @@
 .toplevel_page_woo-product-feed #wpwrap,
 .product-feed-pro_page_adt-edit-feed #wpwrap,
 .product-feed-pro_page_woosea_manage_settings #wpwrap,
-.product-feed-pro_page_woosea_manage_license #wpwrap {
+.product-feed-pro_page_adt_license_settings_page #wpwrap {
   background-color: #ffffff;
 }
 
 .toplevel_page_woo-product-feed h1.title,
 .product-feed-pro_page_adt-edit-feed h1.title,
 .product-feed-pro_page_woosea_manage_settings h1.title,
-.product-feed-pro_page_woosea_manage_license h1.title {
+.product-feed-pro_page_adt_license_settings_page h1.title {
   font-weight: bold !important;
   margin: 1rem 0;
 }
@@ -16,7 +16,7 @@
 .toplevel_page_woo-product-feed a.logo-upgrade,
 .product-feed-pro_page_adt-edit-feed a.logo-upgrade,
 .product-feed-pro_page_woosea_manage_settings a.logo-upgrade,
-.product-feed-pro_page_woosea_manage_license a.logo-upgrade {
+.product-feed-pro_page_adt_license_settings_page a.logo-upgrade {
   display: inline-block;
   padding: 0.3rem 0.7rem;
   margin-top: -55px;

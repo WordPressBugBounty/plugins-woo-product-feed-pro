@@ -58,10 +58,6 @@ class WP_Admin extends Abstract_Class {
             wp_enqueue_style( 'woosea_jquery_ui-css', ADT_PFP_CSS_URL . 'jquery-ui.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
             wp_enqueue_style( 'woosea_jquery_typeahead-css', ADT_PFP_CSS_URL . 'jquery.typeahead.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
 
-            if ( preg_match( '/woosea_manage_license/i', $hook ) ) {
-                wp_enqueue_style( 'woosea_license_settings-css', ADT_PFP_CSS_URL . 'license-settings.css', array(), WOOCOMMERCESEA_PLUGIN_VERSION );
-            }
-
             // JS for adding table rows to the rules page.
             wp_enqueue_script( 'woosea_filters_rules-js', ADT_PFP_JS_URL . 'woosea_filters_rules.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
 
@@ -190,7 +186,7 @@ class WP_Admin extends Abstract_Class {
     public function plugin_action_links( $links, $file ) {
         // Check to make sure we are on the correct plugin.
         if ( ADT_PFP_BASENAME === $file ) {
-            $plugin_links[] = '<a href="' . admin_url( 'admin.php?page=woosea_manage_license' ) . '">License</a>';
+            $plugin_links[] = '<a href="' . admin_url( 'admin.php?page=adt_license_settings_page' ) . '">License</a>';
             $plugin_links[] = '<a href="' . Helper::get_utm_url( 'support', 'pfp', 'pluginpage', 'support' ) . '" target="_blank" rel="noopener noreferrer">Support</a>';
             $plugin_links[] = '<a href="' . Helper::get_utm_url( 'tutorials', 'pfp', 'pluginpage', 'tutorials' ) . '" target="_blank" rel="noopener noreferrer">Tutorials</a>';
             $plugin_links[] = '<a href="' . admin_url( 'admin.php?page=woosea_manage_settings' ) . '">Settings</a>';
@@ -431,7 +427,7 @@ class WP_Admin extends Abstract_Class {
         $allowed = array_filter(
             $filtered,
             function ( $value ) {
-                return is_string( $value ) && 0 === strpos( $value, 'adt_' );
+                return is_string( $value ) && str_starts_with( $value, 'adt_' );
             }
         );
 

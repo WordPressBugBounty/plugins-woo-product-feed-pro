@@ -46,8 +46,8 @@ if ( $feed_id ) {
     $channel_data = '' !== $channel_hash ? Product_Feed_Helper::get_channel_from_legacy_channel_hash( $channel_hash ) : array();
     $feed_type   = $channel_data['fields'] ?? '';
 
-    $feed_filters = $feed['rules'] ?? array();
-    $feed_rules   = $feed['rules2'] ?? array();
+    $feed_filters = isset( $feed['rules'] ) && is_array( $feed['rules'] ) ? $feed['rules'] : array();
+    $feed_rules   = isset( $feed['rules2'] ) && is_array( $feed['rules2'] ) ? $feed['rules2'] : array();
     $count_rules  = count( $feed_filters );
     $count_rules2 = count( $feed_rules );
 }

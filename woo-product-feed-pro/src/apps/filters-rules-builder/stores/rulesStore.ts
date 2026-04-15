@@ -37,6 +37,7 @@ export interface RuleAction {
   action: string;
   value: string | number | boolean;
   find?: string;
+  case_sensitive?: boolean;
 }
 
 export interface Rule {

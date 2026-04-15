@@ -541,6 +541,42 @@ class Product_Feed {
     }
 
     /**
+     * Get temporary file path.
+     *
+     * The temp file always uses the base format extension (e.g. .jsonl not .jsonl.gz)
+     * because compression happens after writing.
+     *
+     * Note: `file_name` is intentionally used raw (no `sanitize_file_name()`) — it is
+     * generated from a controlled keyspace by `Product_Feed_Helper::generate_legacy_project_hash()`
+     * and must match the value used by `get_file_path()` / `get_file_url()` byte-for-byte.
+     * Any external source of `file_name` (import, migration) must sanitize at the boundary.
+     *
+     * @since 13.5.4
+     * @access public
+     *
+     * @return string
+     */
+    public function get_temp_file_path() {
+        $upload_dir  = wp_upload_dir();
+        $base_format = self::get_base_file_format( $this->file_format );
+        return $upload_dir['basedir'] . '/' . self::UPLOAD_SUB_DIR . '/' . $base_format . '/' . $this->file_name . '_tmp.' . $base_format;
+    }
+
+    /**
+     * Get the feed file directory path.
+     *
+     * @since 13.5.4
+     * @access public
+     *
+     * @return string
+     */
+    public function get_file_dir_path() {
+        $upload_dir  = wp_upload_dir();
+        $base_format = self::get_base_file_format( $this->file_format );
+        return $upload_dir['basedir'] . '/' . self::UPLOAD_SUB_DIR . '/' . $base_format;
+    }
+
+    /**
      * Set default delimiter.
      *
      * @since 13.3.5.3
@@ -655,6 +691,21 @@ class Product_Feed {
      * @param string $context The context of the generation. 'schedule' or 'manual'.
      */
     public function generate( $context = 'schedule' ) {
+        // Guard: skip if feed is already being processed to prevent concurrent generation.
+        if ( 'processing' === $this->status ) {
+            if ( function_exists( 'wc_get_logger' ) ) {
+                wc_get_logger()->warning(
+                    'Skipping feed generation: feed is already processing',
+                    array(
+                        'source'  => 'woo-product-feed-pro',
+                        'feed_id' => $this->id,
+                        'context' => $context,
+                    )
+                );
+            }
+            return false;
+        }
+
         // Log when feed generation starts.
         $logging = get_option( 'adt_enable_logging', 'no' );
         if ( 'yes' === $logging ) {
@@ -1143,15 +1194,11 @@ class Product_Feed {
      * @access public
      */
     public function move_feed_file_to_final() {
-        $upload_dir  = wp_upload_dir();
-        $base        = $upload_dir['basedir'];
         $base_format = self::get_base_file_format( $this->file_format );
-        $is_gz       = self::get_base_file_format( $this->file_format ) !== $this->file_format;
+        $is_gz       = $base_format !== $this->file_format;
 
-        // For gz formats the tmp file uses the base format (e.g. _tmp.jsonl for jsonl.gz).
-        $path     = $base . '/woo-product-feed-pro/' . $base_format;
-        $tmp_file = $path . '/' . sanitize_file_name( $this->file_name ) . '_tmp.' . $base_format;
-        $new_file = $path . '/' . sanitize_file_name( $this->file_name ) . '.' . $this->file_format;
+        $tmp_file = $this->get_temp_file_path();
+        $new_file = $this->get_file_path();
 
         // Check if temporary file exists before attempting to copy.
         if ( ! file_exists( $tmp_file ) ) {
@@ -1169,6 +1216,30 @@ class Product_Feed {
                 );
             }
             return;
+        }
+
+        // Validate the tmp file is not corrupt before overwriting the live feed.
+        // Note: we only block on parse errors (-1). A count of 0 is allowed because:
+        // - feeds may legitimately have 0 products after filtering, and
+        // - some XML channel structures are not recognized by count_products_in_tmp_file().
+        if ( 'xml' === $this->file_format ) {
+            $tmp_product_count = $this->count_products_in_tmp_file( $tmp_file );
+            if ( -1 === $tmp_product_count ) {
+                if ( function_exists( 'wc_get_logger' ) ) {
+                    wc_get_logger()->error(
+                        'Refusing to overwrite live feed: tmp file is corrupt (parse error)',
+                        array(
+                            'source'         => 'woo-product-feed-pro',
+                            'feed_id'        => $this->id,
+                            'feed_title'     => $this->title,
+                            'products_count' => $this->products_count,
+                        )
+                    );
+                }
+                // Delete the corrupt tmp file but preserve the existing live feed.
+                wp_delete_file( $tmp_file );
+                return;
+            }
         }
 
         if ( $is_gz ) {
@@ -1279,6 +1350,60 @@ class Product_Feed {
     }
 
     /**
+     * Count products in a temporary XML feed file.
+     *
+     * @since 13.5.4
+     * @access private
+     *
+     * @param string $file The temporary XML file path.
+     * @return int The number of products found, or -1 on parse error.
+     */
+    private function count_products_in_tmp_file( $file ) {
+        if ( ! file_exists( $file ) ) {
+            return 0;
+        }
+
+        $xml = @simplexml_load_file( $file, 'SimpleXMLElement', LIBXML_NOCDATA ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+        if ( false === $xml ) {
+            return -1;
+        }
+
+        $feed_channel = $this->get_channel();
+        $channel_name = ! empty( $feed_channel ) ? ( $feed_channel['name'] ?? '' ) : '';
+
+        if ( 'Yandex' === $channel_name ) {
+            return isset( $xml->offers->offer ) && is_countable( $xml->offers->offer ) ? count( $xml->offers->offer ) : 0;
+        }
+
+        // Google Shopping / Facebook / standard RSS feeds.
+        if ( isset( $xml->channel->item ) && is_countable( $xml->channel->item ) ) {
+            return count( $xml->channel->item );
+        }
+
+        // Generic product feeds (non-Google taxonomy).
+        if ( isset( $xml->product ) && is_countable( $xml->product ) ) {
+            return count( $xml->product );
+        }
+
+        // Feeds with nested <products><product> structure (Bestprice, Skroutz, Shopflix).
+        if ( isset( $xml->products->product ) && is_countable( $xml->products->product ) ) {
+            return count( $xml->products->product );
+        }
+
+        // Heureka/Zbozi/Glami SHOPITEM.
+        if ( isset( $xml->SHOPITEM ) && is_countable( $xml->SHOPITEM ) ) {
+            return count( $xml->SHOPITEM );
+        }
+
+        // Yandex offers (nested path).
+        if ( isset( $xml->shop->offers->offer ) && is_countable( $xml->shop->offers->offer ) ) {
+            return count( $xml->shop->offers->offer );
+        }
+
+        return 0;
+    }
+
+    /**
      * Register the product feed action.
      *
      * @since 13.3.9
@@ -1322,7 +1447,8 @@ class Product_Feed {
             $interval_in_seconds,
             ADT_PFP_AS_GENERATE_PRODUCT_FEED,
             array( 'feed_id' => $this->id ),
-            ADT_PFP_AS_GENERATE_PRODUCT_FEED_GROUP
+            ADT_PFP_AS_GENERATE_PRODUCT_FEED_GROUP,
+            true
         );
     }
 
@@ -1333,7 +1459,7 @@ class Product_Feed {
      * @access public
      */
     public function unregister_action() {
-        as_unschedule_action( ADT_PFP_AS_GENERATE_PRODUCT_FEED, array( 'feed_id' => $this->id ) );
+        as_unschedule_all_actions( ADT_PFP_AS_GENERATE_PRODUCT_FEED, array( 'feed_id' => $this->id ), ADT_PFP_AS_GENERATE_PRODUCT_FEED_GROUP );
     }
 
     /**

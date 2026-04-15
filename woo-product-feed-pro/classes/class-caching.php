@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class WooSEA_Caching
+ *
+ * Handles cache exclusions for various caching plugins.
+ */
 class WooSEA_Caching {
 
     /**
@@ -6,12 +11,12 @@ class WooSEA_Caching {
      *
      * @return false
      */
-    function litespeed_cache() {
+    public function litespeed_cache() {
         if ( ! class_exists( 'LiteSpeed\Core' ) || ! defined( 'LSCWP_DIR' ) ) {
             return false;
         }
         $litespeed_ex_paths = maybe_unserialize( get_option( 'litespeed.conf.cdn-exc' ) );
-        if ( $litespeed_ex_paths && is_array( $litespeed_ex_paths ) && ! in_array( '/wp-content/uploads/woo-product-feed-pro', $litespeed_ex_paths ) ) {
+        if ( $litespeed_ex_paths && is_array( $litespeed_ex_paths ) && ! in_array( '/wp-content/uploads/woo-product-feed-pro', $litespeed_ex_paths, true ) ) {
                 $litespeed_ex_paths = array_merge(
                     $litespeed_ex_paths,
                     array( '/wp-content/uploads/woo-product-feed-pro' )
@@ -85,7 +90,7 @@ class WooSEA_Caching {
         }
 
         $wp_super_ex_paths = get_option( 'ossdl_off_exclude' );
-        if ( $wp_super_ex_paths && strpos( $wp_super_ex_paths, 'woo-product-feed-pro' ) === false ) {
+        if ( $wp_super_ex_paths && ! str_contains( $wp_super_ex_paths, 'woo-product-feed-pro' ) ) {
             $wp_super_ex_paths = explode( ',', $wp_super_ex_paths );
             $wp_super_ex_paths = array_merge( $wp_super_ex_paths, array( 'woo-product-feed-pro' ) );
             update_option( 'ossdl_off_exclude', implode( ',', $wp_super_ex_paths ), false );
@@ -128,7 +133,7 @@ class WooSEA_Caching {
         }
 
         $wp_optimize_ex_paths = maybe_unserialize( get_option( 'wpo_cache_config' ) );
-        // If page Caching enabled
+        // If page caching is enabled.
         if ( isset( $wp_optimize_ex_paths['enable_page_caching'] ) && $wp_optimize_ex_paths['enable_page_caching'] && is_array( $wp_optimize_ex_paths ) && ! in_array( '/wp-content/uploads/woo-product-feed-pro', $wp_optimize_ex_paths['cache_exception_urls'], true ) ) {
             $woo_feed_ex_path['cache_exception_urls'] = array( '/wp-content/uploads/woo-product-feed-pro' );
             $wp_optimize_ex_paths                     = array_merge_recursive(
@@ -208,7 +213,7 @@ class WooSEA_Caching {
 
         if ( $comet_cache_settings && isset( $comet_cache_settings['exclude_uris'] ) ) {
             $exclude_uris = $comet_cache_settings['exclude_uris'];
-            if ( strpos( $exclude_uris, '/wp-content/uploads/woo-product-feed-pro' ) === false ) {
+            if ( ! str_contains( $exclude_uris, '/wp-content/uploads/woo-product-feed-pro' ) ) {
                 $exclude_uris                        .= "\n/wp-content/uploads/woo-product-feed-pro";
                 $comet_cache_settings['exclude_uris'] = $exclude_uris;
                 update_option( 'comet_cache_options', $comet_cache_settings, false );

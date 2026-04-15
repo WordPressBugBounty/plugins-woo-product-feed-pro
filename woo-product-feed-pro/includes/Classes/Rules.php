@@ -339,9 +339,9 @@ class Rules extends Abstract_Filters_Rules {
         // Use descriptive condition names directly.
         switch ( $condition ) {
             case 'contains':
-                return false !== strpos( $data_value, $rule_value );
+                return str_contains( $data_value, $rule_value );
             case 'not_contains':
-                return false === strpos( $data_value, $rule_value );
+                return ! str_contains( $data_value, $rule_value );
             case 'equals':
                 return $data_value === $rule_value;
             case 'not_equals':
@@ -570,7 +570,10 @@ class Rules extends Abstract_Filters_Rules {
         } elseif ( is_string( $original_value ) ) {
             $find_text      = $action['find'] ?? '';
             $new_value      = $action['value'] ?? '';
-            $replaced_value = str_replace( $find_text, $new_value, $original_value );
+            $case_sensitive = $action['case_sensitive'] ?? true;
+            $replaced_value = $case_sensitive
+                ? str_replace( $find_text, $new_value, $original_value )
+                : str_ireplace( $find_text, $new_value, $original_value );
         }
         return $replaced_value;
     }

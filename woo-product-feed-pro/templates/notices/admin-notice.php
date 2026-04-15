@@ -8,6 +8,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     class="adt-pfp-admin-notice notice notice-<?php echo esc_attr( "$type $type" ); ?> <?php echo $is_dismissible ? 'is-dismissible' : ''; ?> <?php echo esc_attr( $args['class'] ?? '' ); ?>"
     id="<?php echo esc_attr( $notice_id ); ?>"
     data-nonce="<?php echo isset( $args['nonce'] ) ? esc_attr( $args['nonce'] ) : ''; ?>"
+    <?php if ( ! empty( $args['notice_type'] ) ) : ?>
+    data-notice-type="<?php echo esc_attr( $args['notice_type'] ); ?>"
+    <?php endif; ?>
     <?php
     if ( ! empty( $args['data'] ) ) :
         foreach ( $args['data'] as $key => $value ) :
