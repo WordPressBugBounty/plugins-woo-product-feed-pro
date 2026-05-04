@@ -15,6 +15,19 @@ use AdTribes\PFP\Traits\Singleton_Trait;
 
 defined( 'ABSPATH' ) || exit;
 
+/*
+ * Defensive fallback: when Elite (or any consumer) loads this bootstrap directly
+ * before the main plugin file has run, derive the plugin constants from __DIR__
+ * so the subsequent require does not fatal on an undefined constant.
+ */
+if ( ! defined( 'ADT_PFP_PLUGIN_DIR_PATH' ) ) {
+    define( 'ADT_PFP_PLUGIN_DIR_PATH', trailingslashit( dirname( __DIR__ ) ) );
+}
+
+if ( ! defined( 'ADT_PFP_PLUGIN_FILE' ) ) {
+    define( 'ADT_PFP_PLUGIN_FILE', ADT_PFP_PLUGIN_DIR_PATH . 'woocommerce-sea.php' );
+}
+
 require_once ADT_PFP_PLUGIN_DIR_PATH . 'includes/autoload.php';
 
 /**

@@ -14,6 +14,7 @@ use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
 use AdTribes\PFP\Traits\Singleton_Trait;
 use AdTribes\PFP\Factories\Vite_App;
+use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Factories\Product_Feed_Query;
 
 /**
@@ -263,6 +264,71 @@ class WP_Admin extends Abstract_Class {
         $settings = apply_filters( 'adt_settings_other_settings_args', $settings );
 
         Helper::locate_admin_template( 'settings/other-settings.php', true, true, array( 'settings' => $settings ) );
+    }
+
+    /**
+     * Mark plugin-internal meta keys as protected.
+     *
+     * Feed configuration is stored as post meta on `adt_product_feed` posts using
+     * the `adt_` prefix. Marking these keys protected hides them from admin surfaces
+     * (REST schema, custom fields UI, etc.) that honour `is_protected_meta()`.
+     *
+     * @since 13.5.4
+     * @access public
+     *
+     * @param bool   $is_protected Whether the meta key is protected.
+     * @param string $meta_key     The meta key.
+     * @param string $meta_type    The meta type.
+     * @return bool
+     */
+    public function protect_adt_meta_keys( $is_protected, $meta_key, $meta_type ) {
+        if ( 'post' === $meta_type && is_string( $meta_key ) && str_starts_with( $meta_key, Product_Feed::META_PREFIX ) ) {
+            return true;
+        }
+        return $is_protected;
+    }
+
+    /**
+     * Exclude plugin-internal meta keys from the classic editor "Add Custom Field" dropdown.
+     *
+     * WordPress core's `meta_form()` runs a `SELECT DISTINCT meta_key ... LIMIT 30` against
+     * `wp_postmeta` and only then applies `is_protected_meta()`. Because `adt_*` keys sort
+     * alphabetically before most user-defined keys, the 30-row window is fully consumed by
+     * plugin-internal keys and — once `is_protected_meta()` removes them — the dropdown ends
+     * up empty. Short-circuiting via `postmeta_form_keys` lets us exclude `adt_*` at the SQL
+     * level so the user's own custom fields surface instead.
+     *
+     * @since 13.5.4
+     * @access public
+     *
+     * @param array|null $keys Pre-defined meta keys, or null to run core's query.
+     * @param \WP_Post   $post The current post being edited.
+     * @return array|null
+     */
+    public function filter_postmeta_form_keys( $keys, $post ) {
+        if ( null !== $keys ) {
+            return $keys;
+        }
+
+        global $wpdb;
+
+        $limit       = (int) apply_filters( 'postmeta_form_limit', 30 );
+        $prefix_like = $wpdb->esc_like( Product_Feed::META_PREFIX ) . '%';
+
+        return $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT DISTINCT meta_key
+                FROM $wpdb->postmeta
+                WHERE meta_key NOT BETWEEN '_' AND '_z'
+                    AND meta_key NOT LIKE %s
+                HAVING meta_key NOT LIKE %s
+                ORDER BY meta_key
+                LIMIT %d",
+                $prefix_like,
+                $wpdb->esc_like( '_' ) . '%',
+                $limit
+            )
+        );
     }
 
     /**
@@ -696,6 +762,10 @@ class WP_Admin extends Abstract_Class {
 
         // Add plugin action links.
         add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 2 );
+
+        // Hide plugin-internal adt_ meta keys from the classic editor Custom Fields dropdown.
+        add_filter( 'is_protected_meta', array( $this, 'protect_adt_meta_keys' ), 10, 3 );
+        add_filter( 'postmeta_form_keys', array( $this, 'filter_postmeta_form_keys' ), 10, 2 );
 
         // Add other settings on the plugin settings page.
         add_action( 'adt_after_manage_settings_table', array( $this, 'add_other_settings' ) );

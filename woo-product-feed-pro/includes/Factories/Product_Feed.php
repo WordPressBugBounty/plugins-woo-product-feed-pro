@@ -1441,14 +1441,21 @@ class Product_Feed {
                 break;
         }
 
-        // Schedule the Action Scheduler event.
+        /*
+         * Schedule the Action Scheduler event.
+         *
+         * Do not pass $unique = true here: Action Scheduler's uniqueness check
+         * matches on hook + group only and ignores args, so passing true would
+         * silently reject every feed after the first (all feeds share the same
+         * hook/group, only the feed_id arg differs). Duplicate prevention for
+         * this specific feed is already handled by unregister_action() above.
+         */
         as_schedule_recurring_action(
             $timestamp,
             $interval_in_seconds,
             ADT_PFP_AS_GENERATE_PRODUCT_FEED,
             array( 'feed_id' => $this->id ),
-            ADT_PFP_AS_GENERATE_PRODUCT_FEED_GROUP,
-            true
+            ADT_PFP_AS_GENERATE_PRODUCT_FEED_GROUP
         );
     }
 

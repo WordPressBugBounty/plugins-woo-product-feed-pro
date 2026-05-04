@@ -3,7 +3,7 @@ Contributors: jkohlbach, RymeraWebCo, Rymera01, smub
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
-Requires at least: 5.9
+Requires at least: 5.4
 Tested up to: 7.0
 Stable tag: trunk
 
@@ -388,6 +388,15 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Feed actions & scheduling – From the feed list you can copy/open the feed URL, trigger a manual refresh, and control refresh frequency for each feed.
 
 === Changelog ===
+
+= 13.5.4 (2026-05-04) =
+* Bug Fix: Feed filename case mismatch on scheduled update
+* Bug Fix: Feed statistics show no product count for JSONL/gzip feeds
+* Bug Fix: Local pickup shipping method not showing in feed
+* Bug Fix: The attribute taxonomy appears under incorrect group in the feed editor
+* Bug Fix: ViewContent sends content_ids as integers instead of strings for variable product parent pages
+* Bug Fix: adt_ plugin-internal meta keys flood WooCommerce product editor "Custom Fields" dropdown
+* Feature: WP-CLI interface for managing product feeds
 
 = 13.5.3 (2026-04-01) =
 * Bug Fix: Bug: Legacy filters/rules nonce selector picks up wrong #_wpnonce element

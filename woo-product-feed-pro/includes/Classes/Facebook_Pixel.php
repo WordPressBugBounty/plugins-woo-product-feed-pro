@@ -222,7 +222,7 @@ class Facebook_Pixel extends Abstract_Class {
         // Parent variable product — use child variation IDs.
         $woosea_content_ids = get_option( 'adt_facebook_pixel_content_ids', 'variation' );
         if ( 'variation' === $woosea_content_ids ) {
-            $content_ids = $product->get_children();
+            $content_ids = array_map( 'strval', $product->get_children() );
         } else {
             $content_ids = array( (string) $fb_prodid );
         }

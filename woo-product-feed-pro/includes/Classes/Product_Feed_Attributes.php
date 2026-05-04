@@ -470,6 +470,7 @@ class Product_Feed_Attributes extends Abstract_Class {
             ) AS p ON pm.post_id = p.ID
             WHERE pm.meta_key NOT IN ('_product_attributes')
                 AND pm.meta_key NOT LIKE '_woosea_%'
+                AND pm.meta_key NOT LIKE 'attribute_pa_%'
         ";
 
         $custom_attributes = $wpdb->get_col( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -518,9 +519,17 @@ class Product_Feed_Attributes extends Abstract_Class {
                 }
             }
             $product_variations_attributes = array_unique( $product_variations_attributes );
+
+            // Filter out WooCommerce taxonomy attributes (pa_*) — they belong in "Dynamic attributes", not here.
+            $product_variations_attributes = array_filter(
+                $product_variations_attributes,
+                function ( $attr ) {
+                    return strpos( $attr, 'pa_' ) !== 0;
+                }
+            );
         }
 
-        return $product_variations_attributes ? $product_variations_attributes : array();
+        return $product_variations_attributes ? array_values( $product_variations_attributes ) : array();
     }
 
 

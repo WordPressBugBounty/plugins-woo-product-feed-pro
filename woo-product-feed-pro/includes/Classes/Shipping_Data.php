@@ -138,6 +138,12 @@ class Shipping_Data extends Abstract_Class {
             }
         }
 
+        // Get standalone local pickup data (WC 8.3+).
+        $standalone_pickup_data = $this->_get_standalone_local_pickup_data( $package, $options, $country_code, $shipping_currency, $feed );
+        if ( ! empty( $standalone_pickup_data ) ) {
+            $shipping_data = array_merge( $shipping_data, $standalone_pickup_data );
+        }
+
         /**
          * Filter the shipping data.
          *
@@ -601,51 +607,8 @@ class Shipping_Data extends Abstract_Class {
                 $shipping['max_transit_time'] = $transit_times['max_transit_time'];
             }
 
-            // Get the shipping cost.
-            $shipping_cost = (float) $rate->get_cost();
-
-            /**
-             * Filter the shipping tax should be applied.
-             *
-             * @since 13.4.1
-             * @param bool   $apply_shipping_tax Whether the shipping tax should be applied. Default true.
-             * @param object $rate              The shipping rate object.
-             * @param object $feed              The feed object.
-             * @return bool
-             */
-            if ( apply_filters( 'adt_apply_shipping_tax', true, $rate, $feed ) ) {
-                $shipping_cost = $shipping_cost + $rate->get_shipping_tax();
-            }
-
-            /**
-             * Filter the shipping cost.
-             * This filter is used to modify the shipping cost before it is added to the feed.
-             *
-             * @since 13.4.0
-             * @param float|bool $shipping_cost   The shipping cost.
-             * @param object     $feed            The feed object.
-             * @param object     $shipping_method The shipping method object.
-             * @return float|bool
-             */
-            $shipping_cost = apply_filters( 'adt_product_feed_convert_shipping_cost', $shipping_cost, $rate, $feed );
-
-            /**
-             * Filter the localized price.
-             *
-             * @since 13.4.0
-             *
-             * @param array      $args          Arguments to localize the price. Default empty array.
-             * @param float|bool $shipping_cost The shipping cost.
-             * @param object     $feed          The feed object.
-             * @param object     $shipping_method The shipping method object.
-             * @return string
-             */
-            $shipping_cost = Formatting::localize_price( $shipping_cost, apply_filters( 'adt_product_feed_shipping_cost_localize_price_args', array(), $shipping_cost, $rate, $feed ), true, $feed );
-
-            // Heureka: remove the currency from the price.
-            $shipping['price'] = $feed->ship_suffix || 'heureka' === $feed_channel['fields']
-                ? $shipping_cost
-                : $shipping_cost . ' ' . $shipping_currency;
+            // Calculate and format the shipping price.
+            $shipping['price'] = $this->_calculate_shipping_price( $rate, $feed, $feed_channel, $shipping_currency );
 
             /**
              * Filter the shipping array.
@@ -751,6 +714,183 @@ class Shipping_Data extends Abstract_Class {
         );
 
         return $methods;
+    }
+
+    /**
+     * Get standalone local pickup shipping data (WC 8.3+).
+     *
+     * WooCommerce 8.3+ moved local pickup out of shipping zones into a standalone
+     * setting (Settings > Shipping > Local pickup). This method retrieves pickup
+     * locations configured there and builds shipping entries for the feed.
+     *
+     * @since 13.5.5
+     * @access private
+     *
+     * @param array  $package           The package data.
+     * @param array  $options           The shipping options.
+     * @param string $country_code      The feed country code.
+     * @param string $shipping_currency The shipping currency.
+     * @param object $feed              The feed object.
+     * @return array
+     */
+    private function _get_standalone_local_pickup_data( $package, $options, $country_code, $shipping_currency, $feed ) {
+        $pickup_data = array();
+
+        // Skip if remove local pickup is enabled.
+        if ( 'yes' === $options['remove_local_pickup_shipping'] ) {
+            return $pickup_data;
+        }
+
+        // Check if the PickupLocation class exists (WC 8.3+).
+        if ( ! class_exists( '\Automattic\WooCommerce\Blocks\Shipping\PickupLocation' ) ) {
+            return $pickup_data;
+        }
+
+        // Check if standalone local pickup is enabled.
+        $pickup_settings = get_option( 'woocommerce_pickup_location_settings', array() );
+        if ( empty( $pickup_settings['enabled'] ) || ! wc_string_to_bool( $pickup_settings['enabled'] ) ) {
+            return $pickup_data;
+        }
+
+        // Get pickup locations.
+        $pickup_locations = get_option( 'pickup_location_pickup_locations', array() );
+        if ( empty( $pickup_locations ) ) {
+            return $pickup_data;
+        }
+
+        $feed_channel         = $feed->get_channel();
+        $feed_country_not_set = empty( $country_code );
+
+        // Instantiate the pickup location method and calculate rates.
+        $method = new \Automattic\WooCommerce\Blocks\Shipping\PickupLocation();
+        $method->calculate_shipping( $package );
+
+        foreach ( $pickup_locations as $index => $location ) {
+            if ( empty( $location['enabled'] ) ) {
+                continue;
+            }
+
+            $location_country = $location['address']['country'] ?? '';
+            $location_state   = $location['address']['state'] ?? '';
+
+            // Country filtering (same logic as zone-based methods).
+            $include_location = false;
+            if ( 'yes' === $options['add_all_shipping'] ) {
+                $include_location = true;
+            } elseif ( $feed_country_not_set && 'yes' === $options['include_all_shipping_countries'] ) {
+                $include_location = true;
+            } elseif ( ! $feed_country_not_set && ( empty( $location_country ) || $location_country === $country_code ) ) {
+                $include_location = true;
+            }
+
+            if ( ! $include_location ) {
+                continue;
+            }
+
+            // Find the rate for this location.
+            $rate_key = 'pickup_location:' . $index;
+            if ( ! isset( $method->rates[ $rate_key ] ) ) {
+                continue;
+            }
+
+            $rate = $method->rates[ $rate_key ];
+
+            $effective_country = ! empty( $location_country ) ? $location_country : $country_code;
+
+            $shipping = array(
+                'country'     => $effective_country,
+                'region'      => '',
+                'postal_code' => '',
+                'service'     => $rate->get_label(),
+                'price'       => '',
+            );
+
+            if ( ! empty( $location_state ) ) {
+                $shipping['region'] = $location_state;
+            }
+
+            $location_postcode = $location['address']['postcode'] ?? '';
+            if ( ! empty( $location_postcode ) ) {
+                $shipping['postal_code'] = $location_postcode;
+            }
+
+            // Append country code to service name (consistent with zone-based methods).
+            if ( ! empty( $effective_country ) ) {
+                $shipping['service'] .= ' ' . $effective_country;
+            }
+
+            // Calculate and format the shipping price.
+            $shipping['price'] = $this->_calculate_shipping_price( $rate, $feed, $feed_channel, $shipping_currency );
+
+            /** This filter is documented in includes/Classes/Shipping_Data.php */
+            $pickup_data[] = apply_filters( 'adt_product_feed_shipping_array', array_filter( $shipping ), $rate, $feed, $package );
+        }
+
+        return $pickup_data;
+    }
+
+    /**
+     * Calculate and format the shipping price from a rate.
+     *
+     * Centralizes cost calculation, tax application, currency conversion,
+     * price formatting, and the Heureka price suffix logic used by both
+     * zone-based methods and standalone pickup locations.
+     *
+     * @since 13.5.5
+     * @access private
+     *
+     * @param \WC_Shipping_Rate $rate              The shipping rate object.
+     * @param object            $feed              The feed object.
+     * @param array             $feed_channel      The feed channel data.
+     * @param string            $shipping_currency The shipping currency.
+     * @return string The formatted shipping price string.
+     */
+    private function _calculate_shipping_price( $rate, $feed, $feed_channel, $shipping_currency ) {
+        // Get the shipping cost.
+        $shipping_cost = (float) $rate->get_cost();
+
+        /**
+         * Filter the shipping tax should be applied.
+         *
+         * @since 13.4.1
+         * @param bool   $apply_shipping_tax Whether the shipping tax should be applied. Default true.
+         * @param object $rate              The shipping rate object.
+         * @param object $feed              The feed object.
+         * @return bool
+         */
+        if ( apply_filters( 'adt_apply_shipping_tax', true, $rate, $feed ) ) {
+            $shipping_cost = $shipping_cost + $rate->get_shipping_tax();
+        }
+
+        /**
+         * Filter the shipping cost.
+         * This filter is used to modify the shipping cost before it is added to the feed.
+         *
+         * @since 13.4.0
+         * @param float|bool $shipping_cost   The shipping cost.
+         * @param object     $feed            The feed object.
+         * @param object     $shipping_method The shipping method object.
+         * @return float|bool
+         */
+        $shipping_cost = apply_filters( 'adt_product_feed_convert_shipping_cost', $shipping_cost, $rate, $feed );
+
+        /**
+         * Filter the localized price.
+         *
+         * @since 13.4.0
+         *
+         * @param array      $args          Arguments to localize the price. Default empty array.
+         * @param float|bool $shipping_cost The shipping cost.
+         * @param object     $feed          The feed object.
+         * @param object     $shipping_method The shipping method object.
+         * @return string
+         */
+        $shipping_cost = Formatting::localize_price( $shipping_cost, apply_filters( 'adt_product_feed_shipping_cost_localize_price_args', array(), $shipping_cost, $rate, $feed ), true, $feed );
+
+        // Heureka: remove the currency from the price.
+        return $feed->ship_suffix || 'heureka' === $feed_channel['fields']
+            ? $shipping_cost
+            : $shipping_cost . ' ' . $shipping_currency;
     }
 
     /**

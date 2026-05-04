@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-15T07:31:06+00:00\n"
+"POT-Creation-Date: 2026-05-04T05:28:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woo-product-feed-pro\n"
@@ -40,12 +40,12 @@ msgid "https://www.adtribes.io"
 msgstr ""
 
 #. translators: %1$s = opening <strong> tag; %2$s = closing </strong> tag; %3$s = opening <p> tag; %4$s = closing </p> tag
-#: bootstrap/app.php:133
+#: bootstrap/app.php:146
 #, php-format
 msgid "%3$s%1$sProduct Feed Pro for WooCommerce %2$splugin missing dependency.%4$s"
 msgstr ""
 
-#: bootstrap/app.php:191
+#: bootstrap/app.php:204
 msgid "The class does not have a run method. Please make sure to extend the Abstract_Class class."
 msgstr ""
 
@@ -164,13 +164,13 @@ msgstr ""
 #: includes/Classes/Product_Feed_Admin.php:314
 #: includes/Classes/Usage.php:760
 #: includes/Classes/Usage.php:790
-#: includes/Classes/WP_Admin.php:303
-#: includes/Classes/WP_Admin.php:449
-#: includes/Classes/WP_Admin.php:477
-#: includes/Classes/WP_Admin.php:500
-#: includes/Classes/WP_Admin.php:579
-#: includes/Classes/WP_Admin.php:612
-#: includes/Classes/WP_Admin.php:662
+#: includes/Classes/WP_Admin.php:369
+#: includes/Classes/WP_Admin.php:515
+#: includes/Classes/WP_Admin.php:543
+#: includes/Classes/WP_Admin.php:566
+#: includes/Classes/WP_Admin.php:645
+#: includes/Classes/WP_Admin.php:678
+#: includes/Classes/WP_Admin.php:728
 msgid "Invalid security token"
 msgstr ""
 
@@ -180,7 +180,7 @@ msgstr ""
 #: includes/Classes/Product_Feed_Admin.php:96
 #: includes/Classes/Product_Feed_Admin.php:230
 #: includes/Classes/Product_Feed_Admin.php:266
-#: includes/Classes/Product_Feed_Attributes.php:596
+#: includes/Classes/Product_Feed_Attributes.php:605
 msgid "You do not have permission to manage product feed."
 msgstr ""
 
@@ -188,11 +188,11 @@ msgstr ""
 #: includes/Classes/Export_Import_Tools.php:73
 #: includes/Classes/Usage.php:756
 #: includes/Classes/Usage.php:786
-#: includes/Classes/WP_Admin.php:298
-#: includes/Classes/WP_Admin.php:445
-#: includes/Classes/WP_Admin.php:473
-#: includes/Classes/WP_Admin.php:496
-#: includes/Classes/WP_Admin.php:608
+#: includes/Classes/WP_Admin.php:364
+#: includes/Classes/WP_Admin.php:511
+#: includes/Classes/WP_Admin.php:539
+#: includes/Classes/WP_Admin.php:562
+#: includes/Classes/WP_Admin.php:674
 msgid "You do not have permission to perform this action."
 msgstr ""
 
@@ -386,64 +386,64 @@ msgid "Disable HTTP feed generation requests"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:321
-#: includes/Classes/WP_Admin.php:215
+#: includes/Classes/WP_Admin.php:216
 msgid "Sync Product Feed"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:323
-#: includes/Classes/WP_Admin.php:217
+#: includes/Classes/WP_Admin.php:218
 msgid "Sync Product Feed to custom post type and legacy options (Backwards compatibility)"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:327
-#: includes/Classes/WP_Admin.php:221
+#: includes/Classes/WP_Admin.php:222
 msgid "Clear custom attributes cache"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:329
-#: includes/Classes/WP_Admin.php:223
+#: includes/Classes/WP_Admin.php:224
 msgid "Clear custom attributes product meta keys cache"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:333
-#: includes/Classes/WP_Admin.php:227
+#: includes/Classes/WP_Admin.php:228
 msgid "Convert feed URLs to lowercase"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:335
-#: includes/Classes/WP_Admin.php:229
+#: includes/Classes/WP_Admin.php:230
 msgid "Standardize all feed file URLs to lowercase format for better compatibility"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:339
-#: includes/Classes/WP_Admin.php:233
+#: includes/Classes/WP_Admin.php:234
 msgid "Fix duplicated feed"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:341
-#: includes/Classes/WP_Admin.php:235
+#: includes/Classes/WP_Admin.php:236
 msgid "This will fix the issue with duplicated feeds due to data migration abnormalities"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:345
 #: includes/Classes/Admin_Pages/Settings_Page.php:347
-#: includes/Classes/WP_Admin.php:239
-#: includes/Classes/WP_Admin.php:241
+#: includes/Classes/WP_Admin.php:240
+#: includes/Classes/WP_Admin.php:242
 msgid "Use legacy filters and rules"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:351
-#: includes/Classes/WP_Admin.php:245
+#: includes/Classes/WP_Admin.php:246
 msgid "Clean up plugin data on un-installation"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:353
-#: includes/Classes/WP_Admin.php:247
+#: includes/Classes/WP_Admin.php:248
 msgid "If checked, removes all plugin data when this plugin is uninstalled. Warning: This process is irreversible."
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:356
-#: includes/Classes/WP_Admin.php:250
+#: includes/Classes/WP_Admin.php:251
 msgid "Are you sure you want to clean up plugin data on un-installation?"
 msgstr ""
 
@@ -451,6 +451,15 @@ msgstr ""
 #: includes/Classes/Admin_Pages/Upgrade_To_Elite_Page.php:40
 #: templates/notices/upgrade-to-elite-notice.php:22
 msgid "Upgrade To Elite"
+msgstr ""
+
+#. translators: %s is the original feed title.
+#. translators: %s is the feed title.
+#: includes/Classes/CLI/Feed_Command.php:479
+#: includes/Classes/Product_Feed_Admin.php:112
+#: includes/Classes/Product_Feed_Admin.php:364
+#, php-format
+msgid "Copy of %s"
 msgstr ""
 
 #: includes/Classes/Export_Import_Tools.php:69
@@ -532,7 +541,7 @@ msgid "Product URL"
 msgstr ""
 
 #: includes/Classes/Heartbeat.php:53
-#: includes/Classes/WP_Admin.php:315
+#: includes/Classes/WP_Admin.php:381
 msgid "Invalid request."
 msgstr ""
 
@@ -679,13 +688,6 @@ msgstr ""
 msgid "The plugin is already installed."
 msgstr ""
 
-#. translators: %s is the feed title.
-#: includes/Classes/Product_Feed_Admin.php:112
-#: includes/Classes/Product_Feed_Admin.php:364
-#, php-format
-msgid "Copy of %s"
-msgstr ""
-
 #: includes/Classes/Product_Feed_Admin.php:162
 msgid "You do not have permission to cancel feeds."
 msgstr ""
@@ -827,15 +829,15 @@ msgstr ""
 msgid "Feed deactivated successfully."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:602
+#: includes/Classes/Product_Feed_Attributes.php:611
 msgid "No attributes found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:610
+#: includes/Classes/Product_Feed_Attributes.php:619
 msgid "No channel data found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:616
+#: includes/Classes/Product_Feed_Attributes.php:625
 msgid "Channel file not found."
 msgstr ""
 
@@ -960,74 +962,74 @@ msgstr ""
 msgid "Failed to enable usage tracking."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:130
+#: includes/Classes/WP_Admin.php:131
 msgid "About Page"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:138
+#: includes/Classes/WP_Admin.php:139
 msgid "Help Page"
 msgstr ""
 
 #. translators: %1$s and %2$s are placeholders for html tags.
-#: includes/Classes/WP_Admin.php:159
+#: includes/Classes/WP_Admin.php:160
 #, php-format
 msgid "You're using Product Feed Pro FREE VERSION. To unlock more features consider %1$supgrading to Elite%2$s."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:323
+#: includes/Classes/WP_Admin.php:389
 msgid "Invalid setting parameter."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:350
+#: includes/Classes/WP_Admin.php:416
 msgid "Settings updated."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:462
+#: includes/Classes/WP_Admin.php:528
 msgid "Migration successful."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:482
+#: includes/Classes/WP_Admin.php:548
 msgid "Custom attributes cache cleared."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:484
+#: includes/Classes/WP_Admin.php:550
 msgid "Custom attributes cache not found."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:561
+#: includes/Classes/WP_Admin.php:627
 msgid "Feed URLs updated to lowercase in database. Some files could not be renamed due to permission issues."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:567
+#: includes/Classes/WP_Admin.php:633
 msgid "Feed URLs and files successfully updated to lowercase."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:583
-#: includes/Classes/WP_Admin.php:666
+#: includes/Classes/WP_Admin.php:649
+#: includes/Classes/WP_Admin.php:732
 msgid "You do not have permission to do this"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:591
+#: includes/Classes/WP_Admin.php:657
 msgid "Legacy filters and rules enabled"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:593
+#: includes/Classes/WP_Admin.php:659
 msgid "Legacy filters and rules disabled"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:596
+#: includes/Classes/WP_Admin.php:662
 msgid "Error enabling legacy filters and rules"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:650
+#: includes/Classes/WP_Admin.php:716
 msgid "Duplicated feed fixed."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:670
+#: includes/Classes/WP_Admin.php:736
 msgid "Notification dismissed"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:672
+#: includes/Classes/WP_Admin.php:738
 msgid "Error dismissing notification"
 msgstr ""
 

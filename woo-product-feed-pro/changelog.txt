@@ -1,3 +1,12 @@
+= 13.5.4 (2026-05-04) =
+* Bug Fix: Feed filename case mismatch on scheduled update
+* Bug Fix: Feed statistics show no product count for JSONL/gzip feeds
+* Bug Fix: Local Pickup Shipping Method Not Showing In Feed
+* Bug Fix: The attribute taxonomy appears under incorrect group in the feed editor
+* Bug Fix: ViewContent sends content_ids as integers instead of strings for variable product parent pages
+* Bug Fix: adt_ plugin-internal meta keys flood WooCommerce product editor "Custom Fields" dropdown
+* Feature: WP-CLI interface for managing product feeds
+
 = 13.5.3 (2026-04-01) =
 * Bug Fix: Bug: Legacy filters/rules nonce selector picks up wrong #_wpnonce element
 * Bug Fix: Bug: TikTok Product Catalog channel loads Snapchat attribute template instead of its own

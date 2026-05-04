@@ -56,6 +56,17 @@ class Cron extends Abstract_Class {
             case 'tsv':
                 $products_count = count( file( $file ) ) - 1; // -1 for the header.
                 break;
+            case 'jsonl':
+                $products_count = $this->count_non_empty_lines( $file, false );
+                break;
+            case 'jsonl.gz':
+                $products_count = $this->count_non_empty_lines( $file, true );
+                break;
+            case 'csv.gz':
+            case 'tsv.gz':
+                $line_count     = $this->count_non_empty_lines( $file, true );
+                $products_count = $line_count > 0 ? $line_count - 1 : 0; // -1 for the header.
+                break;
         }
 
         /**
@@ -69,6 +80,45 @@ class Cron extends Abstract_Class {
          * @param Product_Feed $feed           The feed data object.
          */
         return apply_filters( 'adt_product_feed_history_count', $products_count, $file, $file_format, $feed );
+    }
+
+    /**
+     * Count non-empty lines in a file, streaming plain or gzip-compressed input.
+     *
+     * Streams line-by-line so large feed files do not need to be loaded
+     * entirely into memory.
+     *
+     * @since 13.5.4
+     *
+     * @param string $file     The file path.
+     * @param bool   $is_gzip  Whether the file is gzip-compressed.
+     * @return int
+     */
+    private function count_non_empty_lines( $file, $is_gzip ) {
+        $count  = 0;
+        $handle = $is_gzip ? gzopen( $file, 'rb' ) : fopen( $file, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+
+        if ( false === $handle ) {
+            return 0;
+        }
+
+        while ( ! ( $is_gzip ? gzeof( $handle ) : feof( $handle ) ) ) {
+            $line = $is_gzip ? gzgets( $handle ) : fgets( $handle );
+            if ( false === $line ) {
+                break;
+            }
+            if ( '' !== trim( $line ) ) {
+                ++$count;
+            }
+        }
+
+        if ( $is_gzip ) {
+            gzclose( $handle );
+        } else {
+            fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+        }
+
+        return $count;
     }
 
     /**
