@@ -1610,7 +1610,7 @@ class Product_Feed {
                 }
             );
 
-            update_option( 'adt_cron_projects', $feed_data );
+            update_option( 'adt_cron_projects', $feed_data, false );
         }
 
         // Delete the 'batch_project_' option.

@@ -2,14 +2,14 @@
 # This file is distributed under the GPL3.
 msgid ""
 msgstr ""
-"Project-Id-Version: Product Feed PRO for WooCommerce 13.5.3\n"
+"Project-Id-Version: Product Feed PRO for WooCommerce 13.5.5\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woo-product-feed-pro\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-04T05:28:28+00:00\n"
+"POT-Creation-Date: 2026-06-09T04:45:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woo-product-feed-pro\n"
@@ -140,7 +140,7 @@ msgstr ""
 
 #. translators: %s: WooCommerce Product Feed PRO plugin rating link
 #: includes/Classes/Admin_Pages/Edit_Feed_Page.php:717
-#: includes/Classes/Admin_Pages/Settings_Page.php:398
+#: includes/Classes/Admin_Pages/Settings_Page.php:404
 #, php-format
 msgid "If you like our %1$s plugin please leave us a %2$s rating. Thanks in advance!"
 msgstr ""
@@ -150,7 +150,7 @@ msgid "You do not have permission to edit feeds"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Edit_Feed_Page.php:749
-#: includes/REST/Filters_Rules.php:226
+#: includes/REST/Filters_Rules.php:238
 msgid "Feed not found"
 msgstr ""
 
@@ -165,12 +165,12 @@ msgstr ""
 #: includes/Classes/Usage.php:760
 #: includes/Classes/Usage.php:790
 #: includes/Classes/WP_Admin.php:369
-#: includes/Classes/WP_Admin.php:515
-#: includes/Classes/WP_Admin.php:543
-#: includes/Classes/WP_Admin.php:566
-#: includes/Classes/WP_Admin.php:645
-#: includes/Classes/WP_Admin.php:678
-#: includes/Classes/WP_Admin.php:728
+#: includes/Classes/WP_Admin.php:573
+#: includes/Classes/WP_Admin.php:601
+#: includes/Classes/WP_Admin.php:622
+#: includes/Classes/WP_Admin.php:701
+#: includes/Classes/WP_Admin.php:734
+#: includes/Classes/WP_Admin.php:784
 msgid "Invalid security token"
 msgstr ""
 
@@ -180,7 +180,7 @@ msgstr ""
 #: includes/Classes/Product_Feed_Admin.php:96
 #: includes/Classes/Product_Feed_Admin.php:230
 #: includes/Classes/Product_Feed_Admin.php:266
-#: includes/Classes/Product_Feed_Attributes.php:605
+#: includes/Classes/Product_Feed_Attributes.php:618
 msgid "You do not have permission to manage product feed."
 msgstr ""
 
@@ -189,10 +189,10 @@ msgstr ""
 #: includes/Classes/Usage.php:756
 #: includes/Classes/Usage.php:786
 #: includes/Classes/WP_Admin.php:364
-#: includes/Classes/WP_Admin.php:511
-#: includes/Classes/WP_Admin.php:539
-#: includes/Classes/WP_Admin.php:562
-#: includes/Classes/WP_Admin.php:674
+#: includes/Classes/WP_Admin.php:569
+#: includes/Classes/WP_Admin.php:597
+#: includes/Classes/WP_Admin.php:618
+#: includes/Classes/WP_Admin.php:730
 msgid "You do not have permission to perform this action."
 msgstr ""
 
@@ -262,7 +262,7 @@ msgid "Expired"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:43
-#: includes/Classes/Upsell.php:107
+#: includes/Classes/Upsell.php:112
 msgid "Product Feed Pro for WooCommerce"
 msgstr ""
 
@@ -322,127 +322,131 @@ msgid "Use parent variable product image for variations"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/Settings_Page.php:200
+msgid "Enforce minimum 500x500 image size on Google Shopping and Facebook Catalog feeds"
+msgstr ""
+
+#: includes/Classes/Admin_Pages/Settings_Page.php:206
 msgid "Add shipping costs for all countries to your feed (Google Shopping / Facebook only)"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:205
+#: includes/Classes/Admin_Pages/Settings_Page.php:211
 msgid "Remove all other shipping classes when free shipping criteria are met (Google Shopping / Facebook only)"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:210
+#: includes/Classes/Admin_Pages/Settings_Page.php:216
 msgid "Remove the free shipping zone from your feed (Google Shopping / Facebook only)"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:215
+#: includes/Classes/Admin_Pages/Settings_Page.php:221
 msgid "Remove the local pickup shipping zone from your feed (Google Shopping / Facebook only)"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:220
+#: includes/Classes/Admin_Pages/Settings_Page.php:226
 msgid "Show only basis attributes in field mapping and filter/rule drop-downs"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:225
+#: includes/Classes/Admin_Pages/Settings_Page.php:231
 msgid "Enable logging"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:230
+#: includes/Classes/Admin_Pages/Settings_Page.php:236
 msgid "Add Facebook Pixel"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:236
+#: includes/Classes/Admin_Pages/Settings_Page.php:242
 msgid "Insert your Facebook Pixel ID"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:242
+#: includes/Classes/Admin_Pages/Settings_Page.php:248
 msgid "Content IDS variable products Facebook Pixel"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:247
+#: includes/Classes/Admin_Pages/Settings_Page.php:253
 msgid "Variation product ID's"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:251
+#: includes/Classes/Admin_Pages/Settings_Page.php:257
 msgid "Variable product ID"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:257
+#: includes/Classes/Admin_Pages/Settings_Page.php:263
 msgid "Add Google Dynamic Remarketing Pixel:"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:262
+#: includes/Classes/Admin_Pages/Settings_Page.php:268
 msgid "Insert your Dynamic Remarketing Conversion tracking ID:"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:268
+#: includes/Classes/Admin_Pages/Settings_Page.php:274
 msgid "Change products per batch number"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:274
+#: includes/Classes/Admin_Pages/Settings_Page.php:280
 msgid "Insert batch size:"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:292
+#: includes/Classes/Admin_Pages/Settings_Page.php:298
 msgid "Disable HTTP feed generation requests"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:321
+#: includes/Classes/Admin_Pages/Settings_Page.php:327
 #: includes/Classes/WP_Admin.php:216
 msgid "Sync Product Feed"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:323
+#: includes/Classes/Admin_Pages/Settings_Page.php:329
 #: includes/Classes/WP_Admin.php:218
 msgid "Sync Product Feed to custom post type and legacy options (Backwards compatibility)"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:327
+#: includes/Classes/Admin_Pages/Settings_Page.php:333
 #: includes/Classes/WP_Admin.php:222
 msgid "Clear custom attributes cache"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:329
+#: includes/Classes/Admin_Pages/Settings_Page.php:335
 #: includes/Classes/WP_Admin.php:224
 msgid "Clear custom attributes product meta keys cache"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:333
+#: includes/Classes/Admin_Pages/Settings_Page.php:339
 #: includes/Classes/WP_Admin.php:228
 msgid "Convert feed URLs to lowercase"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:335
+#: includes/Classes/Admin_Pages/Settings_Page.php:341
 #: includes/Classes/WP_Admin.php:230
 msgid "Standardize all feed file URLs to lowercase format for better compatibility"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:339
+#: includes/Classes/Admin_Pages/Settings_Page.php:345
 #: includes/Classes/WP_Admin.php:234
 msgid "Fix duplicated feed"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:341
+#: includes/Classes/Admin_Pages/Settings_Page.php:347
 #: includes/Classes/WP_Admin.php:236
 msgid "This will fix the issue with duplicated feeds due to data migration abnormalities"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:345
-#: includes/Classes/Admin_Pages/Settings_Page.php:347
+#: includes/Classes/Admin_Pages/Settings_Page.php:351
+#: includes/Classes/Admin_Pages/Settings_Page.php:353
 #: includes/Classes/WP_Admin.php:240
 #: includes/Classes/WP_Admin.php:242
 msgid "Use legacy filters and rules"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:351
+#: includes/Classes/Admin_Pages/Settings_Page.php:357
 #: includes/Classes/WP_Admin.php:246
 msgid "Clean up plugin data on un-installation"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:353
+#: includes/Classes/Admin_Pages/Settings_Page.php:359
 #: includes/Classes/WP_Admin.php:248
 msgid "If checked, removes all plugin data when this plugin is uninstalled. Warning: This process is irreversible."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Settings_Page.php:356
+#: includes/Classes/Admin_Pages/Settings_Page.php:362
 #: includes/Classes/WP_Admin.php:251
 msgid "Are you sure you want to clean up plugin data on un-installation?"
 msgstr ""
@@ -829,15 +833,15 @@ msgstr ""
 msgid "Feed deactivated successfully."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:611
+#: includes/Classes/Product_Feed_Attributes.php:624
 msgid "No attributes found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:619
+#: includes/Classes/Product_Feed_Attributes.php:632
 msgid "No channel data found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Attributes.php:625
+#: includes/Classes/Product_Feed_Attributes.php:638
 msgid "Channel file not found."
 msgstr ""
 
@@ -898,30 +902,38 @@ msgid "In Product Feed ELITE for WooCommerce you can exclude specific attributes
 msgstr ""
 
 #: includes/Classes/Upsell.php:55
-msgid "Upgrade to set custom refresh interval"
+msgid "Upgrade to target Feed Output Fields in Rules"
 msgstr ""
 
 #: includes/Classes/Upsell.php:56
-msgid "In Product Feed ELITE for WooCommerce you can set custom refresh intervals and specific times for your feeds. Schedule feeds to run hourly, daily, weekly, yearly or every X hours at specific times (e.g., daily at 11 PM). Perfect for optimizing server performance during off-peak hours and ensuring feeds complete before the next refresh cycle."
+msgid "In Product Feed ELITE for WooCommerce your rules can read from and write to the output columns you configured in Field Mapping (e.g. g:custom_label_0, g:custom_label_1, custom fields). Perfect for populating Google Shopping custom labels conditionally based on product data, or any other feed column derived from your mapping."
 msgstr ""
 
 #: includes/Classes/Upsell.php:60
-msgid "Upgrade to import feeds"
+msgid "Upgrade to set custom refresh interval"
 msgstr ""
 
 #: includes/Classes/Upsell.php:61
+msgid "In Product Feed ELITE for WooCommerce you can set custom refresh intervals and specific times for your feeds. Schedule feeds to run hourly, daily, weekly, yearly or every X hours at specific times (e.g., daily at 11 PM). Perfect for optimizing server performance during off-peak hours and ensuring feeds complete before the next refresh cycle."
+msgstr ""
+
+#: includes/Classes/Upsell.php:65
+msgid "Upgrade to import feeds"
+msgstr ""
+
+#: includes/Classes/Upsell.php:66
 msgid "In Product Feed ELITE for WooCommerce you can import feed configurations from JSON files. Perfect for migrating feeds between sites, restoring backups, or bulk importing multiple feed setups at once. Save hours of manual configuration work."
 msgstr ""
 
-#: includes/Classes/Upsell.php:111
+#: includes/Classes/Upsell.php:116
 msgid "See all features & pricing →"
 msgstr ""
 
-#: includes/Classes/Upsell.php:185
+#: includes/Classes/Upsell.php:190
 msgid "Custom (Elite)"
 msgstr ""
 
-#: includes/Classes/Upsell.php:203
+#: includes/Classes/Upsell.php:208
 msgid "The refresh interval has been automatically set to ‘No Refresh’ because the Elite plugin is deactivated. Custom refresh intervals are only available with the Elite version."
 msgstr ""
 
@@ -980,56 +992,52 @@ msgstr ""
 msgid "Invalid setting parameter."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:416
+#: includes/Classes/WP_Admin.php:417
 msgid "Settings updated."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:528
+#: includes/Classes/WP_Admin.php:586
 msgid "Migration successful."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:548
+#: includes/Classes/WP_Admin.php:607
 msgid "Custom attributes cache cleared."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:550
-msgid "Custom attributes cache not found."
-msgstr ""
-
-#: includes/Classes/WP_Admin.php:627
+#: includes/Classes/WP_Admin.php:683
 msgid "Feed URLs updated to lowercase in database. Some files could not be renamed due to permission issues."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:633
+#: includes/Classes/WP_Admin.php:689
 msgid "Feed URLs and files successfully updated to lowercase."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:649
-#: includes/Classes/WP_Admin.php:732
+#: includes/Classes/WP_Admin.php:705
+#: includes/Classes/WP_Admin.php:788
 msgid "You do not have permission to do this"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:657
+#: includes/Classes/WP_Admin.php:713
 msgid "Legacy filters and rules enabled"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:659
+#: includes/Classes/WP_Admin.php:715
 msgid "Legacy filters and rules disabled"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:662
+#: includes/Classes/WP_Admin.php:718
 msgid "Error enabling legacy filters and rules"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:716
+#: includes/Classes/WP_Admin.php:772
 msgid "Duplicated feed fixed."
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:736
+#: includes/Classes/WP_Admin.php:792
 msgid "Notification dismissed"
 msgstr ""
 
-#: includes/Classes/WP_Admin.php:738
+#: includes/Classes/WP_Admin.php:794
 msgid "Error dismissing notification"
 msgstr ""
 
@@ -1178,8 +1186,8 @@ msgstr ""
 msgid "Product Feed CPT"
 msgstr ""
 
-#: includes/REST/Filters_Rules.php:131
-#: includes/REST/Filters_Rules.php:214
+#: includes/REST/Filters_Rules.php:143
+#: includes/REST/Filters_Rules.php:226
 msgid "Feed ID is required"
 msgstr ""
 
@@ -2352,7 +2360,15 @@ msgstr ""
 msgid "System Report"
 msgstr ""
 
-#: templates/settings/system-check-tab.php:201
+#: templates/settings/system-check-tab.php:199
+msgid "Copy to clipboard"
+msgstr ""
+
+#: templates/settings/system-check-tab.php:200
+msgid "Download log"
+msgstr ""
+
+#: templates/settings/system-check-tab.php:202
 msgid "Copy the below text and paste to the support team when requested to help us debug any systems issues with your feeds."
 msgstr ""
 
@@ -2432,115 +2448,115 @@ msgstr ""
 msgid "Local time is:"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:232
 #: i18n.js:283
 msgid "Attribute is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:235
 #: i18n.js:286
 msgid "Condition is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:238
 #: i18n.js:289
 msgid "Value is required for this condition"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:241
 #: i18n.js:262
 msgid "Action attribute is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:244
 #: i18n.js:265
 msgid "Action find text is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:256
 #: i18n.js:277
 msgid "Invalid numeric value"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:259
 #: i18n.js:280
 msgid "Division by zero is not allowed"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:250
 #: i18n.js:271
 msgid "Invalid decimal format. Use period (.) instead of comma (,) for decimal numbers (e.g., 2.5 instead of 2,5)"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:253
 #: i18n.js:274
 msgid "Invalid numeric value. Only numbers with period (.) as decimal separator are allowed"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:247
 #: i18n.js:268
 msgid "Action value is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:298
 #: i18n.js:337
 msgid "Enter value"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:340
 msgid "Filters Successfully Migrated"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:343
 msgid "Rules Successfully Migrated"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:346
 msgid "Your existing filters have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your filter rules."
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:349
 msgid "Your existing rules have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your rules."
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:295
 msgid "Enter numeric value (e.g., 2.5)"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.Bonx1ob-.js:43
-#: dist/apps/filters-rules-builder/index.BwJEOd9M.js:33
+#: dist/apps/filters-rules-builder/index-legacy.AWaHcvo6.js:43
+#: dist/apps/filters-rules-builder/index.Ct71TJ3h.js:33
 #: i18n.js:229
 msgid "Please fill in all required fields before submitting."
 msgstr ""
@@ -2793,16 +2809,16 @@ msgstr ""
 msgid "You have multiple shipping zones configured for your shop. Do you want to add all Shipping zones to your product feed or just a one?"
 msgstr ""
 
-#: static/js/woosea_channel.js:94
+#: static/js/woosea_channel.js:96
 msgid "Loading channels..."
 msgstr ""
 
-#: static/js/woosea_channel.js:128
-#: static/js/woosea_channel.js:134
+#: static/js/woosea_channel.js:130
+#: static/js/woosea_channel.js:136
 msgid "Error loading channels"
 msgstr ""
 
-#: static/js/woosea_channel.js:155
+#: static/js/woosea_channel.js:158
 msgid "Delimiter:"
 msgstr ""
 

@@ -103,6 +103,10 @@ export const useRulesStore = defineStore('rules', () => {
   const actions = ref<ActionOption[]>([]);
   const categories = ref<CategoryOption[]>([]);
   const fieldMapping = ref<FieldMapping>({});
+  // Map of attribute group labels the server has flagged as Elite-only
+  // to the upsell modal key the dropdown should open when one of their options is clicked.
+  // Empty when Elite is active.
+  const eliteGatedAttrGroups = ref<Record<string, string>>({});
 
   // Validation state (matching FiltersStore pattern)
   const validationErrors = ref<Record<string, string[]>>({});
@@ -277,6 +281,14 @@ export const useRulesStore = defineStore('rules', () => {
       }
       if (response.data.field_mapping) {
         fieldMapping.value = response.data.field_mapping;
+      }
+      // PHP serializes an empty associative array as `[]`, so treat both shapes
+      // as "no gated groups" and only accept a real object map.
+      const gated = response.data.eliteGatedAttrGroups;
+      if (gated && typeof gated === 'object' && !Array.isArray(gated)) {
+        eliteGatedAttrGroups.value = gated as Record<string, string>;
+      } else {
+        eliteGatedAttrGroups.value = {};
       }
 
       // Load categories from the API response
@@ -947,6 +959,7 @@ export const useRulesStore = defineStore('rules', () => {
     conditions.value = [];
     actions.value = [];
     categories.value = [];
+    eliteGatedAttrGroups.value = {};
   };
 
   return {
@@ -961,6 +974,7 @@ export const useRulesStore = defineStore('rules', () => {
     actions,
     fieldMapping,
     categories,
+    eliteGatedAttrGroups,
     migrationRan,
 
     // Getters

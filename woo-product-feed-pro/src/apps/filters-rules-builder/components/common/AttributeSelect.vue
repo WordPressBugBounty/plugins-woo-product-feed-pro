@@ -3,6 +3,7 @@ import { computed, ref, watch, h } from 'vue'
 import VueSelect from 'vue-select'
 import { useFiltersStore } from '../../stores/filtersStore'
 import { useRulesStore } from '../../stores/rulesStore'
+import { isEliteActive, showEliteUpsellModal } from '@/helpers'
 
 interface AttributeOption {
   value: string
@@ -43,6 +44,29 @@ const filtersStore = useFiltersStore()
 const rulesStore = useRulesStore()
 
 const selectedAttribute = ref<AttributeOption | null>(null)
+
+// Suppress the next emit when we reset `selectedAttribute` after intercepting an Elite-gated click.
+// Without this, the watcher below re-fires `update:modelValue` with the reverted value, which is
+// harmless on the parent (idempotent) but pollutes the change stream and triggers validation reruns.
+let suppressNextEmit = false
+
+// Map of Elite-gated group label -> upsell modal key, shipped by the server.
+// Only Rules-side dropdowns receive entries today (Pro registers the filter on `type=rules` /
+// `type=rules_then` only), so when this component renders a Filters dropdown the map is empty
+// and no gating logic runs.
+const eliteGatedGroups = computed<Record<string, string>>(() =>
+  props.storeType === 'rules' ? rulesStore.eliteGatedAttrGroups : {}
+)
+
+const isEliteGatedGroup = (groupName: string | undefined): boolean => {
+  if (!groupName) return false
+  return Object.prototype.hasOwnProperty.call(eliteGatedGroups.value, groupName)
+}
+
+const getEliteUpsellModalKey = (groupName: string | undefined): string => {
+  if (!groupName) return 'default'
+  return eliteGatedGroups.value[groupName] ?? 'default'
+}
 
 // Convert store.attributes to vue-select options format with group information
 const flattenedAttributes = computed(() => {
@@ -104,10 +128,23 @@ watch(
 )
 
 const onAttributeSelected = (option: AttributeOption) => {
-  if (option && !option.isGroupHeader) {
-    emit('update:modelValue', option.value)
-    emit('change', option.value)
+  if (!option || option.isGroupHeader) return
+
+  // Pro upsell: if this option belongs to an Elite-gated group AND Elite is not active,
+  // fire the upsell modal and revert the select to its previous value instead of committing.
+  if (isEliteGatedGroup(option.group) && !isEliteActive()) {
+    showEliteUpsellModal(getEliteUpsellModalKey(option.group))
+
+    suppressNextEmit = true
+    const previous = props.modelValue
+      ? flattenedAttributes.value.find(a => a.value === props.modelValue && !a.isGroupHeader) ?? null
+      : null
+    selectedAttribute.value = previous
+    return
   }
+
+  emit('update:modelValue', option.value)
+  emit('change', option.value)
 }
 
 // Custom filter function for vue-select
@@ -154,7 +191,20 @@ const customFilter = (options: AttributeOption[], search: string) => {
 
 // Watch selectedAttribute to emit changes
 watch(selectedAttribute, (newValue) => {
+  if (suppressNextEmit) {
+    suppressNextEmit = false
+    return
+  }
   if (newValue && !newValue.isGroupHeader) {
+    if (isEliteGatedGroup(newValue.group) && !isEliteActive()) {
+      // Defense-in-depth: never emit a value from an Elite-gated group when Elite is inactive.
+      // `onAttributeSelected` already intercepts the primary click path; this guards programmatic
+      // paths (modelValue assignment, sync watchers, dev console) from leaking gated values upstream.
+      // Intentional divergence: if a parent pushes a gated value via :modelValue, the dropdown will
+      // visibly show the gated label as "selected" while the parent's bound state stays at the prior
+      // (non-gated) value. We never commit gated values, period — the visual mismatch is acceptable.
+      return
+    }
     emit('update:modelValue', newValue.value)
     emit('change', newValue.value)
   }
@@ -175,7 +225,7 @@ watch(selectedAttribute, (newValue) => {
       :class="{ 'adt-attribute-select-error': hasError }"
       @option:selected="onAttributeSelected"
     >
-      <template #option="{ label, isGroupHeader }">
+      <template #option="{ label, isGroupHeader, group }">
         <div
           v-if="isGroupHeader"
           class="adt-attribute-select-group-header"
@@ -185,6 +235,7 @@ watch(selectedAttribute, (newValue) => {
         <div
           v-else
           class="adt-attribute-select-option"
+          :class="{ 'adt-attribute-select-option--elite-gated': isEliteGatedGroup(group) && !isEliteActive() }"
         >
           {{ label }}
         </div>
@@ -213,6 +264,11 @@ watch(selectedAttribute, (newValue) => {
 
 .adt-attribute-select-option {
   padding: 0.25rem 1.5rem;
+}
+
+.adt-attribute-select-option--elite-gated {
+  opacity: 0.55;
+  font-style: italic;
 }
 
 .adt-attribute-select-container .adt-attribute-select-error :deep(.vs__dropdown-toggle) {

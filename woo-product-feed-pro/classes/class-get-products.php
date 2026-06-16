@@ -13,6 +13,14 @@ use AdTribes\PFP\Helpers\Sanitization;
 class WooSEA_Get_Products {
 
     /**
+     * Maximum number of <photoUrl> children rendered inside a Merkandi <photos> element.
+     *
+     * @since 13.6.0
+     * @var int
+     */
+    const MERKANDI_MAX_PHOTOS = 7;
+
+    /**
      * File format.
      *
      * @var string
@@ -1152,6 +1160,10 @@ class WooSEA_Get_Products {
                     $xml = new SimpleXMLElement( '<?xml version="1.0" encoding="utf-8"?><' . $site_domain . '></' . $site_domain . '>' );
                     $xml->addChild( 'created_at', date( 'Y-m-d H:i' ) );
                     $xml->asXML( $file );
+                } elseif ( $feed_config['name'] == 'Merkandi' ) {
+                    // Merkandi expects a bare <products> root (no version/standalone attributes) for XSD validation.
+                    $xml = new SimpleXMLElement( '<?xml version="1.0" encoding="UTF-8"?><products></products>' );
+                    $xml->asXML( $file );
                 } else {
                     $xml = new SimpleXMLElement( '<?xml version="1.0" encoding="utf-8"?><products></products>' );
                     
@@ -1463,6 +1475,31 @@ class WooSEA_Get_Products {
                             // Skip processing if product child node is null.
                             if ( ! isset( $product ) || is_null( $product ) ) {
                                 continue;
+                            }
+
+                            // Merkandi: render tiered <pricing> when supplied, omitting the flat <price> tag.
+                            if ( $feed_config['name'] == 'Merkandi' ) {
+                                /**
+                                 * Filter tiered pricing for a single Merkandi product.
+                                 *
+                                 * Return a list of tiers to output a <pricing> block; the flat
+                                 * <price> tag is then omitted (per the Merkandi spec). Each tier is
+                                 * an array: array( 'qFrom' => int, 'qTo' => int, 'price' => string ).
+                                 * Wholesale/Elite integrations can populate this from quantity-based
+                                 * price rules. Empty by default (flat <price> is used).
+                                 *
+                                 * @since 13.6.0
+                                 *
+                                 * @param array  $tiers The pricing tiers. Empty by default.
+                                 * @param array  $value The mapped product data (includes sku, id, price, etc.).
+                                 * @param object $feed  The feed object.
+                                 */
+                                $pricing_tiers = apply_filters( 'adt_merkandi_pricing_tiers', array(), $value, $feed );
+
+                                if ( ! empty( $pricing_tiers ) && is_array( $pricing_tiers ) ) {
+                                    $this->woosea_add_merkandi_pricing( $product, $pricing_tiers );
+                                    unset( $value['price'] );
+                                }
                             }
 
                             foreach ( $value as $k => $v ) {
@@ -1945,6 +1982,12 @@ class WooSEA_Get_Products {
             return;  // Exit the method early.
         }
 
+        // Merkandi has its own field rules (CDATA name/description, nested <photos>).
+        if ( $feed_config['name'] == 'Merkandi' ) {
+            $this->woosea_write_merkandi_field( $product, $k, $v );
+            return;
+        }
+
         if ( ( $k == 'id' ) && ( $feed_config['name'] == 'Yandex' ) ) {
             if ( isset( $product ) ) {
                 if ( ! empty( $v ) ) {
@@ -2325,10 +2368,106 @@ class WooSEA_Get_Products {
     }
 
     /**
+     * Write a single Merkandi product field to the XML element.
+     *
+     * Handles the Merkandi-specific output rules: <name>/<description> wrapped in
+     * CDATA, <photos> rendered as a parent element with up to 7 <photoUrl> children,
+     * and every other field as a plain (entity-escaped) child. Empty values are
+     * skipped so the feed never contains blank tags.
+     *
+     * @since 13.6.0
+     *
+     * @param object $product The product XML element.
+     * @param string $k       The attribute key (feed tag name).
+     * @param string $v       The attribute value.
+     * @return void
+     */
+    private function woosea_write_merkandi_field( $product, $k, $v ) {
+        if ( ! is_object( $product ) || empty( $k ) ) {
+            return;
+        }
+
+        // Skip empty values to avoid blank tags (Merkandi rejects empty elements).
+        if ( '' === $v || null === $v ) {
+            return;
+        }
+
+        // Multiple images: one <photoUrl> child per URL, capped at 7.
+        if ( 'photos' === $k ) {
+            if ( isset( $product->photos ) ) {
+                return;
+            }
+
+            $urls = preg_split( '/\s*,\s*/', $v, -1, PREG_SPLIT_NO_EMPTY );
+            if ( empty( $urls ) ) {
+                return;
+            }
+
+            $photos = $product->addChild( 'photos' );
+            $count  = 0;
+            foreach ( $urls as $url ) {
+                if ( $count >= self::MERKANDI_MAX_PHOTOS ) {
+                    break;
+                }
+                $this->add_xml_child_with_escaped_entities( $photos, 'photoUrl', $url );
+                ++$count;
+            }
+            return;
+        }
+
+        // Name and description must be wrapped in CDATA.
+        if ( 'name' === $k || 'description' === $k ) {
+            $this->add_child_with_cdata( $product, $k, $v, '', true );
+            return;
+        }
+
+        // Any other (scalar) field as a plain, entity-escaped child.
+        if ( ! isset( $product->$k ) ) {
+            $this->add_xml_child_with_escaped_entities( $product, $k, $v );
+        }
+    }
+
+    /**
+     * Add a tiered <pricing> block to a Merkandi product.
+     *
+     * Renders each tier as a <price> child of <pricing>, with nested <qFrom>,
+     * <qTo> and <price> sub-tags as required by the Merkandi spec. When this is
+     * used the flat <price> tag is omitted by the caller.
+     *
+     * @since 13.6.0
+     *
+     * @param object $product The product XML element.
+     * @param array  $tiers   List of tiers: array( 'qFrom' => int, 'qTo' => int, 'price' => string ).
+     * @return void
+     */
+    private function woosea_add_merkandi_pricing( $product, $tiers ) {
+        if ( ! is_object( $product ) || isset( $product->pricing ) ) {
+            return;
+        }
+
+        $pricing = $product->addChild( 'pricing' );
+
+        foreach ( $tiers as $tier ) {
+            if ( ! is_array( $tier ) || ! isset( $tier['price'] ) || '' === $tier['price'] ) {
+                continue;
+            }
+
+            $tier_node = $pricing->addChild( 'price' );
+            if ( isset( $tier['qFrom'] ) && '' !== $tier['qFrom'] ) {
+                $this->add_xml_child_with_escaped_entities( $tier_node, 'qFrom', (string) $tier['qFrom'] );
+            }
+            if ( isset( $tier['qTo'] ) && '' !== $tier['qTo'] ) {
+                $this->add_xml_child_with_escaped_entities( $tier_node, 'qTo', (string) $tier['qTo'] );
+            }
+            $this->add_xml_child_with_escaped_entities( $tier_node, 'price', (string) $tier['price'] );
+        }
+    }
+
+    /**
      * Check if a field should be wrapped in CDATA for the given feed.
-     * 
+     *
      * @since 13.5.1
-     * 
+     *
      * @param string $field_name The field name to check.
      * @param array  $feed_config The feed configuration array.
      * @param object $feed The feed object.
@@ -2857,6 +2996,13 @@ class WooSEA_Get_Products {
         // Tax class options.
         $tax_class_options  = function_exists( 'wc_get_product_tax_class_options' ) ? wc_get_product_tax_class_options() : array();
 
+        // Minimum image size validation state — Google Shopping and Facebook Catalog enforce 500x500.
+        // Resolved once per feed run since all inputs are loop-invariant.
+        $image_size_validation_in_effect = \AdTribes\PFP\Helpers\Image_Size_Validator::applies_to_channel( $feed_channel );
+        $image_size_min_dimensions       = $image_size_validation_in_effect
+            ? \AdTribes\PFP\Helpers\Image_Size_Validator::get_min_dimensions( $feed_channel )
+            : array( 'width' => 0, 'height' => 0 );
+
         // Main product query loop - will iterate multiple times in preview mode if needed
         do {
             // Construct WP query
@@ -2892,6 +3038,13 @@ class WooSEA_Get_Products {
             // Increment preview query counter
             if ( $is_preview_mode ) {
                 $preview_query_count++;
+            }
+
+            // Prime post + meta caches for this batch's products and their candidate
+            // images so wp_get_attachment_metadata() inside the loop doesn't trigger an
+            // N+1 query against attachment postmeta.
+            if ( $image_size_validation_in_effect && ! empty( $prods->posts ) ) {
+                \AdTribes\PFP\Helpers\Image_Size_Validator::prime_caches_for_products( $prods->posts );
             }
 
         while ( $prods->have_posts() ) :
@@ -3514,6 +3667,82 @@ class WooSEA_Get_Products {
             $product_data['all_images_kogan']   = preg_replace( '/,/', '|', $product_data['all_images'] );
             $product_data['all_gallery_images'] = ltrim( $product_data['all_gallery_images'], ',' );
 
+            // Google Merchant Center and Facebook/Meta Catalog reject product images below 500x500 px.
+            // Swap the primary to the first qualifying gallery image, or skip the product if none qualifies.
+            // The validated URL is held in a local variable so it can be reused by the feature_image
+            // and parent-override blocks below without polluting $product_data with scratch state.
+            $validated_image_url = '';
+            if ( $image_size_validation_in_effect ) {
+                $primary_image_id    = (int) $product->get_image_id();
+                $is_variation        = $product_data['item_group_id'] > 0 && is_object( $parent_product );
+                $candidate_image_ids = array( $primary_image_id );
+
+                // For variations, also consider the parent product's primary + gallery images,
+                // since `image_all` and the variation's fallback both resolve through the parent.
+                if ( $is_variation ) {
+                    $candidate_image_ids[] = (int) $parent_product->get_image_id();
+                    $candidate_image_ids   = array_merge(
+                        $candidate_image_ids,
+                        array_map( 'intval', (array) $parent_product->get_gallery_image_ids() )
+                    );
+                } else {
+                    $candidate_image_ids = array_merge(
+                        $candidate_image_ids,
+                        array_map( 'intval', (array) $product->get_gallery_image_ids() )
+                    );
+                }
+
+                // Drop zero IDs before validating. If the product has NO real attachments at
+                // all (primary and gallery both empty), preserve the pre-existing behaviour of
+                // letting the row through with whatever image URL was resolved earlier — image
+                // size enforcement targets undersized images, not the orthogonal "no image"
+                // case which the channel will reject on its own.
+                $real_candidate_image_ids = array_values( array_unique( array_filter( $candidate_image_ids ) ) );
+
+                $qualifying_image_id = ! empty( $real_candidate_image_ids )
+                    ? \AdTribes\PFP\Helpers\Image_Size_Validator::find_qualifying_attachment(
+                        $real_candidate_image_ids,
+                        $image_size_min_dimensions['width'],
+                        $image_size_min_dimensions['height']
+                    )
+                    : null;
+
+                if ( ! empty( $real_candidate_image_ids ) && null === $qualifying_image_id ) {
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                        error_log( sprintf(
+                            '[adt-pfp] Excluded product %d from %s feed: no image meets the minimum %dx%d size.',
+                            (int) $product_data['id'],
+                            (string) $feed_channel['fields'],
+                            $image_size_min_dimensions['width'],
+                            $image_size_min_dimensions['height']
+                        ) );
+                    }
+                    unset( $product_data, $xml_product );
+                    continue;
+                }
+
+                if ( null !== $qualifying_image_id && $qualifying_image_id !== $primary_image_id ) {
+                    $qualifying_url            = wp_get_attachment_url( $qualifying_image_id );
+                    $product_data['image']     = $qualifying_url ? $qualifying_url : $product_data['image'];
+                    $product_data['image_all'] = $product_data['image'];
+
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                        error_log( sprintf(
+                            '[adt-pfp] Swapped undersized primary image for product %d in %s feed; using attachment %d.',
+                            (int) $product_data['id'],
+                            (string) $feed_channel['fields'],
+                            $qualifying_image_id
+                        ) );
+                    }
+                }
+
+                // Record the validated URL so the feature_image and parent-override blocks below
+                // can fall back to it if their own image source is undersized.
+                $validated_image_url = $product_data['image'];
+            }
+
             $product_data['content_type'] = 'product';
             if ( $product_data['product_type'] == 'variation' ) {
                 $product_data['content_type'] = 'product_group';
@@ -3862,11 +4091,13 @@ class WooSEA_Get_Products {
 
             if ( is_array( $shipping_arr ) ) {
                 foreach ( $shipping_arr as $akey => $arr ) {
-                    // $product_data['shipping_price'] = $arr['price'];
+                    // Price format is "<amount> <currency>" (e.g. "20.00 AUD"); the numeric
+                    // amount is the first segment. Heureka feeds omit the currency, so the
+                    // first segment is still the amount.
                     $pieces_ship = explode( ' ', $arr['price'] );
-                    if ( isset( $pieces_ship['1'] ) ) {
-                        $product_data['shipping_price'] = $pieces_ship['1'];
-                        $lowest_shipping_price[]        = $pieces_ship['1'];
+                    if ( isset( $pieces_ship[0] ) && '' !== $pieces_ship[0] ) {
+                        $product_data['shipping_price'] = $pieces_ship[0];
+                        $lowest_shipping_price[]        = $pieces_ship[0];
                     }
                 }
 
@@ -3963,10 +4194,21 @@ class WooSEA_Get_Products {
                 // Check if user would like to use the mother main image for all variation products
                 $use_parent_variable_product_image = get_option( 'adt_use_parent_variable_product_image' );
                 $product_image_id = 'yes' == $use_parent_variable_product_image && $product_data['item_group_id'] > 0 ? $product_data['item_group_id'] : $product_data['id'];
-                $image = wp_get_attachment_image_src( get_post_thumbnail_id( $product_image_id ), 'single-post-thumbnail' );
-                if ( ! empty( $image[0] ) ) {
-                    $product_data['feature_image'] = $this->get_image_url( $image[0] );
-                    // unset($image);
+                $thumbnail_id = (int) get_post_thumbnail_id( $product_image_id );
+
+                // When min image size validation is in effect and the thumbnail is undersized
+                // (or absent — a zero ID is treated as failing the size check), reuse the
+                // validated swap from earlier so the feed doesn't ship an image Google/Facebook
+                // would reject. attachment_meets_min_size() returns false for IDs <= 0 by design.
+                if ( $image_size_validation_in_effect
+                    && ! \AdTribes\PFP\Helpers\Image_Size_Validator::attachment_meets_min_size( $thumbnail_id, $image_size_min_dimensions['width'], $image_size_min_dimensions['height'] )
+                    && ! empty( $validated_image_url ) ) {
+                    $product_data['feature_image'] = $this->get_image_url( $validated_image_url );
+                } else {
+                    $image = wp_get_attachment_image_src( $thumbnail_id, 'single-post-thumbnail' );
+                    if ( ! empty( $image[0] ) ) {
+                        $product_data['feature_image'] = $this->get_image_url( $image[0] );
+                    }
                 }
             } else {
                 $product_data['feature_image'] = $this->get_image_url( $product_data['image'] );
@@ -3993,32 +4235,17 @@ class WooSEA_Get_Products {
                                         if ( ! in_array( $attr_value, $skroutz_att_array ) ) {
                                             array_push( $skroutz_att_array, $attr_value );
                                         }
-                                        // unset($attr_value);
                                     }
-                                    $product_data[ $taxo ] = ltrim( $product_data[ $taxo ], ',' );
-                                    $product_data[ $taxo ] = rtrim( $product_data[ $taxo ], ',' );
                                 }
                             }
 
-                            foreach ( $skroutz_att_array as $skrtz_value ) {
-                                $product_data[ $taxo ] .= ',' . $skrtz_value;
-                            }
-                            $product_data[ $taxo ] = ltrim( $product_data[ $taxo ], ',' );
-                            $product_data[ $taxo ] = rtrim( $product_data[ $taxo ], ',' );
+                            $product_data[ $taxo ] = implode( ', ', $skroutz_att_array );
                         } else {
                             // Simple Skroutz product
-                            foreach ( $term_value as $term ) {
-                                $product_data[ $taxo ] .= ',' . $term->name;
-                            }
-                            $product_data[ $taxo ] = ltrim( $product_data[ $taxo ], ',' );
-                            $product_data[ $taxo ] = rtrim( $product_data[ $taxo ], ',' );
+                            $product_data[ $taxo ] = implode( ', ', wp_list_pluck( $term_value, 'name' ) );
                         }
                     } else {
-                        foreach ( $term_value as $term ) {
-                            $product_data[ $taxo ] .= ',' . $term->name;
-                        }
-                        $product_data[ $taxo ] = ltrim( $product_data[ $taxo ], ',' );
-                        $product_data[ $taxo ] = rtrim( $product_data[ $taxo ], ',' );
+                        $product_data[ $taxo ] = implode( ', ', wp_list_pluck( $term_value, 'name' ) );
                     }
                 }
 
@@ -4177,11 +4404,22 @@ class WooSEA_Get_Products {
             // Check if user would like to use the mother main image for all variation products
             $use_parent_variable_product_image = get_option( 'adt_use_parent_variable_product_image' );
             if ( ( $use_parent_variable_product_image == 'yes' ) && ( $product_data['item_group_id'] > 0 ) ) {
-                $mother_image = wp_get_attachment_image_src( get_post_thumbnail_id( $product_data['item_group_id'] ), 'full' );
-                if ( isset( $mother_image[0] ) ) {
-                    $product_data['image'] = $mother_image[0];
+                $mother_thumbnail_id = (int) get_post_thumbnail_id( $product_data['item_group_id'] );
+
+                // When min image size validation is in effect and the parent thumbnail is
+                // undersized (or absent — a zero ID is treated as failing the size check),
+                // keep the already-validated image from the earlier swap rather than
+                // re-introducing an image that Google/Facebook will reject.
+                // attachment_meets_min_size() returns false for IDs <= 0 by design.
+                if ( $image_size_validation_in_effect
+                    && ! \AdTribes\PFP\Helpers\Image_Size_Validator::attachment_meets_min_size( $mother_thumbnail_id, $image_size_min_dimensions['width'], $image_size_min_dimensions['height'] ) ) {
+                    // Leave $product_data['image'] as-is (the validated swap).
+                } else {
+                    $mother_image = wp_get_attachment_image_src( $mother_thumbnail_id, 'full' );
+                    if ( isset( $mother_image[0] ) ) {
+                        $product_data['image'] = $mother_image[0];
+                    }
                 }
-                // unset($mother_image);
             }
 
             /**
@@ -4386,14 +4624,7 @@ class WooSEA_Get_Products {
                     $term_value = get_the_terms( $product_data['item_group_id'], $taxo );
                     unset( $product_data[ $taxo ] );
                     if ( is_array( $term_value ) ) {
-                        foreach ( $term_value as $term ) {
-                            if ( empty( $product_data[ $taxo ] ) ) {
-                                $product_data[ $taxo ] = $term->name;
-                            } else {
-                                $product_data[ $taxo ] .= ',' . $term->name;
-                                // $product_data[$taxo] .= " ".$term->name; // October 3th 2023
-                            }
-                        }
+                        $product_data[ $taxo ] = implode( ', ', wp_list_pluck( $term_value, 'name' ) );
                     }
                 }
 
@@ -4785,7 +5016,7 @@ class WooSEA_Get_Products {
                                             if ( isset( $size_variation ) ) {
 
                                                 if ( isset( $sz_attribute ) ) {
-                                                    $product_data[ $sz_attribute ] = implode( ',', $sizez );
+                                                    $product_data[ $sz_attribute ] = implode( ', ', $sizez );
                                                     $product_data['availability']  = 'in stock';
                                                 }
                                             }
@@ -4932,11 +5163,17 @@ class WooSEA_Get_Products {
              */
             $product_data = apply_filters( 'adt_get_product_data', $product_data, $feed, $product );
 
+            // Initialize before the guarded block so the variable is always defined for the Google Shopping check below.
+            $categories_before_rules = null;
+
             // Filter and rules execution.
             if ( is_array( $product_data ) && ! empty( $product_data ) ) {
                 // Filter execution.
                 $filters_instance = AdTribes\PFP\Classes\Filters::instance();
                 $product_data     = $filters_instance->filter( $product_data, $feed );
+
+                // Capture categories before rules so we can detect rule modifications below.
+                $categories_before_rules = $product_data['categories'] ?? null;
 
                 // Rules execution.
                 $rules_instance = AdTribes\PFP\Classes\Rules::instance();
@@ -4952,13 +5189,18 @@ class WooSEA_Get_Products {
             }
 
             /**
-             * Check if we need to add category taxonomy mappings (Google Shopping)
+             * Check if we need to add category taxonomy mappings (Google Shopping).
+             * Skip mapping if a rule already modified the categories value — the rule takes precedence.
              */
             if ( ! empty( $product_data ) && ! empty( $product_data['id'] ) && $feed_channel['taxonomy'] == 'google_shopping' ) {
-                if ( ! empty( $feed_mappings ) ) {
-                    $product_data = $this->woocommerce_sea_mappings( $feed_mappings, $product_data );
-                } else {
-                    $product_data['categories'] = '';
+                $categories_modified_by_rules = ( $product_data['categories'] ?? null ) !== $categories_before_rules;
+
+                if ( ! $categories_modified_by_rules ) {
+                    if ( ! empty( $feed_mappings ) ) {
+                        $product_data = $this->woocommerce_sea_mappings( $feed_mappings, $product_data );
+                    } else {
+                        $product_data['categories'] = '';
+                    }
                 }
             }
 
@@ -5108,44 +5350,43 @@ class WooSEA_Get_Products {
                      */
                     $pieces_row = apply_filters( 'adt_product_feed_csv_row_data', $pieces_row, $old_attributes_config, $product_data, $feed );
 
-                    // Identifier exists attribute for Google Shopping with Plugin Calculation Value Attribute
-                    if ( $feed_channel['fields'] == 'google_shopping' ) {
-                        // Identifier Attributes
-                        $identifier_attributes = array( 'g:brand', 'g:gtin', 'g:mpn' );
+                    // Identifier exists attribute for any channel with Plugin Calculation Value Attribute.
+                    // Some channels (e.g. Facebook DRM) declare these without the g: namespace prefix,
+                    // so we accept both naming conventions here.
+                    $identifier_attributes        = array( 'g:brand', 'g:gtin', 'g:mpn', 'brand', 'gtin', 'mpn' );
+                    $identifier_exists_attributes = array( 'g:identifier_exists', 'identifier_exists' );
 
-                        $has_plugin_calculation_mapfrom = false;
-                        $identifier_exists_position = -1;
-                        $identifier_attributes_positions = array();
-                        $loop_count = 0;
-                        foreach ($old_attributes_config as $attr) {
-                            if (isset($attr['attribute'])) {
-                                if ( $attr['attribute'] == 'g:identifier_exists' ) {
-                                    $identifier_exists_position = $loop_count;
-                                }
+                    $has_identifier_exists_calculation = false;
+                    $identifier_exists_position        = -1;
+                    $identifier_attributes_positions   = array();
+                    $loop_count                        = 0;
+                    foreach ( $old_attributes_config as $attr ) {
+                        if ( isset( $attr['attribute'] ) ) {
+                            if ( in_array( $attr['attribute'], $identifier_exists_attributes, true ) ) {
+                                $identifier_exists_position = $loop_count;
 
-                                if (in_array($attr['attribute'], $identifier_attributes)) {
-                                    $identifier_attributes_positions[] = $loop_count;
+                                if ( isset( $attr['mapfrom'] ) && $attr['mapfrom'] === 'calculated' ) {
+                                    $has_identifier_exists_calculation = true;
                                 }
                             }
 
-                            if ( isset( $attr['mapfrom'] ) && $attr['mapfrom'] == 'calculated' ) {
-                                $has_plugin_calculation_mapfrom = true;
+                            if ( in_array( $attr['attribute'], $identifier_attributes, true ) ) {
+                                $identifier_attributes_positions[] = $loop_count;
                             }
-                            $loop_count++;
                         }
 
-                        // If the plugin calculation mapfrom is found,
-                        // and the identifier attributes are present in the feed,
-                        // and the identifier position is set, set the identifier exists to yes.
-                        if ( $has_plugin_calculation_mapfrom && $identifier_exists_position != -1 ) {
-                            $pieces_row[ $identifier_exists_position ] = 'no';
+                        $loop_count++;
+                    }
 
-                            if ( ! empty( $identifier_attributes_positions ) ) {
-                                foreach ( $identifier_attributes_positions as $identifier_attribute_position ) {
-                                    if ( isset( $pieces_row[ $identifier_attribute_position ] ) && '' !== $pieces_row[ $identifier_attribute_position ] ) {
-                                        $pieces_row[ $identifier_exists_position ] = 'yes';
-                                        break;
-                                    }
+                    // Only compute identifier_exists if the user mapped it to Plugin Calculation.
+                    if ( $has_identifier_exists_calculation && $identifier_exists_position != -1 ) {
+                        $pieces_row[ $identifier_exists_position ] = 'no';
+
+                        if ( ! empty( $identifier_attributes_positions ) ) {
+                            foreach ( $identifier_attributes_positions as $identifier_attribute_position ) {
+                                if ( isset( $pieces_row[ $identifier_attribute_position ] ) && '' !== $pieces_row[ $identifier_attribute_position ] ) {
+                                    $pieces_row[ $identifier_exists_position ] = 'yes';
+                                    break;
                                 }
                             }
                         }
@@ -5528,7 +5769,7 @@ class WooSEA_Get_Products {
         } elseif ( $file_format != 'xml' && is_array( $products ) && ! empty( $products ) ) {
             $file = $this->woosea_create_csvtxt_feed( array_filter( $products ), $feed, 'false' );
         } else {
-            if ( is_array( $xml_piece ) ) {
+            if ( is_array( $xml_piece ) && $file_format === 'xml' ) {
                 $file = $this->woosea_create_xml_feed( array_filter( $xml_piece ), $feed, 'false' );
                 unset( $xml_piece );
             }
@@ -5567,42 +5808,33 @@ class WooSEA_Get_Products {
         // trim whitespaces from attribute values
         $xml_product = array_map( 'trim', $xml_product );
 
-        // Check for new products in the Google Shopping feed if we need to 'calculate' the identifier_exists attribute value
-        if ( ( $feed_channel['taxonomy'] == 'google_shopping' ) && ( isset( $xml_product['g:condition'] ) ) && ( ! isset( $xml_product['g:identifier_exists'] ) ) ) {
+        // Check if we need to 'calculate' the identifier_exists attribute value.
+        // The helper call below further gates on the feed actually having identifier_exists
+        // mapped to Plugin Calculation, so this runs for any channel that configured it.
+        // Some channels (e.g. Facebook DRM) emit these keys without the g: namespace prefix,
+        // so we accept both naming conventions here.
+        if ( isset( $xml_product['g:condition'] )
+            && ! isset( $xml_product['g:identifier_exists'] )
+            && ! isset( $xml_product['identifier_exists'] )
+        ) {
             $identifier_exists = 'no'; // default value is no
 
             // Per Google's requirements, we only need identifier_exists if the product is new
-            if ( strtolower($xml_product['g:condition']) == 'new' ) {
-                if ( array_key_exists( 'g:brand', $xml_product ) && ( $xml_product['g:brand'] != '' ) ) {
-                    // g:gtin exists and has a value
-                    if ( ( array_key_exists( 'g:gtin', $xml_product ) ) && ( $xml_product['g:gtin'] != '' ) ) {
-                        $identifier_exists = 'yes';
-                    // g:mpn exists and has a value
-                    } elseif ( ( array_key_exists( 'g:mpn', $xml_product ) ) && ( $xml_product['g:mpn'] != '' ) ) {
-                        $identifier_exists = 'yes';
-                    // g:brand exists but no gtin or mpn
-                    } else {
-                        $identifier_exists = 'no';
-                    }
-                } else {
-                    // No brand, so identifier_exists should be 'no'
-                    $identifier_exists = 'no';
+            if ( strtolower( $xml_product['g:condition'] ) === 'new' ) {
+                $brand = $xml_product['g:brand'] ?? $xml_product['brand'] ?? '';
+                $gtin  = $xml_product['g:gtin'] ?? $xml_product['gtin'] ?? '';
+                $mpn   = $xml_product['g:mpn'] ?? $xml_product['mpn'] ?? '';
+
+                if ( '' !== $brand && ( '' !== $gtin || '' !== $mpn ) ) {
+                    $identifier_exists = 'yes';
                 }
             }
 
-            // Check if the feed attributes include the calculated attribute for identifier_exists
-            $has_calculated_attribute = false;
-            foreach ($feed_attributes as $attr) {
-                if (isset($attr['mapfrom']) && $attr['mapfrom'] === 'calculated' && 
-                    isset($attr['attribute']) && $attr['attribute'] === 'g:identifier_exists') {
-                    $has_calculated_attribute = true;
-                    break;
-                }
-            }
-            
-            // Only add identifier_exists to the feed if it's configured in the feed attributes
-            if ($has_calculated_attribute) {
-                $xml_product['g:identifier_exists'] = $identifier_exists;
+            // Only add identifier_exists to the feed if it's configured as a Plugin Calculation,
+            // and use whichever attribute name the channel declares (g:identifier_exists or identifier_exists).
+            $identifier_exists_attribute = $this->get_calculated_identifier_exists_attribute( $feed_attributes );
+            if ( null !== $identifier_exists_attribute ) {
+                $xml_product[ $identifier_exists_attribute ] = $identifier_exists;
             }
         }
 
@@ -5620,6 +5852,34 @@ class WooSEA_Get_Products {
             }
         }
         return $xml_product;
+    }
+
+    /**
+     * Get the configured identifier_exists attribute name when it is mapped to Plugin Calculation.
+     *
+     * Some channels (e.g. Google Shopping) use the 'g:identifier_exists' name while others
+     * (e.g. Facebook DRM) use the bare 'identifier_exists' name. Returns whichever variant is
+     * configured on the feed, or null if no Plugin Calculation mapping exists for it.
+     *
+     * @param array $feed_attributes Feed attribute definitions.
+     * @return string|null The configured attribute name or null when not set to Plugin Calculation.
+     */
+    private function get_calculated_identifier_exists_attribute( $feed_attributes ) {
+        $identifier_exists_attributes = array( 'g:identifier_exists', 'identifier_exists' );
+
+        foreach ( $feed_attributes as $attr ) {
+            if ( ! isset( $attr['attribute'], $attr['mapfrom'] ) ) {
+                continue;
+            }
+
+            if ( 'calculated' === $attr['mapfrom']
+                && in_array( $attr['attribute'], $identifier_exists_attributes, true )
+            ) {
+                return $attr['attribute'];
+            }
+        }
+
+        return null;
     }
 
     /**

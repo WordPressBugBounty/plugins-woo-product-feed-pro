@@ -17,6 +17,7 @@ use AdTribes\PFP\Classes\Notices;
 // Updates.
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
 use AdTribes\PFP\Updates\Version_13_4_8_Update;
+use AdTribes\PFP\Updates\Version_13_5_5_Update;
 
 /**
  * Activation class.
@@ -86,6 +87,15 @@ class Activation extends Abstract_Class {
          */
         ( new Version_13_4_8_Update() )->run();
 
+        /***************************************************************************
+         * Version 13.5.5 Update
+         ***************************************************************************
+         *
+         * Flips `autoload` to `'no'` on admin/cron-only plugin options that may have
+         * been seeded as autoloaded on older installs (see issue #919).
+         */
+        ( new Version_13_5_5_Update() )->run();
+
         // Update current installed plugin version.
         update_site_option( ADT_PFP_OPTION_INSTALLED_VERSION, Helper::get_plugin_version() );
 
@@ -135,6 +145,9 @@ class Activation extends Abstract_Class {
         $notices = Notices::instance();
         $notices->schedule_cron_notices();
 
+        // Intentionally autoloaded: `App::initialize()` reads this option on every `init`
+        // hook to detect first-run / dependency-failed installs, so the row should be
+        // resolved from the alloptions blob rather than triggering a per-request SELECT.
         update_option( 'adt_pfp_activation_code_triggered', 'yes' );
     }
 

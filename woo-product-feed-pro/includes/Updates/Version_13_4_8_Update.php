@@ -55,34 +55,45 @@ class Version_13_4_8_Update extends Abstract_Class {
      */
     public function update() {
         // Define the options that need to be migrated from unprefixed to prefixed versions.
+        //
+        // Autoload notes:
+        // - `true` is reserved for options read on every front-end request (tracking pixels,
+        // remarketing tags, etc.). Their values are small flags/IDs.
+        // - All other options are admin-only or feed/cron-only and use `false` to keep the
+        // autoloaded options blob small.
+        //
+        // NOTE: For installs that already ran this migration before issue #919, the autoload
+        // flag values below have no retroactive effect — the migration only writes the new
+        // option when `false === get_option( $new_option )`. Existing rows whose autoload
+        // needs flipping are handled by `Version_13_5_5_Update`.
         $options_to_migrate = array(
             'add_mother_image'               => array(
                 'value'    => 'adt_use_parent_variable_product_image',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'add_all_shipping'               => array(
                 'value'    => 'adt_add_all_shipping',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'free_shipping'                  => array(
                 'value'    => 'adt_remove_other_shipping_classes_on_free_shipping',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'remove_free_shipping'           => array(
                 'value'    => 'adt_remove_free_shipping',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'remove_local_pickup'            => array(
                 'value'    => 'adt_remove_local_pickup_shipping',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'add_woosea_basic'               => array(
                 'value'    => 'adt_show_only_basis_attributes',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'add_woosea_logging'             => array(
                 'value'    => 'adt_enable_logging',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'add_facebook_pixel'             => array(
                 'value'    => 'adt_add_facebook_pixel',
@@ -106,15 +117,15 @@ class Version_13_4_8_Update extends Abstract_Class {
             ),
             'add_batch'                      => array(
                 'value'    => 'adt_enable_batch',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'woosea_batch_size'              => array(
                 'value'    => 'adt_batch_size',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'last_order_id'                  => array(
                 'value'    => 'adt_last_order_id',
-                'autoload' => true,
+                'autoload' => false,
             ),
             'cron_projects'                  => array(
                 'value'    => 'adt_cron_projects',

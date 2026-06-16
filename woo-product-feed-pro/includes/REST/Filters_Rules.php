@@ -97,7 +97,19 @@ class Filters_Rules extends Abstract_REST {
             }
         }
 
-        $attributes = apply_filters( 'adt_pfp_get_filters_rules_attributes', $attributes, $feed_channel, $type );
+        /**
+         * Filter the attributes available in the filters/rules builder dropdowns.
+         *
+         * @since 13.4.6
+         * @since 13.5.5 Added `$feed` as the 4th argument so extensions can enrich the
+         *               attribute list with feed-specific values (e.g. field-mapping outputs).
+         *
+         * @param array             $attributes    Grouped attribute list keyed by group label.
+         * @param string|null       $feed_channel  The feed's channel `fields` value, or null for new feeds.
+         * @param string            $type          One of 'filters', 'rules', or 'rules_then'.
+         * @param Product_Feed|null $feed          The feed object, or null for new feeds.
+         */
+        $attributes = apply_filters( 'adt_pfp_get_filters_rules_attributes', $attributes, $feed_channel, $type, $feed );
 
         // Transform the attributes to match the expected format.
         $formatted_attributes = array();
@@ -279,6 +291,33 @@ class Filters_Rules extends Abstract_REST {
                 $response_data['filters'] = $temp_feed_data['feed_filters'] ?? $default_filters;
             }
         }
+
+        /**
+         * Filter the map of attribute group labels that should be gated as Elite-only
+         * in the rules/filters builder dropdown. The frontend reads this to intercept
+         * clicks on options inside these groups and show the matching Elite upsell
+         * modal — each entry pairs the group label (as it appears in the `attributes`
+         * payload) with the upsell modal key registered in `Upsell::upsell_l10n()`.
+         *
+         * Pro registers callbacks that add entries to this map only when Elite is
+         * inactive; on Elite-active sites the map is empty and the dropdown stays
+         * fully interactive.
+         *
+         * @since 13.5.5
+         *
+         * @param array             $gated_groups Map of group label => upsell modal key. Empty by default.
+         * @param string|null       $feed_channel The feed's channel `fields` value.
+         * @param string            $type         One of 'filters', 'rules', or 'rules_then'.
+         * @param Product_Feed|null $feed         The feed object, or null for new feeds.
+         */
+        $feed_channel                          = $feed ? $feed->get_channel( 'fields' ) : null;
+        $response_data['eliteGatedAttrGroups'] = apply_filters(
+            'adt_pfp_elite_gated_attr_groups',
+            array(),
+            $feed_channel,
+            $type,
+            $feed
+        );
 
         return new WP_REST_Response( $response_data, 200 );
     }

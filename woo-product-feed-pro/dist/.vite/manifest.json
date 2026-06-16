@@ -1,17 +1,17 @@
 {
   "src/apps/filters-rules-builder/index-legacy.ts": {
-    "file": "apps/filters-rules-builder/index-legacy.Bonx1ob-.js",
+    "file": "apps/filters-rules-builder/index-legacy.AWaHcvo6.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index-legacy.ts",
     "isEntry": true
   },
   "src/apps/filters-rules-builder/index.ts": {
-    "file": "apps/filters-rules-builder/index.BwJEOd9M.js",
+    "file": "apps/filters-rules-builder/index.Ct71TJ3h.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index.ts",
     "isEntry": true,
     "css": [
-      "css/index.DqWEy1jG.css"
+      "css/index.BX2A3c1Y.css"
     ]
   },
   "src/vanilla/edit-feed/index-legacy.ts": {

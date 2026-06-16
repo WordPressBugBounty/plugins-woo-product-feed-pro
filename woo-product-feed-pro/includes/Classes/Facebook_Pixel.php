@@ -245,18 +245,39 @@ class Facebook_Pixel extends Abstract_Class {
     }
 
     /**
-     * Build Purchase, InitiateCheckout or AddToCart event data for cart-related pages.
+     * Build Purchase or InitiateCheckout event data for cart-related pages.
+     *
+     * AddToCart is fired client-side from woosea_add_cart.js when the
+     * shopper clicks Add to cart — it is not emitted by this method.
      *
      * @since 13.5.8
      * @access protected
      *
      * @param string $event_id Unique event ID.
      * @param string $currency Store currency code.
-     * @return array|null Structured event array, or null.
+     * @return array|null Structured event array, or null when no event applies.
      */
     protected function get_cart_page_event( $event_id, $currency ) {
-        // Order thank-you page — fire Purchase event.
-        if ( isset( $_GET['key'] ) && is_wc_endpoint_url( 'order-received' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        // Defensive — bail out if WooCommerce's conditional functions aren't loaded yet.
+        // The outer class_exists( 'WooCommerce' ) check in add_facebook_pixel() handles the
+        // common case; this is belt-and-braces for test/CI environments where wp_footer can
+        // fire before wc-conditional-functions.php is fully wired up.
+        if ( ! function_exists( 'is_order_received_page' ) || ! function_exists( 'is_checkout' ) || ! function_exists( 'is_cart' ) ) {
+            return null;
+        }
+
+        // Order received page — fire Purchase event.
+        // Short-circuit BEFORE the is_checkout() branch below: is_checkout() returns true on
+        // order-received URLs (the endpoint sits on the checkout page), so a missing
+        // $_GET['key'] here must return null rather than fall through and emit a phantom
+        // InitiateCheckout on a page where the customer has already converted.
+        // Use is_order_received_page() (works on both legacy and block-based checkout) instead
+        // of is_wc_endpoint_url( 'order-received' ), which misses the block-checkout flow.
+        if ( is_order_received_page() ) {
+            if ( ! isset( $_GET['key'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                return null;
+            }
+
             $order_string = sanitize_text_field( wp_unslash( $_GET['key'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
             if ( empty( $order_string ) ) {
@@ -282,9 +303,14 @@ class Facebook_Pixel extends Abstract_Class {
                     $prod_id = $variation_id;
                 }
                 $content_ids[] = (string) $prod_id;
+                $quantity      = $order_item->get_quantity();
+                $item_price    = $quantity > 0
+                    ? $this->get_numeric_price( $order_item->get_subtotal() / $quantity )
+                    : 0.0;
                 $contents[]    = array(
-                    'id'       => (string) $prod_id,
-                    'quantity' => $order_item->get_quantity(),
+                    'id'         => (string) $prod_id,
+                    'quantity'   => $quantity,
+                    'item_price' => $item_price,
                 );
             }
 
@@ -302,38 +328,51 @@ class Facebook_Pixel extends Abstract_Class {
             );
         }
 
-        // Cart / checkout page.
-        $cart_items        = WC()->cart->get_cart();
-        $cart_total_amount = $this->get_numeric_price( WC()->cart->get_cart_contents_total() );
-        $checkoutpage      = wc_get_checkout_url();
-        $current_url       = get_permalink( get_the_ID() );
-        $content_ids       = array();
-        $product_name      = '';
-
-        if ( ! empty( $cart_items ) ) {
-            foreach ( $cart_items as $cart_item ) {
-                $prod_id      = $cart_item['product_id'];
-                $product_name = $cart_item['data']->get_name();
-                if ( $cart_item['variation_id'] > 0 ) {
-                    $prod_id = $cart_item['variation_id'];
-                }
-                $content_ids[] = (string) $prod_id;
+        // Checkout page (excluding order-received above) — fire InitiateCheckout.
+        // Use is_checkout() instead of comparing wc_get_checkout_url() to get_permalink(),
+        // which silently misfires when the URLs don't match byte-for-byte (trailing slash,
+        // HTTPS mismatch, block checkout on a custom page, etc.).
+        if ( is_checkout() ) {
+            // Defensive — WC()->cart can be null in unusual contexts (REST calls reusing
+            // wp_footer, session destroyed mid-request, etc.).
+            $cart = function_exists( 'WC' ) ? WC()->cart : null;
+            if ( ! $cart ) {
+                return null;
             }
+
+            $cart_items        = $cart->get_cart();
+            $cart_total_amount = $this->get_numeric_price( $cart->get_cart_contents_total() );
+            $content_ids       = array();
+            $product_name      = '';
+
+            if ( ! empty( $cart_items ) ) {
+                foreach ( $cart_items as $cart_item ) {
+                    $prod_id      = $cart_item['product_id'];
+                    $product_name = $cart_item['data']->get_name();
+                    if ( $cart_item['variation_id'] > 0 ) {
+                        $prod_id = $cart_item['variation_id'];
+                    }
+                    $content_ids[] = (string) $prod_id;
+                }
+            }
+
+            return array(
+                'method'       => 'track',
+                'event_name'   => 'InitiateCheckout',
+                'event_data'   => array(
+                    'currency'     => $currency,
+                    'value'        => $cart_total_amount,
+                    'content_type' => 'product',
+                    'content_ids'  => $content_ids,
+                ),
+                // Consumed by Elite's Facebook_CAPI::build_capi_custom_data() — mapped to
+                // CAPI content_name when event_data has no content_name of its own.
+                'product_name' => $product_name,
+            );
         }
 
-        $event_name = ( $checkoutpage === $current_url ) ? 'InitiateCheckout' : 'AddToCart';
-
-        return array(
-            'method'       => 'track',
-            'event_name'   => $event_name,
-            'event_data'   => array(
-                'currency'     => $currency,
-                'value'        => $cart_total_amount,
-                'content_type' => 'product',
-                'content_ids'  => $content_ids,
-            ),
-            'product_name' => $product_name,
-        );
+        // Plain cart page (no event) — AddToCart fires via the woosea_add_cart.js click handler.
+        return null;
     }
 
     /**
@@ -577,11 +616,178 @@ class Facebook_Pixel extends Abstract_Class {
     }
 
     /**
+     * Enqueue the AddToCart click-tracking script and localise its AJAX URL.
+     *
+     * The enqueue and localisation were removed in v9.7.7 (2021-03-09) but the
+     * script file was left behind, silently breaking AddToCart Pixel tracking
+     * for ~5 years.
+     *
+     * @since 13.5.8
+     * @access public
+     */
+    public function enqueue_add_cart_script() {
+        if ( ! class_exists( 'WooCommerce' ) ) {
+            return;
+        }
+
+        if ( 'yes' !== get_option( 'adt_add_facebook_pixel' ) ) {
+            return;
+        }
+
+        $pixel_id = get_option( 'adt_facebook_pixel_id' );
+        if ( ! is_numeric( $pixel_id ) || $pixel_id <= 0 ) {
+            return;
+        }
+
+        // Only enqueue where an Add to Cart button can appear.
+        if ( ! function_exists( 'is_woocommerce' ) ) {
+            return;
+        }
+
+        $should_enqueue = is_woocommerce() || is_cart() || is_checkout() || $this->current_page_renders_add_to_cart();
+
+        /**
+         * Filter whether the AddToCart click-tracking script is enqueued on the current request.
+         *
+         * Lets shops embedding Add to Cart buttons via custom templates / page builders
+         * opt the current page in or out without patching the plugin.
+         *
+         * @since 13.5.8
+         *
+         * @param bool $should_enqueue Whether to enqueue woosea_add_cart.js on this page.
+         */
+        if ( ! apply_filters( 'adt_pfp_enqueue_add_cart_script', $should_enqueue ) ) {
+            return;
+        }
+
+        wp_enqueue_script(
+            'woosea-add-cart',
+            ADT_PFP_JS_URL . 'woosea_add_cart.js',
+            array( 'jquery' ),
+            WOOCOMMERCESEA_PLUGIN_VERSION,
+            true
+        );
+
+        wp_localize_script(
+            'woosea-add-cart',
+            'adtFrontEndAjax',
+            array(
+                'ajaxurl' => admin_url( 'admin-ajax.php' ),
+            )
+        );
+    }
+
+    /**
+     * Detect whether the current singular request renders a WooCommerce
+     * Add to Cart button via a shortcode or block.
+     *
+     * Covers non-WooCommerce pages (home, static landing pages, blog posts)
+     * that embed product grids — `is_woocommerce()` is false there but an
+     * Add to Cart button can still be clicked.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @return bool
+     */
+    private function current_page_renders_add_to_cart() {
+        if ( ! is_singular() ) {
+            return false;
+        }
+
+        $post = get_post();
+        if ( ! $post instanceof \WP_Post || '' === $post->post_content ) {
+            return false;
+        }
+
+        // WooCommerce shortcodes that render an Add to Cart button.
+        $shortcodes = array(
+            'products',
+            'product_page',
+            'product',
+            'add_to_cart',
+            'recent_products',
+            'featured_products',
+            'sale_products',
+            'best_selling_products',
+            'top_rated_products',
+            'product_category',
+            'product_categories',
+        );
+        foreach ( $shortcodes as $shortcode ) {
+            if ( has_shortcode( $post->post_content, $shortcode ) ) {
+                return true;
+            }
+        }
+
+        // WooCommerce blocks that can render an Add to Cart button.
+        if ( function_exists( 'has_block' ) ) {
+            $blocks = array(
+                'woocommerce/all-products',
+                'woocommerce/handpicked-products',
+                'woocommerce/product-best-sellers',
+                'woocommerce/product-category',
+                'woocommerce/product-new',
+                'woocommerce/product-on-sale',
+                'woocommerce/product-tag',
+                'woocommerce/product-top-rated',
+                'woocommerce/products-by-attribute',
+                'woocommerce/featured-product',
+                'woocommerce/single-product',
+                'woocommerce/product-button',
+            );
+            foreach ( $blocks as $block ) {
+                if ( has_block( $block, $post ) ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Return product details for the AddToCart Pixel event.
+     *
+     * Responds to the `woosea_addtocart_details` AJAX action that
+     * `woosea_add_cart.js` calls when the shopper clicks Add to cart.
+     *
+     * @since 13.5.8
+     * @access public
+     */
+    public function ajax_addtocart_details() {
+        $product_id = isset( $_POST['data_to_pass'] ) ? absint( wp_unslash( $_POST['data_to_pass'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- public read-only lookup of already-public product data.
+
+        if ( ! $product_id || ! function_exists( 'wc_get_product' ) ) {
+            wp_send_json_error( null, 400 );
+        }
+
+        $product = wc_get_product( $product_id );
+
+        if ( ! $product instanceof \WC_Product || 'publish' !== $product->get_status() ) {
+            wp_send_json_error( null, 404 );
+        }
+
+        wp_send_json(
+            array(
+                'product_id'       => (string) $product->get_id(),
+                'product_name'     => $product->get_name(),
+                'product_cats'     => $this->get_product_categories( $product->get_id() ),
+                'product_price'    => $this->get_numeric_price( $product->get_price() ),
+                'product_currency' => get_woocommerce_currency(),
+            )
+        );
+    }
+
+    /**
      * Run the class.
      *
      * @since 13.5.8
      */
     public function run() {
         add_action( 'wp_footer', array( $this, 'add_facebook_pixel' ) );
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_add_cart_script' ) );
+        add_action( 'wp_ajax_woosea_addtocart_details', array( $this, 'ajax_addtocart_details' ) );
+        add_action( 'wp_ajax_nopriv_woosea_addtocart_details', array( $this, 'ajax_addtocart_details' ) );
     }
 }

@@ -196,7 +196,8 @@ $debug_info_content = $notifications_obj->woosea_debug_informations( $versions, 
 $debug_info_title   = __( 'System Report', 'woo-product-feed-pro' );
 
 print '<div class="woo-product-feed-pro-debug-info">';
-print '<button class="button copy-product-feed-pro-debug-info" type="button" data-clipboard-target="#woo-product-feed-pro-debug-info">Copy to clipboard</button>';
+print '<button class="button copy-product-feed-pro-debug-info" type="button" data-clipboard-target="#woo-product-feed-pro-debug-info">' . esc_html__( 'Copy to clipboard', 'woo-product-feed-pro' ) . '</button>';
+print '<button class="button download-product-feed-pro-debug-info" type="button" data-download-target="#woo-product-feed-pro-debug-info" data-filename-prefix="pfp-debug-log">' . esc_html__( 'Download log', 'woo-product-feed-pro' ) . '</button>';
 echo "<h3>{$debug_info_title}</h3>";
 print '<p>' . __( 'Copy the below text and paste to the support team when requested to help us debug any systems issues with your feeds.', 'woo-product-feed-pro' ) . '</p>';
 echo "<pre id=\"woo-product-feed-pro-debug-info\">{$debug_info_content}</pre>";

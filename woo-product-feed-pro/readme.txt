@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 7.0
-Stable tag: trunk
+Stable tag: 13.5.5
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -84,8 +84,8 @@ Our plugin supports the official shipping table rate plugin of WooCommerce
 = WooCommerce Shipping Table Rate (Bolder Elements) support =
 Our plugin supports the WooCommerce Shipping Table Rate plugin created by Bolder Elements.
 
-= Fish and Ships Shipping plugin (WP Centrics) =
-Our plugin supports the Fish and Ships plugin by WP Centrics
+= Advanced Shipping Rates for WooCommerce: Flexible Table Rate Shipping Rules (formerly Fish and Ships Shipping by WP Centrics) =
+Our plugin supports the Advanced Shipping Rates for WooCommerce: Flexible Table Rate Shipping Rules plugin by WP Centrics (formerly Fish and Ships Shipping)
 
 = EAN and Barcodes for WooCommerce =
 Our plugin supports the EAN and Barcodes for WooCommerce pugin created by WPFactory.
@@ -178,7 +178,7 @@ Our plugin support TranslatePress
 * Supports [WooCommerce Wholesale Prices](https://wordpress.org/plugins/woocommerce-wholesale-prices/) from Rymera Web Co (removing prices with wholesale prices set)
 * Supports Table Rate Shipping for WooCommerce from WooCommerce
 * Supports Table Rate Shipping for WooCommerce from Bolder Elements
-* Supports Fish and Ships shipping plugin by WP Centrics
+* Supports Advanced Shipping Rates for WooCommerce: Flexible Table Rate Shipping Rules by WP Centrics (formerly Fish and Ships Shipping)
 * Supports usage of the All In One SEO pack title and description attributes
 * Supports the WPC Product Bundles for WooCommerce plugin
 * Supports the EAN and Barcodes for WooCommerce pugin created by WPFactory.
@@ -388,6 +388,30 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Feed actions & scheduling – From the feed list you can copy/open the feed URL, trigger a manual refresh, and control refresh frequency for each feed.
 
 === Changelog ===
+
+= 13.5.5 (2026-06-09) =
+* Bug Fix: "Clear custom attributes cache" button shows misleading error on second click
+* Bug Fix: AddToCart event never fires — woosea_add_cart.js not enqueued and AJAX handler missing
+* Bug Fix: CAPI Purchase event `contents` array missing required `item_price` field
+* Bug Fix: CSV feeds abort with "not valid XML" error on empty batch
+* Bug Fix: Facebook Pixel add to cart script loads on all frontend pages, not just WooCommerce pages
+* Bug Fix: Facebook Pixel cart/checkout/purchase event detection is broken in get_cart_page_event()
+* Bug Fix: Field mapping: duplicate 'Brands' label in dynamic attributes when WooCommerce and YITH Brands are both active
+* Bug Fix: Free shipping with requires='either'/'both' ignores coupon side of the rule in feed availability check
+* Bug Fix: Free shipping without minimum order requirement not included in feed
+* Bug Fix: Inconsistent spacing in "dynamic attribute" values for simple vs variable products in feeds
+* Bug Fix: Rules builder 'Category Set Value' action has no effect on Google Shopping XML feeds
+* Bug Fix: Snapchat product catalog feed outputs prices without currency code (missing {{CURRENCY}} suffix)
+* Bug Fix: identifier_exists plugin calculation never runs for TikTok / Pinterest / Facebook channels
+* Feature: New Amazon feed — sell on the world's largest marketplace with a ready-to-upload, generic Amazon flat-file inventory loader template generated straight from WooCommerce
+* Feature: New Merkandi XML feed channel — list your catalog on the Merkandi B2B marketplace with a ready-to-use XML feed
+* Feature: New maximum_retail_price attribute support for Google Shopping
+* Feature: Enforce minimum 500x500 image size for Google/Facebook feeds for better compliance and approval rates
+* Improvement: Add 'Feed output fields' rules-dropdown group as Elite upsell + host shared field-mapping helper in Pro
+* Improvement: Audit update_option calls and disable autoload for admin/cron-only options
+* Improvement: Implement download button for debug log in system report section
+* Improvement: Migrate woosea_add_remarketing_tags() to OOP Google_Remarketing class
+* Improvement: Pass $feed to adt_pfp_get_filters_rules_attributes filter for Elite/extension use
 
 = 13.5.4 (2026-05-04) =
 * Bug Fix: Feed filename case mismatch on scheduled update

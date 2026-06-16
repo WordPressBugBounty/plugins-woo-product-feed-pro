@@ -677,6 +677,44 @@ jQuery(function ($) {
   // Add copy to clipboard functionality for the debug information content box.
   new ClipboardJS('.copy-product-feed-pro-debug-info');
 
+  /**
+   * Generic "download text content as a file" click handler.
+   *
+   * Reads text from the element targeted by `data-download-target` (CSS selector),
+   * wraps it in a UTF-8 plain-text Blob, and triggers a same-page download. The
+   * filename is `data-filename-prefix` + UTC ISO timestamp + `.txt`.
+   *
+   * @param {jQuery.Event} e The click event.
+   * @since 13.5.5
+   */
+  $(document).on('click', '.download-product-feed-pro-debug-info', function (e) {
+    e.preventDefault();
+
+    var $button = $(this);
+    var targetSelector = $button.data('download-target');
+    var $target = targetSelector ? $(targetSelector) : $();
+
+    if (!$target.length) {
+      return;
+    }
+
+    var content = $target.text();
+    var prefix = $button.data('filename-prefix') || 'debug-log';
+    // Include seconds in the timestamp so repeated downloads in the same day produce unique filenames.
+    var timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-') + 'Z';
+    var filename = prefix + '-' + timestamp + '.txt';
+
+    var blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+
+    var $link = $('<a/>', { href: url, download: filename }).css('display', 'none').appendTo('body');
+    $link[0].click();
+    $link.remove();
+
+    // Release the object URL after a tick so the download has time to start.
+    setTimeout(function () { URL.revokeObjectURL(url); }, 100);
+  });
+
   // Init tooltips and select2
   $(document.body)
     .on('init_woosea_tooltips', function () {

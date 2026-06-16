@@ -197,6 +197,12 @@ class Settings_Page extends Admin_Page {
                 'id'    => 'adt_use_parent_variable_product_image',
             ),
             array(
+                'title'          => __( 'Enforce minimum 500x500 image size on Google Shopping and Facebook Catalog feeds', 'woo-product-feed-pro' ),
+                'type'           => 'checkbox',
+                'id'             => 'adt_pfp_enable_image_size_validation',
+                'read_more_link' => 'https://support.google.com/merchants/answer/6324350',
+            ),
+            array(
                 'title' => __( 'Add shipping costs for all countries to your feed (Google Shopping / Facebook only)', 'woo-product-feed-pro' ),
                 'type'  => 'checkbox',
                 'id'    => 'adt_add_all_shipping',

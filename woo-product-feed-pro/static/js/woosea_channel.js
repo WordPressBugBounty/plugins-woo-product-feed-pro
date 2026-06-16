@@ -53,6 +53,8 @@ jQuery(document).ready(function ($) {
       'Bol.com': ['csv', 'txt'],
       'Snapchat Product Catalog': ['csv'],
       'OpenAI Product Feed': ['jsonl.gz', 'csv.gz', 'tsv.gz'],
+      'Amazon': ['tsv', 'txt', 'csv'],
+      'Merkandi': ['xml'],
     };
     const selected_channel = $table.find('#channel_hash option:selected').text();
 
@@ -144,17 +146,23 @@ jQuery(document).ready(function ($) {
 
   jQuery('#fileformat').on('change', function () {
     var fileformat = this.value;
+    var $table = $('table.woo-product-feed-pro-table');
 
     if (fileformat == 'xml' || fileformat == 'jsonl') {
-      $('#delimiter').remove();
+      $table.find('#delimiter').remove();
     } else {
       // Put delimiter dropdown back
-      if ($('#delimiter').length == 0) {
-        $('#file').after(
+      if ($table.find('#delimiter').length == 0) {
+        $table.find('#file').after(
           '<tr id="delimiter"><td><span>' +
             __('Delimiter:', 'woo-product-feed-pro') +
             '</span></td><td><select name="delimiter" class="select-field"><option value=",">, comma</option><option value="|">| pipe</option><option value=";">;</option><option value="tab">tab</option><option value="#">#</option></select></td></tr>',
         );
+      }
+
+      // TSV is tab-separated by definition — auto-select tab.
+      if (fileformat == 'tsv') {
+        $table.find('#delimiter select[name="delimiter"]').val('tab');
       }
     }
   });

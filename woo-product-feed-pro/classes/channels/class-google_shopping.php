@@ -111,6 +111,12 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'format'      => 'optional',
                     'woo_suggest' => 'sale_price_effective_date',
                 ),
+                'Maximum retail price'      => array(
+                    'name'      => 'maximum_retail_price',
+                    'feed_name' => 'g:maximum_retail_price',
+                    'format'    => 'optional',
+                    'suffix'    => ' {{CURRENCY}}',
+                ),
                 'Unit pricing measure'      => array(
                     'name'      => 'unit_pricing_measure',
                     'feed_name' => 'g:unit_pricing_measure',

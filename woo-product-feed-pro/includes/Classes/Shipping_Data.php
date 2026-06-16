@@ -471,7 +471,7 @@ class Shipping_Data extends Abstract_Class {
         $free_shipping_met = false;
 
         foreach ( $methods as $method ) {
-            if ( $this->_is_shipping_available( $method, $package ) ) {
+            if ( $this->_is_shipping_available( $method, $package, $feed ) ) {
                 // Skip all other shipping methods if free shipping is met.
                 if ( 'yes' === $options['only_free_shipping'] && $has_free_shipping ) {
                     if ( $free_shipping_met && 'free_shipping' !== $method->id ) {
@@ -896,28 +896,150 @@ class Shipping_Data extends Abstract_Class {
     /**
      * Check if the shipping method is available.
      *
+     * Free Shipping is evaluated per the four `requires` modes WooCommerce
+     * supports. Non-free-shipping methods delegate to the method's own
+     * `is_available()` check.
+     *
      * @since 13.4.0
+     * @since 13.5.5 Added the `$feed` parameter.
+     * @access private
+     *
+     * @param object      $method  The shipping method object.
+     * @param array       $package The package data.
+     * @param object|null $feed    The feed object (for context-aware filters). Default null.
+     * @return bool
+     */
+    private function _is_shipping_available( $method, $package, $feed = null ) {
+        if ( 'free_shipping' !== $method->id ) {
+            return $method->is_available( $package );
+        }
+
+        switch ( (string) $method->requires ) {
+            // Min-amount-gated: cart total must meet the configured minimum.
+            case 'min_amount':
+                return $this->_cart_total_meets_min_amount( $method, $package );
+
+            // Coupon OR min_amount: available if either side is satisfiable.
+            // The feed has no real cart so we proxy "coupon side satisfiable"
+            // by checking whether any free-shipping coupon is published in
+            // the system (i.e. whether a customer COULD apply one).
+            case 'either':
+                return $this->_cart_total_meets_min_amount( $method, $package )
+                    || $this->_has_free_shipping_coupon( $feed );
+
+            // Coupon AND min_amount: both sides must be satisfiable.
+            case 'both':
+                return $this->_cart_total_meets_min_amount( $method, $package )
+                    && $this->_has_free_shipping_coupon( $feed );
+
+            // No min-amount gate ('' / 'none' / 'coupon'): the feed treats the
+            // method as unconditionally available. 'coupon' is intentional —
+            // feeds advertise the best-case shipping price, and a coupon-gated
+            // free rate is a legitimate price point a customer can reach.
+            case '':
+            case 'none':
+            case 'coupon':
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Check whether the cart total in the package meets the method's minimum amount.
+     *
+     * @since 13.5.4
      * @access private
      *
      * @param object $method  The shipping method object.
      * @param array  $package The package data.
      * @return bool
      */
-    private function _is_shipping_available( $method, $package ) {
-        $is_available = false;
-        if ( 'free_shipping' === $method->id ) {
-            if ( in_array( $method->requires, array( 'min_amount', 'either', 'both' ), true ) ) {
-                $total = $package['contents_cost'];
-                $total = \Automattic\WooCommerce\Utilities\NumberUtil::round( $total, wc_get_price_decimals() );
+    private function _cart_total_meets_min_amount( $method, $package ) {
+        $total = \Automattic\WooCommerce\Utilities\NumberUtil::round(
+            $package['contents_cost'],
+            wc_get_price_decimals()
+        );
+        return $total >= (float) $method->min_amount;
+    }
 
-                if ( $total >= $method->min_amount ) {
-                    $is_available = true;
-                }
-            }
-        } else {
-            $is_available = $method->is_available( $package );
+    /**
+     * Check whether a free-shipping coupon exists in the system.
+     *
+     * The feed does not run a real cart, so `$package['applied_coupons']`
+     * is always empty. As a proxy for "the coupon side of a Free Shipping
+     * `requires='either'` / `requires='both'` rule is satisfiable", this
+     * helper checks whether any published `shop_coupon` post has the
+     * `free_shipping=yes` meta — i.e. whether a customer COULD apply one
+     * at checkout.
+     *
+     * Existence-only check — does NOT replicate `WC_Coupon::is_valid()`.
+     * Expired, exhausted, or product-/customer-/email-restricted coupons
+     * still satisfy the proxy. This matches the best-case stance the feed
+     * already applies to `requires='coupon'`. Stores needing stricter
+     * validity should hook the override filter below.
+     *
+     * Cached in a function-scoped static for the lifetime of the PHP
+     * request. Coupons published mid-process (e.g. inside a long-lived
+     * Action Scheduler worker) won't be reflected until the worker
+     * recycles. Deliberately not a transient — an admin publishing a
+     * coupon should be reflected on the very next feed run, not after a
+     * TTL expires.
+     *
+     * @since 13.5.5
+     * @access private
+     *
+     * @param object|null $feed The feed object passed through to the override filter. Default null.
+     * @return bool
+     */
+    private function _has_free_shipping_coupon( $feed = null ) {
+        /**
+         * Filter the detected presence of a free-shipping coupon used to
+         * evaluate Free Shipping `requires='either'` / `requires='both'`
+         * in the feed.
+         *
+         * Return a boolean to override the default detection (which scans
+         * for any published `shop_coupon` with `free_shipping=yes`).
+         * Return null (the default) to run the default detection.
+         *
+         * Invoked once per `(zone × method)` evaluation during feed
+         * generation and takes precedence over the function-scoped static
+         * cache below — callbacks should be cheap and idempotent (e.g.
+         * cache their own result if they perform a DB or API lookup).
+         *
+         * @since 13.5.5
+         *
+         * @param bool|null   $available Pre-computed result. Default null.
+         * @param object|null $feed      The feed object being generated, when available. Default null.
+         * @return bool|null
+         */
+        $pre = apply_filters( 'adt_product_feed_has_free_shipping_coupon', null, $feed );
+        if ( null !== $pre ) {
+            return (bool) $pre;
         }
-        return $is_available;
+
+        static $cached = null;
+        if ( null !== $cached ) {
+            return $cached;
+        }
+
+        $coupons = get_posts(
+            array(
+                'post_type'      => 'shop_coupon',
+                'post_status'    => 'publish',
+                'posts_per_page' => 1,
+                'fields'         => 'ids',
+                'no_found_rows'  => true,
+                'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+                    array(
+                        'key'   => 'free_shipping',
+                        'value' => 'yes',
+                    ),
+                ),
+            )
+        );
+
+        $cached = ! empty( $coupons );
+        return $cached;
     }
 
     /**

@@ -383,10 +383,15 @@ input:checked + .woo-product-feed-pro-slider:before {
   margin: 0;
 }
 
-.woo-product-feed-pro-debug-info .copy-product-feed-pro-debug-info {
+.woo-product-feed-pro-debug-info .copy-product-feed-pro-debug-info,
+.woo-product-feed-pro-debug-info .download-product-feed-pro-debug-info {
   position: relative;
   top: 1.5em;
   float: right;
+}
+
+.woo-product-feed-pro-debug-info .download-product-feed-pro-debug-info {
+  margin-right: 0.5em;
 }
 
 .woo-product-feed-pro-debug-info pre {

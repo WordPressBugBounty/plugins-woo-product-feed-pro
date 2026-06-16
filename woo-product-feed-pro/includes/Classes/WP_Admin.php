@@ -411,9 +411,66 @@ class WP_Admin extends Abstract_Class {
         }
 
         // Update the option (allows empty values).
-        update_option( $setting, $value );
+        // Default to autoload=false; only opt back in for options read on every front-end request.
+        update_option( $setting, $value, $this->is_autoloaded_setting( $setting ) );
 
         wp_send_json_success( array( 'message' => __( 'Settings updated.', 'woo-product-feed-pro' ) ) );
+    }
+
+    /**
+     * Determine whether a given AJAX-updatable setting should be autoloaded.
+     *
+     * Autoload should only be true for small options that are read on every
+     * front-end request. Admin-only, cron-only, or feed-generation-only
+     * options must be loaded on-demand to keep the autoloaded options blob
+     * small.
+     *
+     * @since 13.5.5
+     * @access private
+     *
+     * @param string $setting Option name.
+     * @return bool True if the option should be autoloaded, false otherwise.
+     */
+    private function is_autoloaded_setting( $setting ) {
+        // Small front-end-read options that should remain autoloaded after an AJAX toggle.
+        // PRO-owned: tracking pixels rendered on every storefront request.
+        // Elite-owned: listed here defensively so a stale Elite install that has not yet
+        // registered `adt_pfp_autoloaded_ajax_settings` does not lose autoload on toggle.
+        // Elite may still extend this list via the filter below.
+        $autoloaded = array(
+            // PRO-owned, front-end read.
+            'adt_add_facebook_pixel',
+            'adt_facebook_pixel_id',
+            'adt_facebook_pixel_content_ids',
+            'adt_add_remarketing',
+            'adt_adwords_conversion_id',
+            // Elite-owned, front-end read.
+            'adt_structured_data_fix',
+            'adt_enable_facebook_capi',
+            'adt_facebook_capi_token',
+        );
+
+        /**
+         * Filter the list of AJAX-updatable settings that should be autoloaded.
+         *
+         * Use this to opt additional small front-end-read options into the
+         * autoloaded set. New entries should default to NOT being autoloaded;
+         * only add an option here if it is read on every front-end request
+         * AND its value is small.
+         *
+         * @since 13.5.5
+         * @param array  $autoloaded Array of option names that should be autoloaded.
+         * @param string $setting    The option name being updated.
+         */
+        $filtered = apply_filters( 'adt_pfp_autoloaded_ajax_settings', $autoloaded, $setting );
+
+        // Fall back to the original list if a filter returns a non-array (mirrors
+        // the defensive pattern in `get_allowed_ajax_settings()`).
+        if ( ! is_array( $filtered ) ) {
+            $filtered = $autoloaded;
+        }
+
+        return in_array( $setting, $filtered, true );
     }
 
     /**
@@ -443,6 +500,7 @@ class WP_Admin extends Abstract_Class {
             'adt_enable_batch',
             'adt_batch_size',
             'adt_disable_http_feed_generation',
+            'adt_pfp_enable_image_size_validation',
             // Other settings from Settings_Page::get_other_settings().
             'adt_use_legacy_filters_and_rules',
             defined( 'ADT_PFP_CLEAN_UP_PLUGIN_OPTIONS' ) ? (string) ADT_PFP_CLEAN_UP_PLUGIN_OPTIONS : 'adt_clean_up_plugin_data',
@@ -543,12 +601,10 @@ class WP_Admin extends Abstract_Class {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
         }
 
-        // Clear the cache.
-        if ( delete_transient( ADT_TRANSIENT_CUSTOM_ATTRIBUTES ) ) {
-            wp_send_json_success( array( 'message' => __( 'Custom attributes cache cleared.', 'woo-product-feed-pro' ) ) );
-        } else {
-            wp_send_json_error( array( 'message' => __( 'Custom attributes cache not found.', 'woo-product-feed-pro' ) ) );
-        }
+        // Clear the cache. delete_transient() returns false both on failure and when the transient
+        // does not exist; treat both as success since the desired end state (cache absent) is reached.
+        delete_transient( ADT_TRANSIENT_CUSTOM_ATTRIBUTES );
+        wp_send_json_success( array( 'message' => __( 'Custom attributes cache cleared.', 'woo-product-feed-pro' ) ) );
     }
 
     /**

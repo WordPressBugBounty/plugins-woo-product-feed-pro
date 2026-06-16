@@ -238,7 +238,7 @@ class Notices extends Abstract_Class {
             return;
         }
 
-        update_option( $notice['option'], 'yes' );
+        update_option( $notice['option'], 'yes', false );
     }
 
     /**
@@ -520,7 +520,7 @@ class Notices extends Abstract_Class {
             return;
         }
 
-        update_option( $option, $value );
+        update_option( $option, $value, false );
 
         // Update metadata when dismissed.
         if ( 'dismissed' === $value ) {
@@ -576,7 +576,7 @@ class Notices extends Abstract_Class {
             $meta_data
         );
 
-        return update_option( 'adt_notification_meta', $all_meta );
+        return update_option( 'adt_notification_meta', $all_meta, false );
     }
 
     /**
@@ -638,7 +638,7 @@ class Notices extends Abstract_Class {
             }
         }
 
-        return update_option( 'adt_notification_meta', $all_meta );
+        return update_option( 'adt_notification_meta', $all_meta, false );
     }
 
     /**

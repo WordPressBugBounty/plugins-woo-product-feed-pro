@@ -148,6 +148,22 @@ return array(
             'utm_source'   => 'OpenAI Product Feed',
             'type'         => 'Advertising',
         ),
+        'Amazon'                               => array(
+            'channel_hash' => 'b3b3a6ac74ecbd56bcdbefa4799fb9df',
+            'name'         => 'Amazon',
+            'fields'       => 'amazon',
+            'taxonomy'     => 'none',
+            'utm_source'   => 'Amazon',
+            'type'         => 'Marketplace',
+        ),
+        'Merkandi'                             => array(
+            'channel_hash' => 'bd34b252c67f6f03dc68f42ce9f24b0a',
+            'name'         => 'Merkandi',
+            'fields'       => 'merkandi',
+            'taxonomy'     => 'none',
+            'utm_source'   => 'Merkandi',
+            'type'         => 'Marketplace',
+        ),
     ),
     'Custom Feed'                 => array(
         'Custom Feed' => array(

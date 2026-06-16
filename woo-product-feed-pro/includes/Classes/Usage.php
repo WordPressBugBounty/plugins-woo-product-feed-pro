@@ -517,7 +517,7 @@ class Usage extends Abstract_Class {
         if ( ! $main_usage_tracking_scheduled ) {
             // Schedule the main usage tracking event.
             wp_schedule_event( $tracking['initsend'], 'weekly', ADT_PFP_USAGE_CRON_ACTION );
-            update_option( ADT_PFP_USAGE_CRON_CONFIG, $tracking );
+            update_option( ADT_PFP_USAGE_CRON_CONFIG, $tracking, false );
         } else {
             // Use the existing scheduled time.
             $tracking['initsend'] = $main_usage_tracking_scheduled;
@@ -603,7 +603,7 @@ class Usage extends Abstract_Class {
         );
 
         // If we have completed successfully, recheck in 1 week.
-        update_option( ADT_PFP_USAGE_LAST_CHECKIN, time() );
+        update_option( ADT_PFP_USAGE_LAST_CHECKIN, time(), false );
         return true;
     }
 
@@ -736,7 +736,7 @@ class Usage extends Abstract_Class {
      */
     public function update_allow_usage_setting_on_notice_dismiss( $notice_key, $response ) {
         if ( 'allow_usage' === $notice_key && 'allow_usage' === $response ) {
-            update_option( ADT_PFP_USAGE_ALLOW, 'yes' );
+            update_option( ADT_PFP_USAGE_ALLOW, 'yes', false );
         }
     }
 
@@ -764,7 +764,7 @@ class Usage extends Abstract_Class {
         $value = 'true' === $value ? 'yes' : 'no';
 
         // Update the option.
-        if ( update_option( ADT_PFP_USAGE_ALLOW, $value ) ) {
+        if ( update_option( ADT_PFP_USAGE_ALLOW, $value, false ) ) {
             if ( 'yes' === $value ) {
                 wp_send_json_success( array( 'message' => __( 'Usage tracking has been enabled.', 'woo-product-feed-pro' ) ) );
             } else {
@@ -794,7 +794,7 @@ class Usage extends Abstract_Class {
         $value = '1' === $value ? 'yes' : 'no';
 
         // Update the option.
-        if ( update_option( ADT_PFP_USAGE_ALLOW, $value ) ) {
+        if ( update_option( ADT_PFP_USAGE_ALLOW, $value, false ) ) {
             if ( 'yes' === $value ) {
                 wp_send_json_success( array( 'message' => __( 'Usage tracking has been enabled.', 'woo-product-feed-pro' ) ) );
             } else {

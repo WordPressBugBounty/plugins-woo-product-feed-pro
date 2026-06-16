@@ -386,8 +386,21 @@ class Product_Feed_Attributes extends Abstract_Class {
 
         // Det custom taxonomy values for a product.
         if ( ! empty( $taxonomies ) ) {
+            // Count how many taxonomies share each label so we can disambiguate duplicates.
+            $label_counts = array();
             foreach ( $taxonomies as $tax ) {
-                $dynamic_attributes[ $tax->name ] = $tax->label;
+                $label_counts[ $tax->label ] = isset( $label_counts[ $tax->label ] ) ? $label_counts[ $tax->label ] + 1 : 1;
+            }
+
+            foreach ( $taxonomies as $tax ) {
+                $label = $tax->label;
+                // When two plugins register taxonomies with the same human-readable label
+                // (e.g. WooCommerce and YITH both labelling their brand taxonomy "Brands"),
+                // append the slug so users can tell them apart in the field-mapping dropdown.
+                if ( $label_counts[ $tax->label ] > 1 ) {
+                    $label .= ' (' . $tax->name . ')';
+                }
+                $dynamic_attributes[ $tax->name ] = $label;
             }
         }
         return apply_filters( 'adt_product_feed_dynamic_attributes', $dynamic_attributes );

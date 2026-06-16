@@ -14,6 +14,7 @@ use AdTribes\PFP\Classes\Product_Data;
 use AdTribes\PFP\Classes\Shipping_Data;
 use AdTribes\PFP\Classes\Filters;
 use AdTribes\PFP\Classes\Rules;
+use AdTribes\PFP\Classes\Field_Mapping_Editor_Attributes;
 use AdTribes\PFP\Classes\Cron;
 use AdTribes\PFP\Classes\Heartbeat;
 use AdTribes\PFP\Classes\Marketing;
@@ -34,6 +35,7 @@ use AdTribes\PFP\Classes\Legacy\Filters_Legacy;
 use AdTribes\PFP\Classes\Legacy\Rules_Legacy;
 use AdTribes\PFP\Classes\Export_Import_Tools;
 use AdTribes\PFP\Classes\Facebook_Pixel;
+use AdTribes\PFP\Classes\Google_Remarketing;
 use AdTribes\PFP\Classes\CLI\CLI_Bootstrap;
 
 defined( 'ABSPATH' ) || exit;
@@ -46,6 +48,7 @@ return array(
     Shipping_Data::instance(),
     Filters::instance(),
     Rules::instance(),
+    Field_Mapping_Editor_Attributes::instance(),
     Cron::instance(),
     Heartbeat::instance(),
     WP_Admin::instance(),
@@ -67,5 +70,6 @@ return array(
     Rules_Legacy::instance(),
     Export_Import_Tools::instance(),
     Facebook_Pixel::instance(),
+    Google_Remarketing::instance(),
     CLI_Bootstrap::instance(),
 );

@@ -51,6 +51,11 @@ class Upsell extends Abstract_Class {
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can exclude specific attributes from your feed based on advanced rules and criteria. Perfect for removing sensitive data, hiding irrelevant fields, or omitting attributes that don\'t meet channel requirements—keeping your feed streamlined and compliant.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'excludeattributesrule' ),
             ),
+            'rules_feed_output_fields'  => array(
+                'title'   => __( 'Upgrade to target Feed Output Fields in Rules', 'woo-product-feed-pro' ),
+                'message' => __( 'In Product Feed ELITE for WooCommerce your rules can read from and write to the output columns you configured in Field Mapping (e.g. g:custom_label_0, g:custom_label_1, custom fields). Perfect for populating Google Shopping custom labels conditionally based on product data, or any other feed column derived from your mapping.', 'woo-product-feed-pro' ),
+                'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'rulesfeedoutputfields' ),
+            ),
             'custom_refresh_interval'   => array(
                 'title'   => __( 'Upgrade to set custom refresh interval', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can set custom refresh intervals and specific times for your feeds. Schedule feeds to run hourly, daily, weekly, yearly or every X hours at specific times (e.g., daily at 11 PM). Perfect for optimizing server performance during off-peak hours and ensuring feeds complete before the next refresh cycle.', 'woo-product-feed-pro' ),
