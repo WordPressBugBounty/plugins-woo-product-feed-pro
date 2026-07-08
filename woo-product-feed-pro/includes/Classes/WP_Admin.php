@@ -191,7 +191,11 @@ class WP_Admin extends Abstract_Class {
             $plugin_links[] = '<a href="' . Helper::get_utm_url( 'support', 'pfp', 'pluginpage', 'support' ) . '" target="_blank" rel="noopener noreferrer">Support</a>';
             $plugin_links[] = '<a href="' . Helper::get_utm_url( 'tutorials', 'pfp', 'pluginpage', 'tutorials' ) . '" target="_blank" rel="noopener noreferrer">Tutorials</a>';
             $plugin_links[] = '<a href="' . admin_url( 'admin.php?page=woosea_manage_settings' ) . '">Settings</a>';
-            $plugin_links[] = '<a href="' . Helper::get_utm_url( 'pricing', 'pfp', 'pluginpage', 'goelite' ) . '" target="_blank" style="color:green;" rel="noopener noreferrer"><b>Upgrade To Elite</b></a>';
+
+            // Only offer the upgrade link when the Elite plugin is not already active.
+            if ( ! Helper::has_paid_plugin_active() ) {
+                $plugin_links[] = '<a href="' . Helper::get_utm_url( 'pricing', 'pfp', 'pluginpage', 'goelite' ) . '" target="_blank" style="color:green;" rel="noopener noreferrer"><b>Upgrade To Elite</b></a>';
+            }
 
             // Add the links to the list of links already there.
             foreach ( $plugin_links as $link ) {
@@ -691,6 +695,108 @@ class WP_Admin extends Abstract_Class {
     }
 
     /**
+     * Regenerate the Action Scheduler feed-refresh tasks for all active feeds.
+     *
+     * Recovery tool for cases where automatic feed refreshes silently stop
+     * running (stuck/cancelled Action Scheduler jobs after a server migration,
+     * plugin conflict, or manual queue cleanup). Mirrors the activation-time
+     * scheduling: for every published feed with a real recurring refresh interval
+     * it calls register_action(), which unschedules any existing action for that
+     * feed first and then re-schedules it — so healthy schedules are not
+     * duplicated. Feed data and configuration are untouched.
+     *
+     * @since 13.5.6
+     * @access public
+     */
+    public function ajax_regenerate_action_schedulers() {
+        if ( ! Helper::is_current_user_allowed() ) {
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
+        }
+
+        if ( ! isset( $_REQUEST['security'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'woosea_ajax_nonce' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid security token', 'woo-product-feed-pro' ) ) );
+        }
+
+        // Active feeds with a recurring refresh interval ('custom' has no schedule),
+        // matching the activation-time registration query.
+        $feeds_query = new Product_Feed_Query(
+            array(
+                'post_status'    => array( 'publish' ),
+                'posts_per_page' => -1,
+                'meta_query'     => array(
+                    array(
+                        'key'     => 'adt_refresh_interval',
+                        'value'   => 'custom',
+                        'compare' => '!=',
+                    ),
+                ),
+            ),
+            'edit'
+        );
+
+        $regenerated = 0;
+        if ( $feeds_query->have_posts() ) {
+            foreach ( $feeds_query->get_posts() as $feed ) {
+                if ( ! $feed instanceof Product_Feed ) {
+                    continue;
+                }
+
+                // register_action() clears any existing/orphaned action for this
+                // feed and re-schedules it when a recurring interval is set; it is
+                // a no-op (just an unschedule) for feeds without one.
+                $feed->register_action();
+
+                // Count only feeds that actually get a recurring schedule.
+                // register_action() schedules a real Action Scheduler event only for
+                // these three intervals (its switch has no default), so counting any
+                // other non-empty value would overstate what was scheduled.
+                $interval = $feed->refresh_interval ?? '';
+                if ( in_array( $interval, array( 'hourly', 'twicedaily', 'daily' ), true ) ) {
+                    ++$regenerated;
+                }
+            }
+        }
+
+        /**
+         * Let extensions regenerate their own feed-refresh actions and add to the count.
+         *
+         * The query above only covers standard intervals (the PRO activation pass).
+         * Elite hooks this to re-register 'custom' refresh-interval feeds, which live in
+         * a separate Action Scheduler group — mirroring the two-pass activation-time
+         * registration. Capability and nonce are already verified above, so callbacks
+         * should only register actions and return the updated total.
+         *
+         * @since 13.5.6
+         *
+         * @param int $regenerated Number of standard-interval feeds regenerated so far.
+         */
+        $regenerated = (int) apply_filters( 'adt_pfp_regenerate_action_schedulers_count', $regenerated );
+
+        if ( function_exists( 'wc_get_logger' ) ) {
+            wc_get_logger()->info(
+                sprintf( 'Regenerated feed-refresh Action Scheduler tasks for %d feed(s) via the settings tool.', $regenerated ),
+                array( 'source' => 'woo-product-feed-pro' )
+            );
+        }
+
+        wp_send_json_success(
+            array(
+                'message'     => sprintf(
+                    /* translators: %d: number of active feeds whose refresh schedule was regenerated. */
+                    _n(
+                        'Action Schedulers regenerated. Re-created the refresh schedule for %d active feed.',
+                        'Action Schedulers regenerated. Re-created the refresh schedules for %d active feeds.',
+                        $regenerated,
+                        'woo-product-feed-pro'
+                    ),
+                    $regenerated
+                ),
+                'regenerated' => $regenerated,
+            )
+        );
+    }
+
+    /**
      * Use legacy filters and rules.
      *
      * @since 13.4.6
@@ -835,6 +941,7 @@ class WP_Admin extends Abstract_Class {
         add_action( 'wp_ajax_adt_migrate_to_custom_post_type', array( $this, 'ajax_migrate_to_custom_post_type' ) );
         add_action( 'wp_ajax_adt_clear_custom_attributes_product_meta_keys', array( $this, 'ajax_adt_clear_custom_attributes_product_meta_keys' ) );
         add_action( 'wp_ajax_adt_update_file_url_to_lower_case', array( $this, 'ajax_update_file_url_to_lower_case' ) );
+        add_action( 'wp_ajax_adt_regenerate_action_schedulers', array( $this, 'ajax_regenerate_action_schedulers' ) );
         add_action( 'wp_ajax_adt_use_legacy_filters_and_rules', array( $this, 'ajax_use_legacy_filters_and_rules' ) );
         add_action( 'wp_ajax_adt_fix_duplicate_feed', array( $this, 'ajax_fix_duplicate_feed' ) );
     }

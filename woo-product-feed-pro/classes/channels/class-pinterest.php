@@ -28,19 +28,19 @@ class WooSEA_pinterest { // phpcs:ignore
                 ),
                 'Product title'        => array(
                     'name'        => 'title',
-                    'feed_name'   => 'g:title',
+                    'feed_name'   => 'title',
                     'format'      => 'required',
                     'woo_suggest' => 'title',
                 ),
                 'Product description'  => array(
                     'name'        => 'description',
-                    'feed_name'   => 'g:description',
+                    'feed_name'   => 'description',
                     'format'      => 'required',
                     'woo_suggest' => 'description',
                 ),
                 'Product URL'          => array(
                     'name'        => 'link',
-                    'feed_name'   => 'g:link',
+                    'feed_name'   => 'link',
                     'format'      => 'required',
                     'woo_suggest' => 'link',
                 ),
@@ -87,7 +87,7 @@ class WooSEA_pinterest { // phpcs:ignore
                 ),
                 'Sale price'                => array(
                     'name'        => 'sale_price',
-                    'feed_name'   => 'g:sale_price',
+                    'feed_name'   => 'sale_price',
                     'format'      => 'optional',
                     'woo_suggest' => 'vivino_sale_price',
                 ),

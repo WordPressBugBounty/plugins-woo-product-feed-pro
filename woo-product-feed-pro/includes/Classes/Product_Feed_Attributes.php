@@ -206,6 +206,7 @@ class Product_Feed_Attributes extends Abstract_Class {
             'privacy_policy_page_url' => 'Privacy Policy page URL (WordPress)',
             'boolean_true'            => 'True (Boolean)',
             'boolean_false'           => 'False (Boolean)',
+            'base_country'            => 'WooCommerce base country',
             'product_tag'             => 'Product tags',
             'product_tag_space'       => 'Product tags space',
             'menu_order'              => 'Menu order',

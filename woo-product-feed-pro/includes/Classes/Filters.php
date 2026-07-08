@@ -494,7 +494,25 @@ class Filters extends Abstract_Filters_Rules {
                 return ! empty( $product_value );
 
             default:
-                return true; // Default to passing if condition is unknown.
+                /**
+                 * Filter the evaluation result of a condition the core switch does not handle.
+                 *
+                 * Lets add-ons evaluate custom condition types (e.g. character count) that they
+                 * register via the `adt_pfp_get_filters_rules_conditions` filter. Return a boolean
+                 * to resolve the condition; return the passed-through `null` to fall back to the
+                 * core default (unhandled filter conditions pass).
+                 *
+                 * @since 13.5.6
+                 *
+                 * @param bool|null $result         Null when the core switch did not handle the condition.
+                 * @param string    $condition      The condition operator.
+                 * @param mixed     $product_value  The product field value (case-normalised).
+                 * @param mixed     $filter_value   The filter's comparison value.
+                 * @param bool      $case_sensitive Whether the comparison is case-sensitive.
+                 */
+                $result = apply_filters( 'adt_pfp_evaluate_filters_rules_condition', null, $condition, $product_value, $filter_value, $case_sensitive );
+
+                return is_bool( $result ) ? $result : true; // Default to passing if condition is unknown.
         }
     }
 

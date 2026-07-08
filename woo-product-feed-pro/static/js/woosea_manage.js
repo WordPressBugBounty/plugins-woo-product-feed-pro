@@ -486,6 +486,41 @@ jQuery(function ($) {
     }
   });
 
+  $('#adt_regenerate_action_schedulers').on('click', function () {
+    var nonce = $('#_wpnonce').val();
+    var popup_dialog = confirm(__('Are you sure you want to regenerate the Action Scheduler feed refresh tasks for all active feeds?', 'woo-product-feed-pro'));
+    var $button = $(this);
+
+    if (popup_dialog == true) {
+      // Disable the button
+      $button.prop('disabled', true);
+
+      jQuery
+        .ajax({
+          method: 'POST',
+          url: ajaxurl,
+          data: {
+            action: 'adt_regenerate_action_schedulers',
+            security: nonce,
+          },
+        })
+        .done(function (response) {
+          // Enable the button
+          $button.prop('disabled', false);
+
+          if (response.success) {
+            toastr.success(response.data.message);
+          } else {
+            toastr.error(response.data.message);
+          }
+        })
+        .fail(function (data) {
+          // Enable the button
+          $button.prop('disabled', false);
+        });
+    }
+  });
+
   $('#adt_use_legacy_filters_and_rules').on('change', function (e) {
     var nonce = $('#_wpnonce').val();
     var value = $(this).is(':checked');

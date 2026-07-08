@@ -36,32 +36,37 @@ class Upsell extends Abstract_Class {
      */
     public function upsell_l10n() {
         $popup_upsells = array(
-            'default'                   => array(
+            'default'                        => array(
                 'title'   => __( 'Upgrade to Product Feed Elite for WooCommerce', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed Pro Elite for WooCommerce you get access to advanced features like extra fields (GTIN, MPN, EAN, etc.), advanced filters and rules, product data manupulation, and more. Perfect for scaling your e-commerce business across multiple platforms.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'modal' ),
             ),
-            'rule_action_set_attribute' => array(
+            'rule_action_set_attribute'      => array(
                 'title'   => __( 'Upgrade to Set Attributes', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can dynamically set and modify product attributes on-the-fly. This is perfect for customizing product data for different channels, adding custom labels, and optimizing feed data without touching your product catalog.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'setattrrules' ),
             ),
-            'rule_action_exclude'       => array(
+            'rule_action_exclude'            => array(
                 'title'   => __( 'Upgrade to Exclude Attributes with Rules', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can exclude specific attributes from your feed based on advanced rules and criteria. Perfect for removing sensitive data, hiding irrelevant fields, or omitting attributes that don\'t meet channel requirements—keeping your feed streamlined and compliant.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'excludeattributesrule' ),
             ),
-            'rules_feed_output_fields'  => array(
+            'rule_condition_character_count' => array(
+                'title'   => __( 'Upgrade to Character Count conditions', 'woo-product-feed-pro' ),
+                'message' => __( 'In Product Feed ELITE for WooCommerce you can build filters and rules based on how many characters a field has—e.g. "if the description has more than 300 characters". Perfect for meeting channel character limits (like Google Shopping\'s title limit) and triggering actions such as truncating or rewriting oversized fields.', 'woo-product-feed-pro' ),
+                'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'charactercountcondition' ),
+            ),
+            'rules_feed_output_fields'       => array(
                 'title'   => __( 'Upgrade to target Feed Output Fields in Rules', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed ELITE for WooCommerce your rules can read from and write to the output columns you configured in Field Mapping (e.g. g:custom_label_0, g:custom_label_1, custom fields). Perfect for populating Google Shopping custom labels conditionally based on product data, or any other feed column derived from your mapping.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'rulesfeedoutputfields' ),
             ),
-            'custom_refresh_interval'   => array(
+            'custom_refresh_interval'        => array(
                 'title'   => __( 'Upgrade to set custom refresh interval', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can set custom refresh intervals and specific times for your feeds. Schedule feeds to run hourly, daily, weekly, yearly or every X hours at specific times (e.g., daily at 11 PM). Perfect for optimizing server performance during off-peak hours and ensuring feeds complete before the next refresh cycle.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'customrefreshinterval' ),
             ),
-            'import_feeds'              => array(
+            'import_feeds'                   => array(
                 'title'   => __( 'Upgrade to import feeds', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can import feed configurations from JSON files. Perfect for migrating feeds between sites, restoring backups, or bulk importing multiple feed setups at once. Save hours of manual configuration work.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'importfeeds' ),

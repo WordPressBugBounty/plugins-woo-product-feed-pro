@@ -12,9 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<header class="adt-tw-flex adt-tw-flex-col sm:adt-tw-flex-row adt-tw-justify-between adt-tw-items-start sm:adt-tw-items-center adt-tw-gap-4 sm:adt-tw-gap-0 adt-tw-mb-6">
+<header class="adt-header adt-tw-flex adt-tw-flex-col sm:adt-tw-flex-row adt-tw-justify-between adt-tw-items-start sm:adt-tw-items-center adt-tw-gap-4 sm:adt-tw-gap-0 adt-tw-mb-6">
     <div class="adt-tw-flex adt-tw-items-center adt-tw-gap-4">
-        <img src=<?php echo esc_url( ADT_PFP_IMAGES_URL . 'logo.svg' ); ?> alt="Product Feed Pro Logo" class="adt-tw-w-full adt-tw-max-w-44 adt-tw-h-auto" />
+        <img src="<?php echo esc_url( ADT_PFP_IMAGES_URL . 'logo.svg' ); ?>" alt="Product Feed Pro Logo" class="adt-header__logo" />
         <?php if ( Helper::is_show_logo_upgrade_button() ) : ?>
         <a target="_blank" href="<?php echo esc_url( Helper::get_utm_url( '', 'pfp', 'logo', 'adminpagelogo' ) ); ?>" class="adt-button adt-button-primary adt-button-sm">
             <?php esc_html_e( 'Upgrade to Elite', 'woo-product-feed-pro' ); ?>
@@ -78,6 +78,19 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <span class="adt-tw-icon-[lucide--youtube] adt-help-button-content-inner-link-icon"></span>
                     <?php esc_html_e( 'YouTube Channel', 'woo-product-feed-pro' ); ?>
                 </a>
+                <?php
+                /**
+                 * Fires at the end of the Help dropdown menu, after the Resources links.
+                 *
+                 * Allows Elite and add-ons to append their own Help menu items (for
+                 * example an "Advanced" tools section). Because the header renders on
+                 * every AdTribes admin page, callbacks are responsible for scoping
+                 * their output to the pages where it should appear.
+                 *
+                 * @since 13.5.6
+                 */
+                do_action( 'adt_pfp_help_menu_items' );
+                ?>
             </div>
         </div>
         </div>

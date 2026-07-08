@@ -7,7 +7,7 @@
  * (BMVD, Clothing, Home, etc.) are out of scope; sellers should verify the
  * output against the exact template required by their product category.
  *
- * @since 13.6.0
+ * @since 13.5.5
  * @package AdTribes\PFP
  */
 class WooSEA_amazon { // phpcs:ignore
@@ -15,7 +15,7 @@ class WooSEA_amazon { // phpcs:ignore
     /**
      * Get the channel attributes.
      *
-     * @since 13.6.0
+     * @since 13.5.5
      * @return array
      */
     public static function get_channel_attributes() {

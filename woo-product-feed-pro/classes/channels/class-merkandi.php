@@ -13,7 +13,7 @@
  * child per image (capped at 7), and tiered <pricing> can be supplied through
  * the `adt_merkandi_pricing_tiers` filter (e.g. by a wholesale pricing add-on).
  *
- * @since 13.6.0
+ * @since 13.5.5
  * @package AdTribes\PFP
  */
 class WooSEA_merkandi { // phpcs:ignore
@@ -21,7 +21,7 @@ class WooSEA_merkandi { // phpcs:ignore
     /**
      * Get the channel attributes.
      *
-     * @since 13.6.0
+     * @since 13.5.5
      * @return array
      */
     public static function get_channel_attributes() {

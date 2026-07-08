@@ -7,7 +7,7 @@
 
 namespace AdTribes\PFP\Updates;
 
-use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Abstracts\Abstract_Update;
 
 /**
  * Class Version_13_5_5_Update
@@ -17,41 +17,21 @@ use AdTribes\PFP\Abstracts\Abstract_Class;
  * autoload flag the first time an option is created, so existing installs
  * that seeded these options as autoloaded need this one-shot migration.
  *
+ * Gating/idempotency live in Abstract_Update; update() only flips rows that are
+ * still autoloaded, so a one-time re-run is a no-op.
+ *
  * @since 13.5.5
  */
-class Version_13_5_5_Update extends Abstract_Class {
+class Version_13_5_5_Update extends Abstract_Update {
 
     /**
-     * Holds the version number.
+     * Per-blog option name flagging this migration as complete.
      *
-     * @since 13.5.5
-     * @access protected
+     * @since 13.5.6
      *
      * @var string
      */
-    protected $version = '13.5.5';
-
-    /**
-     * Whether to force update the options.
-     *
-     * @since 13.5.5
-     * @access protected
-     *
-     * @var bool
-     */
-    protected $force_update = false;
-
-    /**
-     * Constructor.
-     *
-     * @since 13.5.5
-     * @access public
-     *
-     * @param bool $force_update Whether to force update the options.
-     */
-    public function __construct( $force_update = false ) {
-        $this->force_update = $force_update;
-    }
+    const MIGRATION_FLAG = 'adt_pfp_update_13_5_5_done';
 
     /**
      * Plugin-owned options that should NOT be autoloaded.
@@ -165,25 +145,5 @@ class Version_13_5_5_Update extends Abstract_Class {
 
         // Bust the alloptions cache so subsequent reads do not contain the flipped rows.
         wp_cache_delete( 'alloptions', 'options' );
-    }
-
-    /**
-     * Run the migration.
-     *
-     * Runs against the CURRENT blog only. `Activation::run()` already loops
-     * `$blog_ids` and calls `_activate_plugin()` (which invokes this method)
-     * per blog, so this method must not loop blogs itself.
-     *
-     * @since 13.5.5
-     */
-    public function run() {
-        if (
-            (
-                version_compare( get_site_option( ADT_PFP_OPTION_INSTALLED_VERSION ), $this->version, '<' ) ||
-                ! get_site_option( ADT_PFP_OPTION_INSTALLED_VERSION )
-            ) || $this->force_update
-        ) {
-            $this->update();
-        }
     }
 }

@@ -214,7 +214,7 @@ class Admin_Notice extends Abstract_Class {
                             self_admin_url(
                                 'update.php?action=upgrade-plugin&plugin='
                             ) . $failed_dependency['plugin-base'],
-                            'activate-plugin_' . $failed_dependency['plugin-base']
+                            'upgrade-plugin_' . $failed_dependency['plugin-base']
                         ),
                         esc_attr__( 'Update plugin', 'woo-product-feed-pro' )
                     ),

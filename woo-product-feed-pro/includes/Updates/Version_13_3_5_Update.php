@@ -7,48 +7,29 @@
 
 namespace AdTribes\PFP\Updates;
 
-use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Abstracts\Abstract_Update;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Factories\Product_Feed;
 
 /**
  * Class Version_13_3_5_Update
  *
+ * Gating/idempotency live in Abstract_Update; update() upserts feeds by legacy
+ * project hash against the continuously-synced adt_cron_projects option, so a
+ * one-time re-run re-applies current data with no duplication.
+ *
  * @since 13.3.5
  */
-class Version_13_3_5_Update extends Abstract_Class {
+class Version_13_3_5_Update extends Abstract_Update {
 
     /**
-     * Holds the version number.
+     * Per-blog option name flagging this migration as complete.
      *
-     * @since 13.3.5
-     * @access protected
+     * @since 13.5.6
      *
      * @var string
      */
-    protected $version = '13.3.5';
-
-    /**
-     * Whether to force update the options.
-     *
-     * @since 13.3.5
-     * @access protected
-     *
-     * @var bool
-     */
-    protected $force_update = false;
-
-    /**
-     * Constructor.
-     *
-     * @since 13.3.5
-     * @access public
-     *
-     * @param bool $force_update Whether to force update the options.
-     */
-    public function __construct( $force_update = false ) {
-        $this->force_update = $force_update;
-    }
+    const MIGRATION_FLAG = 'adt_pfp_update_13_3_5_done';
 
     /**
      * Migrate the options to new CPT.
@@ -132,32 +113,6 @@ class Version_13_3_5_Update extends Abstract_Class {
             foreach ( $post_ids as $post_id ) {
                 $product_feed = new Product_Feed( $post_id );
                 $product_feed->save_legacy_options();
-            }
-        }
-    }
-
-    /**
-     * Run the class.
-     *
-     * @since 13.3.5
-     */
-    public function run() {
-        if (
-            (
-                version_compare( get_site_option( ADT_PFP_OPTION_INSTALLED_VERSION ), $this->version, '<=' ) ||
-                ! get_site_option( ADT_PFP_OPTION_INSTALLED_VERSION )
-            ) || $this->force_update
-        ) {
-            if ( is_multisite() ) {
-                global $wpdb;
-                $blog_ids = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs}" );
-                foreach ( $blog_ids as $blog_id ) {
-                    switch_to_blog( $blog_id );
-                    $this->update();
-                    restore_current_blog();
-                }
-            } else {
-                $this->update();
             }
         }
     }

@@ -106,6 +106,25 @@ abstract class Abstract_Filters_Rules extends Abstract_Class {
                 'value' => 'is_not_empty',
                 'label' => __( 'Is Not Empty', 'woo-product-feed-pro' ),
             ),
+            // Character Count conditions are an Elite feature. Pro lists them with an
+            // `(Elite)` suffix as an upsell; Elite strips the suffix and evaluates them
+            // (mirrors the `Set Attribute (Elite)` / `Exclude Attribute (Elite)` actions).
+            array(
+                'value' => 'character_count_greater_than',
+                'label' => __( 'Character Count Greater Than (Elite)', 'woo-product-feed-pro' ),
+            ),
+            array(
+                'value' => 'character_count_greater_than_or_equal',
+                'label' => __( 'Character Count Greater Than or Equal (Elite)', 'woo-product-feed-pro' ),
+            ),
+            array(
+                'value' => 'character_count_less_than',
+                'label' => __( 'Character Count Less Than (Elite)', 'woo-product-feed-pro' ),
+            ),
+            array(
+                'value' => 'character_count_less_than_or_equal',
+                'label' => __( 'Character Count Less Than or Equal (Elite)', 'woo-product-feed-pro' ),
+            ),
         );
 
         /**

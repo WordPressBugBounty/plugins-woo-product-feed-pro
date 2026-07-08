@@ -342,6 +342,12 @@ class Settings_Page extends Admin_Page {
                 'id'    => 'adt_update_file_url_to_lower_case',
             ),
             array(
+                'title' => __( 'Regenerate Action Schedulers', 'woo-product-feed-pro' ),
+                'type'  => 'button',
+                'desc'  => __( 'Re-create the scheduled feed refresh tasks for all active feeds. Use this if automatic feed refreshes have stopped running (e.g. after a server migration, plugin conflict, or Action Scheduler cleanup). Does not change feed data or configuration.', 'woo-product-feed-pro' ),
+                'id'    => 'adt_regenerate_action_schedulers',
+            ),
+            array(
                 'title' => __( 'Fix duplicated feed', 'woo-product-feed-pro' ),
                 'type'  => 'button',
                 'desc'  => __( 'This will fix the issue with duplicated feeds due to data migration abnormalities', 'woo-product-feed-pro' ),

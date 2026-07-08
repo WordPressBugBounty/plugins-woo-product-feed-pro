@@ -41,13 +41,26 @@ class License_Page extends Admin_Page {
      * @since 13.4.4
      */
     public function init() {
-        $this->parent_slug = 'woo-product-feed';
-        $this->page_title  = __( 'License', 'woo-product-feed-pro' );
-        $this->menu_title  = __( 'License', 'woo-product-feed-pro' );
-        $this->capability  = is_multisite() ? 'manage_sites' : apply_filters( 'adt_pfp_admin_capability', 'manage_options' );
-        $this->menu_slug   = self::MENU_SLUG;
-        $this->template    = 'license-page.php';
-        $this->position    = 40;
+        /*
+         * In the network admin, the `woo-product-feed` parent menu does not exist — it is only
+         * registered under `admin_menu`, never `network_admin_menu`. Attaching as a submenu there
+         * makes WordPress silently discard the page, so no license menu appears for super admins.
+         * Register it as a standalone top-level "AdTribes License" menu instead. Single-site and
+         * regular subsite admin keep the submenu under Product Feed. See #980.
+         */
+        if ( is_multisite() && is_network_admin() ) {
+            $this->parent_slug = null;
+            $this->menu_title  = __( 'AdTribes License', 'woo-product-feed-pro' );
+            $this->icon        = esc_url( ADT_PFP_IMAGES_URL . 'icon-16x16.png' );
+        } else {
+            $this->parent_slug = 'woo-product-feed';
+            $this->menu_title  = __( 'License', 'woo-product-feed-pro' );
+        }
+        $this->page_title = __( 'License', 'woo-product-feed-pro' );
+        $this->capability = is_multisite() ? 'manage_sites' : apply_filters( 'adt_pfp_admin_capability', 'manage_options' );
+        $this->menu_slug  = self::MENU_SLUG;
+        $this->template   = 'license-page.php';
+        $this->position   = 40;
     }
 
     /**

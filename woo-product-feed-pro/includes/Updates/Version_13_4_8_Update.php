@@ -7,46 +7,26 @@
 
 namespace AdTribes\PFP\Updates;
 
-use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Abstracts\Abstract_Update;
 
 /**
  * Class Version_13_4_8_Update
  *
+ * Gating/idempotency live in Abstract_Update; update() only writes a prefixed
+ * option when it does not already exist, so a one-time re-run is a no-op.
+ *
  * @since 13.4.8
  */
-class Version_13_4_8_Update extends Abstract_Class {
+class Version_13_4_8_Update extends Abstract_Update {
 
     /**
-     * Holds the version number.
+     * Per-blog option name flagging this migration as complete.
      *
-     * @since 13.4.8
-     * @access protected
+     * @since 13.5.6
      *
      * @var string
      */
-    protected $version = '13.4.8';
-
-    /**
-     * Whether to force update the options.
-     *
-     * @since 13.4.8
-     * @access protected
-     *
-     * @var bool
-     */
-    protected $force_update = false;
-
-    /**
-     * Constructor.
-     *
-     * @since 13.4.8
-     * @access public
-     *
-     * @param bool $force_update Whether to force update the options.
-     */
-    public function __construct( $force_update = false ) {
-        $this->force_update = $force_update;
-    }
+    const MIGRATION_FLAG = 'adt_pfp_update_13_4_8_done';
 
     /**
      * Migrate unprefixed options to prefixed versions.
@@ -147,32 +127,6 @@ class Version_13_4_8_Update extends Abstract_Class {
             // If the old option exists and the new one doesn't, migrate the value.
             if ( false !== $old_value && false === get_option( $new_option ) ) {
                 update_option( $new_option, $old_value, $autoload );
-            }
-        }
-    }
-
-    /**
-     * Run the class.
-     *
-     * @since 13.4.8
-     */
-    public function run() {
-        if (
-            (
-                version_compare( get_site_option( ADT_PFP_OPTION_INSTALLED_VERSION ), $this->version, '<=' ) ||
-                ! get_site_option( ADT_PFP_OPTION_INSTALLED_VERSION )
-            ) || $this->force_update
-        ) {
-            if ( is_multisite() ) {
-                global $wpdb;
-                $blog_ids = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs}" );
-                foreach ( $blog_ids as $blog_id ) {
-                    switch_to_blog( $blog_id );
-                    $this->update();
-                    restore_current_blog();
-                }
-            } else {
-                $this->update();
             }
         }
     }

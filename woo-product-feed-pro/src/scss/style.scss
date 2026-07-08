@@ -1,7 +1,156 @@
-/* Import Lato font from Google CDN */
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
+/* ============================================================
+   AdTribes webfonts — Lato (primary) + Inter (display alternate).
+   2026 rebrand. Loaded from Google Fonts; swap in self-hosted
+   .woff2 here for an offline build.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&family=Inter:wght@400;500;600;700&display=swap');
 
+/* ============================================================
+   AdTribes Design System tokens (2026 rebrand)
+   Ported from the AdTribes Design System project. Two co-primaries
+   (Cerise Pink + Midnight Purple), full tint scales, neutrals,
+   semantics, gradients, type/spacing/shadow scales and semantic
+   aliases. Legacy --adt-*-color variables are preserved below so
+   existing styles keep working unchanged.
+   ============================================================ */
 :root {
+  /* ---- Brand palette ---- */
+  --adt-cerise-pink: #E63D78;       /* PRIMARY — wordmark "Ad", panda nose */
+  --adt-midnight-purple: #441670;   /* PRIMARY — panda mark, wordmark "Tribes" */
+  --adt-lavender-mist: #DFBCFF;     /* soft pastel — gradients / brand surfaces */
+  --adt-cotton-candy-pink: #FFC7E9; /* soft pastel — gradients / brand surfaces */
+
+  /* ---- Primary (cerise) scale ---- */
+  --adt-primary-50:  #FDF2F6;
+  --adt-primary-100: #FAE6EE;
+  --adt-primary-200: #F6C0D6;
+  --adt-primary-300: #F29ABD;
+  --adt-primary-400: #ED74A5;
+  --adt-primary-500: #E63D78;       /* = Cerise Pink */
+  --adt-primary-600: #D42F69;
+  --adt-primary-700: #AD2755;
+  --adt-primary-800: #871F41;
+  --adt-primary-900: #601733;
+  --adt-primary-950: #401024;
+  --adt-primary-light: #F17CA6;     /* 20% lighter */
+  --adt-primary-dark:  #C42C61;     /* 20% darker  */
+
+  /* ---- Purple (secondary) scale — anchored on Midnight Purple #441670 ---- */
+  --adt-purple-50:  #F4EFFB;
+  --adt-purple-100: #E7D9F6;
+  --adt-purple-200: #CDB2EC;
+  --adt-purple-300: #AE84DE;
+  --adt-purple-400: #8B52C8;
+  --adt-purple-500: #6E33AC;
+  --adt-purple-600: #59268C;
+  --adt-purple-700: #441670;        /* = Midnight Purple */
+  --adt-purple-800: #38125C;
+  --adt-purple-900: #2B0E47;
+  --adt-purple-950: #1D0931;
+  --adt-purple-light: #6E33AC;      /* hover-up / tints  */
+  --adt-purple-dark:  #38125C;      /* hover / pressed   */
+
+  /* ---- Neutrals / grays ---- */
+  --adt-ink: #333333;               /* light-black / primary text */
+  --adt-gray-900: #211F54;          /* darkest brand ink */
+  --adt-gray-700: #4B5563;
+  --adt-gray-600: #666666;          /* dark-gray body text */
+  --adt-gray-500: #6E7191;          /* muted text */
+  --adt-gray-400: #A0A3BD;          /* faint text / placeholders */
+  --adt-gray-300: #D5D4DC;
+  --adt-gray-250: #DBDBDB;          /* border gray */
+  --adt-gray-200: #DCDDEB;          /* dividers */
+  --adt-gray-150: #EFF0F6;          /* hairline */
+  --adt-gray-100: #F2F3F7;
+  --adt-gray-50:  #F9FAFB;          /* light-gray surface */
+  --adt-canvas:   #F7F7FC;          /* page background */
+
+  /* ---- Semantic status ---- */
+  --adt-success: #00974F;
+  --adt-success-bg: #F0FFF8;
+  --adt-danger: #D91A1A;
+  --adt-danger-strong: #DC2626;     /* notification badge red-600 */
+  --adt-warning: #E9924F;           /* processing / caution (amber) */
+  --adt-info: #1693A7;              /* informational (teal) */
+
+  /* ---- Gradients (2026 rebrand) ---- */
+  --adt-gradient-header: linear-gradient(180deg, #FFFFFF 0%, #EFE6FB 100%);
+  --adt-gradient-pastel: linear-gradient(135deg, #DFBCFF 0%, #FFC7E9 100%);
+  --adt-gradient-brand:  linear-gradient(135deg, #441670 0%, #E63D78 100%);
+  --adt-gradient-brand-hover: linear-gradient(135deg, #38125C 0%, #C42C61 100%);
+
+  /* ---- Typography ---- */
+  --adt-font-sans: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+  --adt-font-display: 'Inter', 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --adt-fw-light: 300;
+  --adt-fw-regular: 400;
+  --adt-fw-bold: 700;
+  --adt-fw-black: 900;
+  /* Heading scale */
+  --adt-fs-h1: 54px; --adt-fs-h2: 38px; --adt-fs-h3: 24px;
+  --adt-fs-h4: 22px; --adt-fs-h5: 18px; --adt-fs-h6: 16px;
+  /* Body / UI scale */
+  --adt-fs-body-lg: 18px; --adt-fs-body: 16px; --adt-fs-sm: 14px;
+  --adt-fs-xs: 12px; --adt-fs-2xs: 10px;
+
+  /* ---- Spacing (4px base) ---- */
+  --adt-space-1: 4px;  --adt-space-2: 8px;   --adt-space-3: 12px;
+  --adt-space-4: 16px; --adt-space-5: 20px;  --adt-space-6: 24px;
+  --adt-space-8: 32px; --adt-space-10: 40px; --adt-space-12: 48px;
+  --adt-space-16: 64px;
+
+  /* ---- Radii ---- */
+  --adt-radius-sm: 6px;  --adt-radius-md: 8px;  --adt-radius-lg: 12px;
+  --adt-radius-xl: 16px; --adt-radius-2xl: 24px; --adt-radius-pill: 9999px;
+
+  /* ---- Shadows ---- */
+  --adt-shadow-xs: 0 1px 2px rgba(20, 20, 43, 0.05);
+  --adt-shadow-sm: 0 1px 3px rgba(20, 20, 43, 0.08), 0 1px 2px rgba(20, 20, 43, 0.04);
+  --adt-shadow-card: 0 2px 12px rgba(20, 20, 43, 0.08);
+  --adt-shadow-soft: 0 6px 20px rgba(74, 58, 255, 0.08);
+  --adt-shadow-header: 0 5px 14px rgba(20, 20, 43, 0.05);
+  --adt-shadow-lg: 0 12px 32px rgba(20, 20, 43, 0.12);
+  --adt-shadow-focus: 0 0 0 3px rgba(230, 61, 120, 0.18);
+
+  /* ---- Motion ---- */
+  --adt-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --adt-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --adt-dur-fast: 150ms;
+  --adt-dur-base: 200ms;
+  --adt-dur-slow: 300ms;
+
+  /* ============================================================
+     SEMANTIC ALIASES — prefer these in new styles
+     ============================================================ */
+  --color-primary: var(--adt-cerise-pink);
+  --color-primary-hover: var(--adt-primary-dark);
+  --color-primary-soft: var(--adt-primary-50);
+  --color-secondary: var(--adt-midnight-purple);
+  --color-secondary-hover: var(--adt-purple-800);
+  --color-secondary-soft: var(--adt-purple-50);
+
+  --text-strong: var(--adt-ink);
+  --text-body: var(--adt-gray-600);
+  --text-muted: var(--adt-gray-500);
+  --text-faint: var(--adt-gray-400);
+  --text-on-primary: #FFFFFF;
+  --text-link: var(--adt-cerise-pink);
+
+  --surface-page: var(--adt-gray-100);
+  --surface-card: #FFFFFF;
+  --surface-subtle: var(--adt-gray-50);
+  --surface-canvas: var(--adt-canvas);
+
+  --border-default: var(--adt-gray-250);
+  --border-subtle: var(--adt-gray-200);
+  --border-strong: var(--adt-gray-300);
+  --border-focus: var(--adt-cerise-pink);
+
+  /* ============================================================
+     LEGACY ALIASES — preserved so existing styles keep working.
+     ============================================================ */
   --adt-primary-color: #E63D78;
   --adt-white-color: #ffffff;
   --adt-gray-color: #D5D4DC;
@@ -13,7 +162,7 @@
 
   /* border color */
   --adt-border-gray-color: #DBDBDB;
-  
+
   --adt-label-default-bg-color: #eff0f1;
   --adt-label-default-text-color: #666666;
   --adt-label-success-bg-color: #F0FFF8;
@@ -56,6 +205,15 @@
 
 .toplevel_page_woo-product-feed #wpwrap {
   @apply adt-tw-bg-gray-100;
+}
+
+/* Rebrand header — plain transparent bar on the gray canvas, matching the
+   Product Feed PRO design-system AppShell (a flex row + bottom margin, no
+   background). The lavender --adt-gradient-header token is a brand/marketing
+   surface and is intentionally NOT used in product chrome. */
+.adt-tw-wrapper .adt-header__logo {
+  width: auto;
+  height: 44px;
 }
 
 .adt-button {

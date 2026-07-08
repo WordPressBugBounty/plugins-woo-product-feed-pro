@@ -5,7 +5,7 @@ License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
 Tested up to: 7.0
-Stable tag: 13.5.5
+Stable tag: 13.5.6
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -388,6 +388,29 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 8. Feed actions & scheduling – From the feed list you can copy/open the feed URL, trigger a manual refresh, and control refresh frequency for each feed.
 
 === Changelog ===
+
+= 13.5.6 (2026-07-08) =
+* Bug Fix: "Upgrade To Elite" link visible on plugins page when Elite plugin is already active
+* Bug Fix: Bug: "Update plugin" link in version-requirement notice fails with "link has expired" (wrong nonce action)
+* Bug Fix: Custom Feed channel generates an empty feed (zero products) for a non-base currency
+* Bug Fix: Empty g:additional_image_link nodes in feed when URL suffix is configured
+* Bug Fix: Pinterest CSV feed ingestion fails with Error 9156 — UTF-8 BOM in CSV header
+* Bug Fix: Pinterest XML feed rejected by Pinterest Data Source — incorrect element names (g:title, g:description, g:link)
+* Bug Fix: Product filter fields missing from Google Merchant Promotions Feed when using specific_products
+* Bug Fix: g:product_detail — "Custom attributes" prefix not stripped from g:attribute_name
+* Bug Fix: money_off_amount field outputs wrong element name in Google Merchant Promotions feed
+* Bug Fix: promotion_destination required field missing from Google Merchant Promotions Feed channel attributes
+* Bug fix: obtain App singleton via App::instance() instead of require_once return value
+* Improvement: Add Regenerate Action Schedulers feature to recover broken feed refresh schedules
+* Improvement: Add adt_pfp_help_menu_items action to the Help dropdown for add-on extensions
+* Improvement: Filters & Rules: add Elite upsell for the Character Count condition type
+* Improvement: Filters & Rules: add adt_pfp_evaluate_filters_rules_condition hook for custom condition types
+* Improvement: Include libxml parse error details in batch XML load failure log
+* Improvement: Make OpenAI product feed channel compliant with OpenAI's GA feed spec
+* Improvement: Multisite: Version_*_Update migrations skip blogs #2..N (network-global version gate)
+* Improvement: Re-branding: Apply the 2026 AdTribes rebrand foundation (tokens, colors, logo, header)
+* Improvement: Support nested g:subscription_cost output in the Google Shopping XML writer
+* Improvement: Unify adt_pfp_get_filters_rules_attributes filter signature across REST + deprecated trait call sites
 
 = 13.5.5 (2026-06-09) =
 * Bug Fix: "Clear custom attributes cache" button shows misleading error on second click

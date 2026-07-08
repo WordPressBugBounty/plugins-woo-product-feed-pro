@@ -1,21 +1,21 @@
 {
   "src/apps/filters-rules-builder/index-legacy.ts": {
-    "file": "apps/filters-rules-builder/index-legacy.AWaHcvo6.js",
+    "file": "apps/filters-rules-builder/index-legacy.BWAJv11a.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index-legacy.ts",
     "isEntry": true
   },
   "src/apps/filters-rules-builder/index.ts": {
-    "file": "apps/filters-rules-builder/index.Ct71TJ3h.js",
+    "file": "apps/filters-rules-builder/index.CMa0sbdk.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index.ts",
     "isEntry": true,
     "css": [
-      "css/index.BX2A3c1Y.css"
+      "css/index.D2j9Tia5.css"
     ]
   },
   "src/vanilla/edit-feed/index-legacy.ts": {
-    "file": "vanilla\\edit-feed/index-legacy.CuLSHObq.js",
+    "file": "vanilla\\edit-feed/index-legacy.BQXEHeDM.js",
     "name": "vanilla\\edit-feed/index",
     "src": "src/vanilla/edit-feed/index-legacy.ts",
     "isEntry": true,
@@ -24,7 +24,7 @@
     ]
   },
   "src/vanilla/edit-feed/index.ts": {
-    "file": "vanilla\\edit-feed/index.DUd4Il_o.js",
+    "file": "vanilla\\edit-feed/index.CPKoFUPL.js",
     "name": "vanilla\\edit-feed/index",
     "src": "src/vanilla/edit-feed/index.ts",
     "isEntry": true,
@@ -44,7 +44,7 @@
     "isEntry": true
   },
   "src/vanilla/export-import-tools/index-legacy.ts": {
-    "file": "vanilla\\export-import-tools/index-legacy.BtHOfxJ6.js",
+    "file": "vanilla\\export-import-tools/index-legacy.l-Kvb1PG.js",
     "name": "vanilla\\export-import-tools/index",
     "src": "src/vanilla/export-import-tools/index-legacy.ts",
     "isEntry": true,
@@ -53,7 +53,7 @@
     ]
   },
   "src/vanilla/export-import-tools/index.ts": {
-    "file": "vanilla\\export-import-tools/index.Cg9oAgPY.js",
+    "file": "vanilla\\export-import-tools/index.dDIijf_L.js",
     "name": "vanilla\\export-import-tools/index",
     "src": "src/vanilla/export-import-tools/index.ts",
     "isEntry": true,
@@ -82,7 +82,7 @@
     ]
   },
   "src/vanilla/field-mapping/index.ts": {
-    "file": "vanilla\\field-mapping/index.CSMjbCKJ.js",
+    "file": "vanilla\\field-mapping/index.Cku8OS1s.js",
     "name": "vanilla\\field-mapping/index",
     "src": "src/vanilla/field-mapping/index.ts",
     "isEntry": true,
@@ -102,22 +102,22 @@
     "isEntry": true
   },
   "src/vanilla/index-legacy.ts": {
-    "file": "vanilla/index-legacy.CIFnQ8Ys.js",
+    "file": "vanilla/index-legacy.C45nyapA.js",
     "name": "vanilla/index",
     "src": "src/vanilla/index-legacy.ts",
     "isEntry": true
   },
   "src/vanilla/index.ts": {
-    "file": "vanilla/index.DMlwFl16.js",
+    "file": "vanilla/index.C43F4SU4.js",
     "name": "vanilla/index",
     "src": "src/vanilla/index.ts",
     "isEntry": true,
     "css": [
-      "css/index.eJsOxaxZ.css"
+      "css/index.Vz3GE3QM.css"
     ]
   },
   "src/vanilla/manage-feeds/index-legacy.ts": {
-    "file": "vanilla\\manage-feeds/index-legacy.BiDWRf1h.js",
+    "file": "vanilla\\manage-feeds/index-legacy.B_FTCmZL.js",
     "name": "vanilla\\manage-feeds/index",
     "src": "src/vanilla/manage-feeds/index-legacy.ts",
     "isEntry": true,
@@ -126,51 +126,51 @@
     ]
   },
   "src/vanilla/manage-feeds/index.ts": {
-    "file": "vanilla\\manage-feeds/index.Db7gTk8D.js",
+    "file": "vanilla\\manage-feeds/index.CLjpadKt.js",
     "name": "vanilla\\manage-feeds/index",
     "src": "src/vanilla/manage-feeds/index.ts",
     "isEntry": true,
     "css": [
-      "css/vanilla/manage-feeds/style.B315Lovp.css"
+      "css/vanilla/manage-feeds/style.ro9YRqB9.css"
     ]
   },
   "src/vanilla/manage-feeds/style-legacy.scss": {
-    "file": "vanilla\\manage-feeds/style.scss-legacy.CHq7dT4S.js",
+    "file": "vanilla\\manage-feeds/style.scss-legacy.FEGptKsn.js",
     "name": "vanilla\\manage-feeds/style.scss",
     "src": "src/vanilla/manage-feeds/style-legacy.scss",
     "isEntry": true
   },
   "src/vanilla/manage-feeds/style.scss": {
-    "file": "css/vanilla/manage-feeds/style.B315Lovp.css",
+    "file": "css/vanilla/manage-feeds/style.ro9YRqB9.css",
     "src": "src/vanilla/manage-feeds/style.scss",
     "isEntry": true
   },
   "src/vanilla/notices/drawer-legacy.ts": {
-    "file": "vanilla\\notices/drawer-legacy.DTdNY-_l.js",
+    "file": "vanilla\\notices/drawer-legacy.emUWq9g1.js",
     "name": "vanilla\\notices/drawer",
     "src": "src/vanilla/notices/drawer-legacy.ts",
     "isEntry": true
   },
   "src/vanilla/notices/drawer.ts": {
-    "file": "vanilla\\notices/drawer._JpF86-g.js",
+    "file": "vanilla\\notices/drawer.BanUXkiu.js",
     "name": "vanilla\\notices/drawer",
     "src": "src/vanilla/notices/drawer.ts",
     "isEntry": true
   },
   "src/vanilla/notices/header-icon-legacy.ts": {
-    "file": "vanilla\\notices/header-icon-legacy.B8-G74sl.js",
+    "file": "vanilla\\notices/header-icon-legacy.C_1R8Qp-.js",
     "name": "vanilla\\notices/header-icon",
     "src": "src/vanilla/notices/header-icon-legacy.ts",
     "isEntry": true
   },
   "src/vanilla/notices/header-icon.ts": {
-    "file": "vanilla\\notices/header-icon.BTfknGvJ.js",
+    "file": "vanilla\\notices/header-icon.Bj9Al0lH.js",
     "name": "vanilla\\notices/header-icon",
     "src": "src/vanilla/notices/header-icon.ts",
     "isEntry": true
   },
   "src/vanilla/notices/index-legacy.ts": {
-    "file": "vanilla\\notices/index-legacy.BhWO3WXO.js",
+    "file": "vanilla\\notices/index-legacy.CIutoPSR.js",
     "name": "vanilla\\notices/index",
     "src": "src/vanilla/notices/index-legacy.ts",
     "isEntry": true,
@@ -181,7 +181,7 @@
     ]
   },
   "src/vanilla/notices/index.ts": {
-    "file": "vanilla\\notices/index.DjIbt0nX.js",
+    "file": "vanilla\\notices/index.Cy4xbBvE.js",
     "name": "vanilla\\notices/index",
     "src": "src/vanilla/notices/index.ts",
     "isEntry": true,
@@ -190,22 +190,22 @@
       "src/vanilla/notices/header-icon.ts"
     ],
     "css": [
-      "css/vanilla/notices/style.Dt7taT9s.css"
+      "css/vanilla/notices/style.DW-XHh8a.css"
     ]
   },
   "src/vanilla/notices/style-legacy.scss": {
-    "file": "vanilla\\notices/style.scss-legacy.BS9U_83Z.js",
+    "file": "vanilla\\notices/style.scss-legacy.CuQ5LUVl.js",
     "name": "vanilla\\notices/style.scss",
     "src": "src/vanilla/notices/style-legacy.scss",
     "isEntry": true
   },
   "src/vanilla/notices/style.scss": {
-    "file": "css/vanilla/notices/style.Dt7taT9s.css",
+    "file": "css/vanilla/notices/style.DW-XHh8a.css",
     "src": "src/vanilla/notices/style.scss",
     "isEntry": true
   },
   "src/vanilla/upsell/index-legacy.ts": {
-    "file": "vanilla\\upsell/index-legacy.CSS_xjiD.js",
+    "file": "vanilla\\upsell/index-legacy.uubSjVto.js",
     "name": "vanilla\\upsell/index",
     "src": "src/vanilla/upsell/index-legacy.ts",
     "isEntry": true,
@@ -214,7 +214,7 @@
     ]
   },
   "src/vanilla/upsell/index.ts": {
-    "file": "vanilla\\upsell/index.DJFjygGQ.js",
+    "file": "vanilla\\upsell/index.N5ZBP55l.js",
     "name": "vanilla\\upsell/index",
     "src": "src/vanilla/upsell/index.ts",
     "isEntry": true,
@@ -234,7 +234,7 @@
     "isEntry": true
   },
   "vite/legacy-polyfills-legacy": {
-    "file": "polyfills-legacy.BaY-IMDZ.js",
+    "file": "polyfills-legacy.U4ugnhD2.js",
     "name": "polyfills",
     "src": "vite/legacy-polyfills-legacy",
     "isEntry": true

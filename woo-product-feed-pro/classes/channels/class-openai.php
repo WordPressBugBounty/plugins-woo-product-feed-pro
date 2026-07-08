@@ -34,8 +34,8 @@ class WooSEA_openai { // phpcs:ignore
         $openai_attributes = array(
             'Basic Product Data'     => array(
                 'Product ID'          => array(
-                    'name'        => 'id',
-                    'feed_name'   => 'id',
+                    'name'        => 'item_id',
+                    'feed_name'   => 'item_id',
                     'format'      => 'required',
                     'woo_suggest' => 'id',
                 ),
@@ -52,120 +52,105 @@ class WooSEA_openai { // phpcs:ignore
                     'woo_suggest' => 'description',
                 ),
                 'Product URL'         => array(
-                    'name'        => 'link',
-                    'feed_name'   => 'link',
+                    'name'        => 'url',
+                    'feed_name'   => 'url',
                     'format'      => 'required',
                     'woo_suggest' => 'link',
                 ),
                 'GTIN'                => array(
                     'name'        => 'gtin',
                     'feed_name'   => 'gtin',
-                    'format'      => 'required',
+                    'format'      => 'optional',
                     'woo_suggest' => 'gtin',
                 ),
                 'MPN'                 => array(
                     'name'        => 'mpn',
                     'feed_name'   => 'mpn',
-                    'format'      => 'required',
+                    'format'      => 'optional',
                     'woo_suggest' => 'mpn',
                 ),
             ),
             'Media'                  => array(
                 'Main Image URL'       => array(
-                    'name'        => 'image_link',
-                    'feed_name'   => 'image_link',
+                    'name'        => 'image_url',
+                    'feed_name'   => 'image_url',
                     'format'      => 'required',
                     'woo_suggest' => 'image',
                 ),
                 'Additional Image URL' => array(
-                    'name'        => 'additional_image_link',
-                    'feed_name'   => 'additional_image_link',
+                    'name'        => 'additional_image_urls',
+                    'feed_name'   => 'additional_image_urls',
                     'format'      => 'recommended',
                     'woo_suggest' => 'image_1',
                 ),
                 'Video Link'           => array(
-                    'name'      => 'video_link',
-                    'feed_name' => 'video_link',
+                    'name'      => 'video_url',
+                    'feed_name' => 'video_url',
                     'format'    => 'optional',
                 ),
                 '3D Model Link'        => array(
-                    'name'      => 'model_3d_link',
-                    'feed_name' => 'model_3d_link',
+                    'name'      => 'model_3d_url',
+                    'feed_name' => 'model_3d_url',
                     'format'    => 'optional',
                 ),
             ),
             'Pricing & Availability' => array(
-                'Price'                     => array(
+                'Price'                 => array(
                     'name'        => 'price',
                     'feed_name'   => 'price',
                     'format'      => 'required',
                     'woo_suggest' => 'price',
                     'suffix'      => ' {{CURRENCY}}',
                 ),
-                'Applicable Taxes Fees'     => array(
-                    'name'      => 'applicable_taxes_fees',
-                    'feed_name' => 'applicable_taxes_fees',
-                    'format'    => 'optional',
-                ),
-                'Sale Price'                => array(
+                'Sale Price'            => array(
                     'name'        => 'sale_price',
                     'feed_name'   => 'sale_price',
                     'format'      => 'recommended',
                     'woo_suggest' => 'sale_price',
+                    'suffix'      => ' {{CURRENCY}}',
                 ),
-                'Sale Price Effective Date' => array(
-                    'name'      => 'sale_price_effective_date',
-                    'feed_name' => 'sale_price_effective_date',
+                'Sale Price Start Date' => array(
+                    'name'      => 'sale_price_start_date',
+                    'feed_name' => 'sale_price_start_date',
                     'format'    => 'optional',
                 ),
-                'Stock Status'              => array(
+                'Sale Price End Date'   => array(
+                    'name'      => 'sale_price_end_date',
+                    'feed_name' => 'sale_price_end_date',
+                    'format'    => 'optional',
+                ),
+                'Stock Status'          => array(
                     'name'        => 'availability',
                     'feed_name'   => 'availability',
                     'format'      => 'required',
                     'woo_suggest' => 'availability',
                 ),
-                'Availability Date'         => array(
+                'Availability Date'     => array(
                     'name'      => 'availability_date',
                     'feed_name' => 'availability_date',
                     'format'    => 'optional',
                 ),
-                'Inventory Quantity'        => array(
-                    'name'        => 'inventory_quantity',
-                    'feed_name'   => 'inventory_quantity',
-                    'format'      => 'required',
-                    'woo_suggest' => 'quantity',
-                ),
-                'Expiration Date'           => array(
+                'Expiration Date'       => array(
                     'name'      => 'expiration_date',
                     'feed_name' => 'expiration_date',
                     'format'    => 'optional',
                 ),
-                'Pickup Method'             => array(
+                'Pickup Method'         => array(
                     'name'      => 'pickup_method',
                     'feed_name' => 'pickup_method',
                     'format'    => 'optional',
                 ),
-                'Pickup SLA'                => array(
+                'Pickup SLA'            => array(
                     'name'      => 'pickup_sla',
                     'feed_name' => 'pickup_sla',
                     'format'    => 'optional',
                 ),
-                'Price Effective Date'      => array(
-                    'name'      => 'price_effective_date',
-                    'feed_name' => 'price_effective_date',
-                    'format'    => 'optional',
-                ),
-                'Cost of Goods Sold'        => array(
-                    'name'      => 'cost_of_goods_sold',
-                    'feed_name' => 'cost_of_goods_sold',
-                    'format'    => 'optional',
-                ),
-                'Unit Pricing Measure'      => array(
+                'Unit Pricing Measure'  => array(
                     'name'      => 'unit_pricing_measure',
                     'feed_name' => 'unit_pricing_measure',
                     'format'    => 'optional',
                 ),
-                'Pricing Trend'             => array(
+                'Pricing Trend'         => array(
                     'name'      => 'pricing_trend',
                     'feed_name' => 'pricing_trend',
                     'format'    => 'optional',
@@ -176,7 +161,7 @@ class WooSEA_openai { // phpcs:ignore
                 'Product Category' => array(
                     'name'        => 'product_category',
                     'feed_name'   => 'product_category',
-                    'format'      => 'required',
+                    'format'      => 'optional',
                     'woo_suggest' => 'category_path',
                 ),
                 'Brand'            => array(
@@ -194,7 +179,7 @@ class WooSEA_openai { // phpcs:ignore
                 'Weight'           => array(
                     'name'        => 'weight',
                     'feed_name'   => 'weight',
-                    'format'      => 'required',
+                    'format'      => 'optional',
                     'woo_suggest' => 'weight',
                 ),
                 'Dimensions'       => array(
@@ -222,10 +207,9 @@ class WooSEA_openai { // phpcs:ignore
                     'woo_suggest' => 'height',
                 ),
                 'Material'         => array(
-                    'name'        => 'material',
-                    'feed_name'   => 'material',
-                    'format'      => 'required',
-                    'woo_suggest' => 'static_value:Unknown',
+                    'name'      => 'material',
+                    'feed_name' => 'material',
+                    'format'    => 'optional',
                 ),
                 'Age Group'        => array(
                     'name'      => 'age_group',
@@ -235,23 +219,34 @@ class WooSEA_openai { // phpcs:ignore
             ),
             'OpenAI Flags'           => array(
                 'Enable Search'   => array(
-                    'name'        => 'enable_search',
-                    'feed_name'   => 'enable_search',
+                    'name'        => 'is_eligible_search',
+                    'feed_name'   => 'is_eligible_search',
                     'format'      => 'required',
                     'woo_suggest' => 'boolean_true',
                 ),
                 'Enable Checkout' => array(
-                    'name'        => 'enable_checkout',
-                    'feed_name'   => 'enable_checkout',
+                    'name'        => 'is_eligible_checkout',
+                    'feed_name'   => 'is_eligible_checkout',
                     'format'      => 'required',
                     'woo_suggest' => 'boolean_false',
+                ),
+                'Enable Ads'      => array(
+                    'name'        => 'is_eligible_ads',
+                    'feed_name'   => 'is_eligible_ads',
+                    'format'      => 'optional',
+                    'woo_suggest' => 'boolean_true',
+                ),
+                'Ads Metadata'    => array(
+                    'name'      => 'ads_metadata',
+                    'feed_name' => 'ads_metadata',
+                    'format'    => 'optional',
                 ),
             ),
             'Variants'               => array(
                 'Item Group ID'             => array(
-                    'name'        => 'item_group_id',
-                    'feed_name'   => 'item_group_id',
-                    'format'      => 'required',
+                    'name'        => 'group_id',
+                    'feed_name'   => 'group_id',
+                    'format'      => 'recommended',
                     'woo_suggest' => 'item_group_id',
                 ),
                 'Color'                     => array(
@@ -319,16 +314,11 @@ class WooSEA_openai { // phpcs:ignore
                 ),
             ),
             'Fulfillment'            => array(
-                'Shipping'          => array(
+                'Shipping' => array(
                     'name'        => 'shipping',
                     'feed_name'   => 'shipping',
-                    'format'      => 'required',
+                    'format'      => 'optional',
                     'woo_suggest' => 'shipping',
-                ),
-                'Delivery Estimate' => array(
-                    'name'      => 'delivery_estimate',
-                    'feed_name' => 'delivery_estimate',
-                    'format'    => 'optional',
                 ),
             ),
             'Merchant Info'          => array(
@@ -365,21 +355,21 @@ class WooSEA_openai { // phpcs:ignore
                     'woo_suggest' => 'page:',
                 ),
                 'Return Window' => array(
-                    'name'        => 'return_window',
-                    'feed_name'   => 'return_window',
-                    'format'      => 'required',
+                    'name'        => 'return_deadline_in_days',
+                    'feed_name'   => 'return_deadline_in_days',
+                    'format'      => 'optional',
                     'woo_suggest' => 'static_value:',
                 ),
             ),
             'Reviews and Q&A'        => array(
                 'Product Review Count'  => array(
-                    'name'      => 'product_review_count',
-                    'feed_name' => 'product_review_count',
+                    'name'      => 'review_count',
+                    'feed_name' => 'review_count',
                     'format'    => 'recommended',
                 ),
                 'Product Review Rating' => array(
-                    'name'      => 'product_review_rating',
-                    'feed_name' => 'product_review_rating',
+                    'name'      => 'star_rating',
+                    'feed_name' => 'star_rating',
                     'format'    => 'recommended',
                 ),
                 'Store Review Count'    => array(
@@ -388,8 +378,8 @@ class WooSEA_openai { // phpcs:ignore
                     'format'    => 'optional',
                 ),
                 'Store Review Rating'   => array(
-                    'name'      => 'store_review_rating',
-                    'feed_name' => 'store_review_rating',
+                    'name'      => 'store_star_rating',
+                    'feed_name' => 'store_star_rating',
                     'format'    => 'optional',
                 ),
                 'Q and A'               => array(
@@ -398,8 +388,8 @@ class WooSEA_openai { // phpcs:ignore
                     'format'    => 'recommended',
                 ),
                 'Raw Review Data'       => array(
-                    'name'      => 'raw_review_data',
-                    'feed_name' => 'raw_review_data',
+                    'name'      => 'reviews',
+                    'feed_name' => 'reviews',
                     'format'    => 'recommended',
                 ),
             ),
@@ -428,6 +418,18 @@ class WooSEA_openai { // phpcs:ignore
                 ),
             ),
             'Geo Tagging'            => array(
+                'Target Countries' => array(
+                    'name'        => 'target_countries',
+                    'feed_name'   => 'target_countries',
+                    'format'      => 'required',
+                    'woo_suggest' => 'base_country',
+                ),
+                'Store Country'    => array(
+                    'name'        => 'store_country',
+                    'feed_name'   => 'store_country',
+                    'format'      => 'required',
+                    'woo_suggest' => 'base_country',
+                ),
                 'Geo Price'        => array(
                     'name'      => 'geo_price',
                     'feed_name' => 'geo_price',

@@ -15,7 +15,7 @@ class WooSEA_Get_Products {
     /**
      * Maximum number of <photoUrl> children rendered inside a Merkandi <photos> element.
      *
-     * @since 13.6.0
+     * @since 13.5.5
      * @var int
      */
     const MERKANDI_MAX_PHOTOS = 7;
@@ -841,10 +841,7 @@ class WooSEA_Get_Products {
                 }
 
                 // Load XML without LIBXML_NOCDATA to preserve CDATA sections during batch processing.
-                $xml = simplexml_load_file( $file, 'SimpleXMLElement' );
-                if ( false === $xml ) {
-                    throw new \Exception( 'Failed to parse temporary XML feed file: ' . basename( $file ) );
-                }
+                $xml = Product_Feed_Helper::load_xml_feed_file( $file );
 
                 $aantal = count( $products );
 
@@ -955,7 +952,14 @@ class WooSEA_Get_Products {
                                                 $section_name_start   = str_replace( 'Pa ', '', $section_name_start );
                                                 $section_name_start   = str_replace( 'pa ', '', $section_name_start );
                                                 $section_name_start   = str_replace( '-', ' ', $section_name_start );
-                                                $section_name_start   = str_replace( 'Custom attributes ', '', $section_name_start );
+                                                // Strip the leading "Custom attributes" group-label prefix case-insensitively.
+                                                // It arrives in two casings: "Custom attributes ..." (capital C, plain path)
+                                                // or "custom attributes ..." (lowercase, the section/|| path — ucfirst() only
+                                                // capitalised the leading section token, which has since been removed). A
+                                                // case-sensitive str_replace missed the lowercase form, leaking the prefix
+                                                // into g:attribute_name. Anchor to the start so a real attribute name that
+                                                // merely contains the phrase is never altered.
+                                                $section_name_start   = preg_replace( '/^custom attributes\s+/i', '', $section_name_start );
                                                 $product_detail_name  = $this->add_xml_child_with_escaped_entities( $product_detail, 'g:attribute_name', ucfirst( $section_name_start ), $namespace['g'] );
                                                 $product_detail_value = $this->add_xml_child_with_escaped_entities( $product_detail, 'g:attribute_value', $product_detail_value, $namespace['g'] );
                                             }
@@ -984,6 +988,21 @@ class WooSEA_Get_Products {
                                             $installment        = $product->addChild( $k, '', $namespace['g'] );
                                             $installment_months = $this->add_xml_child_with_escaped_entities( $installment, 'g:months', $installment_split[0], $namespace['g'] );
                                             $installment_amount = $this->add_xml_child_with_escaped_entities( $installment, 'g:amount', $installment_split[1], $namespace['g'] );
+                                        }
+                                    } elseif ( $k == 'g:subscription_cost' ) {
+                                        if ( ! empty( $v ) ) {
+                                            // Google's subscription_cost is a nested attribute. The value
+                                            // arrives as a colon-delimited "period:period_length:amount"
+                                            // string (Google's own text format, e.g. "month:3:50.00 USD");
+                                            // split it into the nested period / period_length / amount
+                                            // children. Limit 3 so a stray ':' in the amount is preserved.
+                                            $subscription_split = explode( ':', $v, 3 );
+                                            if ( count( $subscription_split ) === 3 && '' !== trim( $subscription_split[2] ) ) {
+                                                $subscription_cost = $product->addChild( $k, '', $namespace['g'] );
+                                                $this->add_xml_child_with_escaped_entities( $subscription_cost, 'g:period', trim( $subscription_split[0] ), $namespace['g'] );
+                                                $this->add_xml_child_with_escaped_entities( $subscription_cost, 'g:period_length', trim( $subscription_split[1] ), $namespace['g'] );
+                                                $this->add_xml_child_with_escaped_entities( $subscription_cost, 'g:amount', trim( $subscription_split[2] ), $namespace['g'] );
+                                            }
                                         }
                                     } elseif ( $k == 'g:color' || $k == 'g:size' || $k == 'g:material' ) {
                                         if ( ! empty( $v ) ) {
@@ -1188,10 +1207,7 @@ class WooSEA_Get_Products {
                     throw new \Exception( 'Temporary feed file is not valid XML: ' . basename( $file ) );
                 }
 
-                $xml = simplexml_load_file( $file );
-                if ( false === $xml ) {
-                    throw new \Exception( 'Failed to parse temporary XML feed file: ' . basename( $file ) );
-                }
+                $xml = Product_Feed_Helper::load_xml_feed_file( $file );
 
                 $aantal = count( $products );
 
@@ -1488,7 +1504,7 @@ class WooSEA_Get_Products {
                                  * Wholesale/Elite integrations can populate this from quantity-based
                                  * price rules. Empty by default (flat <price> is used).
                                  *
-                                 * @since 13.6.0
+                                 * @since 13.5.5
                                  *
                                  * @param array  $tiers The pricing tiers. Empty by default.
                                  * @param array  $value The mapped product data (includes sku, id, price, etc.).
@@ -2375,7 +2391,7 @@ class WooSEA_Get_Products {
      * and every other field as a plain (entity-escaped) child. Empty values are
      * skipped so the feed never contains blank tags.
      *
-     * @since 13.6.0
+     * @since 13.5.5
      *
      * @param object $product The product XML element.
      * @param string $k       The attribute key (feed tag name).
@@ -2434,7 +2450,7 @@ class WooSEA_Get_Products {
      * <qTo> and <price> sub-tags as required by the Merkandi spec. When this is
      * used the flat <price> tag is omitted by the caller.
      *
-     * @since 13.6.0
+     * @since 13.5.5
      *
      * @param object $product The product XML element.
      * @param array  $tiers   List of tiers: array( 'qFrom' => int, 'qTo' => int, 'price' => string ).
@@ -2683,8 +2699,11 @@ class WooSEA_Get_Products {
         // Append or write to file
         $fp = fopen( $file, 'a+' );
 
-        // Set proper UTF encoding BOM for CSV files
-        if ( $header == 'true' && ! preg_match( '/fruugo/i', $fields ) ) {
+        // Set proper UTF encoding BOM for CSV files.
+        // Pinterest's CSV parser reads the BOM as part of the first column header
+        // (e.g. "\xEF\xBB\xBFid" instead of "id"), so it cannot find the required
+        // "id" field and aborts ingestion with Error 9156. Exclude it like Fruugo.
+        if ( $header == 'true' && ! preg_match( '/fruugo|pinterest/i', $fields ) ) {
             fputs( $fp, $bom = chr( 0xEF ) . chr( 0xBB ) . chr( 0xBF ) );
         }
 
@@ -3132,6 +3151,9 @@ class WooSEA_Get_Products {
             $product_data['visibility']              = $catalog_visibility;
             $product_data['boolean_true']            = 'true';
             $product_data['boolean_false']           = 'false';
+
+            // WooCommerce base country (used by e.g. the OpenAI feed target_countries/store_country fields).
+            $product_data['base_country']            = WC()->countries->get_base_country();
 
             // Site URL 
             $product_data['site_url'] = get_site_url();
@@ -3582,7 +3604,7 @@ class WooSEA_Get_Products {
             unset( $virtual );
 
             $product_data['menu_order'] = get_post_field( 'menu_order', $product_data['id'] );
-            $product_data['currency']   = apply_filters( 'adt_product_data_currency', get_woocommerce_currency() );
+            $product_data['currency']   = Product_Feed_Helper::get_product_data_currency();
 
             if ( $product->is_on_sale() ) {
                 $sales_price_date_from                     = Formatting::format_date( $product->get_date_on_sale_from(), $feed );
@@ -5637,6 +5659,15 @@ class WooSEA_Get_Products {
                                                 $xml_product[ $attr_attribute . "_$ga" ] = "$attr_value[prefix]" . $attr_data_value . "$attr_value[suffix]";
                                             } elseif ( $attr_attribute == 'g:product_detail' ) {
                                                 $xml_product[ $attr_attribute . "_$ga" ] = "$attr_value[prefix]||" . $attr_map_from . '#' . $attr_data_value . "$attr_value[suffix]";
+                                            } elseif ( str_contains( $attr_attribute, 'g:additional_image_link' ) ) {
+                                                // Skip empty additional image slots. When the product has no image
+                                                // for this slot but a prefix/suffix is configured, the composed
+                                                // value (e.g. "?gla090723_04") is non-empty and slips past the
+                                                // output-stage empty guard, emitting an invalid node. Mirror the
+                                                // guard already applied on the first-occurrence path below.
+                                                if ( $attr_data_value !== '' ) {
+                                                    $xml_product[ $attr_attribute . "_$ca_extra" ] = "$attr_value[prefix]" . $attr_data_value . "$attr_value[suffix]";
+                                                }
                                             } else {
                                                 $xml_product[ $attr_attribute . "_$ca_extra" ] = "$attr_value[prefix]" . $attr_data_value . "$attr_value[suffix]";
                                             }

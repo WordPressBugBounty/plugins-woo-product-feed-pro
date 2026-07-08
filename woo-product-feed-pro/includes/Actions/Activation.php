@@ -18,6 +18,7 @@ use AdTribes\PFP\Classes\Notices;
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
 use AdTribes\PFP\Updates\Version_13_4_8_Update;
 use AdTribes\PFP\Updates\Version_13_5_5_Update;
+use AdTribes\PFP\Updates\Version_13_5_6_Update;
 
 /**
  * Activation class.
@@ -95,6 +96,16 @@ class Activation extends Abstract_Class {
          * been seeded as autoloaded on older installs (see issue #919).
          */
         ( new Version_13_5_5_Update() )->run();
+
+        /***************************************************************************
+         * Version 13.5.6 Update
+         ***************************************************************************
+         *
+         * Renames stored OpenAI feed output-field keys to the GA spec names so
+         * existing OpenAI feeds become spec-compliant without a manual re-save
+         * (issue #985).
+         */
+        ( new Version_13_5_6_Update() )->run();
 
         // Update current installed plugin version.
         update_site_option( ADT_PFP_OPTION_INSTALLED_VERSION, Helper::get_plugin_version() );

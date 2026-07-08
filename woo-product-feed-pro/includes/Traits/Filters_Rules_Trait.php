@@ -31,7 +31,26 @@ trait Filters_Rules_Trait {
     protected function get_attributes() {
         $product_feed_attributes = new Product_Feed_Attributes();
         $attributes              = $product_feed_attributes->get_attributes();
-        return apply_filters( 'adt_pfp_get_filters_rules_attributes', $attributes, $this );
+
+        /**
+         * Filter the attributes available in the filters/rules builder dropdowns.
+         *
+         * Fired here from the deprecated trait path with the same 4-argument signature
+         * as the canonical REST call site (includes/REST/Filters_Rules.php) so callbacks
+         * see one stable contract. This path has no channel/feed context, so $feed_channel
+         * and $feed are null and $type is the non-injectable 'filters' value, preserving
+         * the prior (no field-mapping/channel injection) behaviour.
+         *
+         * @since 13.4.6
+         * @since 13.5.6 Added `$feed` as the 4th argument so extensions can enrich the
+         *               attribute list with feed-specific values (e.g. field-mapping outputs).
+         *
+         * @param array             $attributes   Grouped attribute list keyed by group label.
+         * @param string|null       $feed_channel The feed's channel `fields` value, or null for new feeds.
+         * @param string            $type         One of 'filters', 'rules', or 'rules_then'.
+         * @param Product_Feed|null $feed         The feed object, or null for new feeds.
+         */
+        return apply_filters( 'adt_pfp_get_filters_rules_attributes', $attributes, null, 'filters', null );
     }
 
     /**
