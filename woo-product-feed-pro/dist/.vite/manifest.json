@@ -1,22 +1,22 @@
 {
   "src/apps/filters-rules-builder/index-legacy.ts": {
-    "file": "apps/filters-rules-builder/index-legacy.BWAJv11a.js",
+    "file": "apps/filters-rules-builder/index-legacy.MoMC2wVe.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index-legacy.ts",
     "isEntry": true
   },
   "src/apps/filters-rules-builder/index.ts": {
-    "file": "apps/filters-rules-builder/index.CMa0sbdk.js",
+    "file": "apps/filters-rules-builder/index.Ct03ODDx.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index.ts",
     "isEntry": true,
     "css": [
-      "css/index.D2j9Tia5.css"
+      "css/index.CxqcuHEW.css"
     ]
   },
   "src/vanilla/edit-feed/index-legacy.ts": {
-    "file": "vanilla\\edit-feed/index-legacy.BQXEHeDM.js",
-    "name": "vanilla\\edit-feed/index",
+    "file": "vanilla/edit-feed/index-legacy.BQXEHeDM.js",
+    "name": "vanilla/edit-feed/index",
     "src": "src/vanilla/edit-feed/index-legacy.ts",
     "isEntry": true,
     "imports": [
@@ -24,8 +24,8 @@
     ]
   },
   "src/vanilla/edit-feed/index.ts": {
-    "file": "vanilla\\edit-feed/index.CPKoFUPL.js",
-    "name": "vanilla\\edit-feed/index",
+    "file": "vanilla/edit-feed/index.CPKoFUPL.js",
+    "name": "vanilla/edit-feed/index",
     "src": "src/vanilla/edit-feed/index.ts",
     "isEntry": true,
     "css": [
@@ -33,8 +33,8 @@
     ]
   },
   "src/vanilla/edit-feed/style-legacy.scss": {
-    "file": "vanilla\\edit-feed/style.scss-legacy.CYJD_mAM.js",
-    "name": "vanilla\\edit-feed/style.scss",
+    "file": "vanilla/edit-feed/style.scss-legacy.CYJD_mAM.js",
+    "name": "vanilla/edit-feed/style.scss",
     "src": "src/vanilla/edit-feed/style-legacy.scss",
     "isEntry": true
   },
@@ -44,8 +44,8 @@
     "isEntry": true
   },
   "src/vanilla/export-import-tools/index-legacy.ts": {
-    "file": "vanilla\\export-import-tools/index-legacy.l-Kvb1PG.js",
-    "name": "vanilla\\export-import-tools/index",
+    "file": "vanilla/export-import-tools/index-legacy.l-Kvb1PG.js",
+    "name": "vanilla/export-import-tools/index",
     "src": "src/vanilla/export-import-tools/index-legacy.ts",
     "isEntry": true,
     "imports": [
@@ -53,8 +53,8 @@
     ]
   },
   "src/vanilla/export-import-tools/index.ts": {
-    "file": "vanilla\\export-import-tools/index.dDIijf_L.js",
-    "name": "vanilla\\export-import-tools/index",
+    "file": "vanilla/export-import-tools/index.dDIijf_L.js",
+    "name": "vanilla/export-import-tools/index",
     "src": "src/vanilla/export-import-tools/index.ts",
     "isEntry": true,
     "css": [
@@ -62,8 +62,8 @@
     ]
   },
   "src/vanilla/export-import-tools/style-legacy.scss": {
-    "file": "vanilla\\export-import-tools/style.scss-legacy.BWo5nvXv.js",
-    "name": "vanilla\\export-import-tools/style.scss",
+    "file": "vanilla/export-import-tools/style.scss-legacy.BWo5nvXv.js",
+    "name": "vanilla/export-import-tools/style.scss",
     "src": "src/vanilla/export-import-tools/style-legacy.scss",
     "isEntry": true
   },
@@ -73,8 +73,8 @@
     "isEntry": true
   },
   "src/vanilla/field-mapping/index-legacy.ts": {
-    "file": "vanilla\\field-mapping/index-legacy.CO66LcBa.js",
-    "name": "vanilla\\field-mapping/index",
+    "file": "vanilla/field-mapping/index-legacy.CO66LcBa.js",
+    "name": "vanilla/field-mapping/index",
     "src": "src/vanilla/field-mapping/index-legacy.ts",
     "isEntry": true,
     "imports": [
@@ -82,8 +82,8 @@
     ]
   },
   "src/vanilla/field-mapping/index.ts": {
-    "file": "vanilla\\field-mapping/index.Cku8OS1s.js",
-    "name": "vanilla\\field-mapping/index",
+    "file": "vanilla/field-mapping/index.Cku8OS1s.js",
+    "name": "vanilla/field-mapping/index",
     "src": "src/vanilla/field-mapping/index.ts",
     "isEntry": true,
     "css": [
@@ -91,8 +91,8 @@
     ]
   },
   "src/vanilla/field-mapping/style-legacy.scss": {
-    "file": "vanilla\\field-mapping/style.scss-legacy.C7GLHoaF.js",
-    "name": "vanilla\\field-mapping/style.scss",
+    "file": "vanilla/field-mapping/style.scss-legacy.C7GLHoaF.js",
+    "name": "vanilla/field-mapping/style.scss",
     "src": "src/vanilla/field-mapping/style-legacy.scss",
     "isEntry": true
   },
@@ -102,23 +102,23 @@
     "isEntry": true
   },
   "src/vanilla/index-legacy.ts": {
-    "file": "vanilla/index-legacy.C45nyapA.js",
+    "file": "vanilla/index-legacy.CdUVauyi.js",
     "name": "vanilla/index",
     "src": "src/vanilla/index-legacy.ts",
     "isEntry": true
   },
   "src/vanilla/index.ts": {
-    "file": "vanilla/index.C43F4SU4.js",
+    "file": "vanilla/index.DvcvEJf8.js",
     "name": "vanilla/index",
     "src": "src/vanilla/index.ts",
     "isEntry": true,
     "css": [
-      "css/index.Vz3GE3QM.css"
+      "css/index.BF_CH6pm.css"
     ]
   },
   "src/vanilla/manage-feeds/index-legacy.ts": {
-    "file": "vanilla\\manage-feeds/index-legacy.B_FTCmZL.js",
-    "name": "vanilla\\manage-feeds/index",
+    "file": "vanilla/manage-feeds/index-legacy.B_FTCmZL.js",
+    "name": "vanilla/manage-feeds/index",
     "src": "src/vanilla/manage-feeds/index-legacy.ts",
     "isEntry": true,
     "imports": [
@@ -126,8 +126,8 @@
     ]
   },
   "src/vanilla/manage-feeds/index.ts": {
-    "file": "vanilla\\manage-feeds/index.CLjpadKt.js",
-    "name": "vanilla\\manage-feeds/index",
+    "file": "vanilla/manage-feeds/index.CLjpadKt.js",
+    "name": "vanilla/manage-feeds/index",
     "src": "src/vanilla/manage-feeds/index.ts",
     "isEntry": true,
     "css": [
@@ -135,8 +135,8 @@
     ]
   },
   "src/vanilla/manage-feeds/style-legacy.scss": {
-    "file": "vanilla\\manage-feeds/style.scss-legacy.FEGptKsn.js",
-    "name": "vanilla\\manage-feeds/style.scss",
+    "file": "vanilla/manage-feeds/style.scss-legacy.FEGptKsn.js",
+    "name": "vanilla/manage-feeds/style.scss",
     "src": "src/vanilla/manage-feeds/style-legacy.scss",
     "isEntry": true
   },
@@ -146,32 +146,32 @@
     "isEntry": true
   },
   "src/vanilla/notices/drawer-legacy.ts": {
-    "file": "vanilla\\notices/drawer-legacy.emUWq9g1.js",
-    "name": "vanilla\\notices/drawer",
+    "file": "vanilla/notices/drawer-legacy.emUWq9g1.js",
+    "name": "vanilla/notices/drawer",
     "src": "src/vanilla/notices/drawer-legacy.ts",
     "isEntry": true
   },
   "src/vanilla/notices/drawer.ts": {
-    "file": "vanilla\\notices/drawer.BanUXkiu.js",
-    "name": "vanilla\\notices/drawer",
+    "file": "vanilla/notices/drawer.BanUXkiu.js",
+    "name": "vanilla/notices/drawer",
     "src": "src/vanilla/notices/drawer.ts",
     "isEntry": true
   },
   "src/vanilla/notices/header-icon-legacy.ts": {
-    "file": "vanilla\\notices/header-icon-legacy.C_1R8Qp-.js",
-    "name": "vanilla\\notices/header-icon",
+    "file": "vanilla/notices/header-icon-legacy.C_1R8Qp-.js",
+    "name": "vanilla/notices/header-icon",
     "src": "src/vanilla/notices/header-icon-legacy.ts",
     "isEntry": true
   },
   "src/vanilla/notices/header-icon.ts": {
-    "file": "vanilla\\notices/header-icon.Bj9Al0lH.js",
-    "name": "vanilla\\notices/header-icon",
+    "file": "vanilla/notices/header-icon.Bj9Al0lH.js",
+    "name": "vanilla/notices/header-icon",
     "src": "src/vanilla/notices/header-icon.ts",
     "isEntry": true
   },
   "src/vanilla/notices/index-legacy.ts": {
-    "file": "vanilla\\notices/index-legacy.CIutoPSR.js",
-    "name": "vanilla\\notices/index",
+    "file": "vanilla/notices/index-legacy.CIutoPSR.js",
+    "name": "vanilla/notices/index",
     "src": "src/vanilla/notices/index-legacy.ts",
     "isEntry": true,
     "imports": [
@@ -181,8 +181,8 @@
     ]
   },
   "src/vanilla/notices/index.ts": {
-    "file": "vanilla\\notices/index.Cy4xbBvE.js",
-    "name": "vanilla\\notices/index",
+    "file": "vanilla/notices/index.Cy4xbBvE.js",
+    "name": "vanilla/notices/index",
     "src": "src/vanilla/notices/index.ts",
     "isEntry": true,
     "imports": [
@@ -194,8 +194,8 @@
     ]
   },
   "src/vanilla/notices/style-legacy.scss": {
-    "file": "vanilla\\notices/style.scss-legacy.CuQ5LUVl.js",
-    "name": "vanilla\\notices/style.scss",
+    "file": "vanilla/notices/style.scss-legacy.CuQ5LUVl.js",
+    "name": "vanilla/notices/style.scss",
     "src": "src/vanilla/notices/style-legacy.scss",
     "isEntry": true
   },
@@ -204,9 +204,38 @@
     "src": "src/vanilla/notices/style.scss",
     "isEntry": true
   },
+  "src/vanilla/setup-checklist/index-legacy.ts": {
+    "file": "vanilla/setup-checklist/index-legacy.DqX8nrmJ.js",
+    "name": "vanilla/setup-checklist/index",
+    "src": "src/vanilla/setup-checklist/index-legacy.ts",
+    "isEntry": true,
+    "imports": [
+      "src/vanilla/setup-checklist/style-legacy.scss"
+    ]
+  },
+  "src/vanilla/setup-checklist/index.ts": {
+    "file": "vanilla/setup-checklist/index.DtEsdU9z.js",
+    "name": "vanilla/setup-checklist/index",
+    "src": "src/vanilla/setup-checklist/index.ts",
+    "isEntry": true,
+    "css": [
+      "css/vanilla/setup-checklist/style.C7Nsme-l.css"
+    ]
+  },
+  "src/vanilla/setup-checklist/style-legacy.scss": {
+    "file": "vanilla/setup-checklist/style.scss-legacy.DH2KwIqX.js",
+    "name": "vanilla/setup-checklist/style.scss",
+    "src": "src/vanilla/setup-checklist/style-legacy.scss",
+    "isEntry": true
+  },
+  "src/vanilla/setup-checklist/style.scss": {
+    "file": "css/vanilla/setup-checklist/style.C7Nsme-l.css",
+    "src": "src/vanilla/setup-checklist/style.scss",
+    "isEntry": true
+  },
   "src/vanilla/upsell/index-legacy.ts": {
-    "file": "vanilla\\upsell/index-legacy.uubSjVto.js",
-    "name": "vanilla\\upsell/index",
+    "file": "vanilla/upsell/index-legacy.uubSjVto.js",
+    "name": "vanilla/upsell/index",
     "src": "src/vanilla/upsell/index-legacy.ts",
     "isEntry": true,
     "imports": [
@@ -214,8 +243,8 @@
     ]
   },
   "src/vanilla/upsell/index.ts": {
-    "file": "vanilla\\upsell/index.N5ZBP55l.js",
-    "name": "vanilla\\upsell/index",
+    "file": "vanilla/upsell/index.N5ZBP55l.js",
+    "name": "vanilla/upsell/index",
     "src": "src/vanilla/upsell/index.ts",
     "isEntry": true,
     "css": [
@@ -223,8 +252,8 @@
     ]
   },
   "src/vanilla/upsell/style-legacy.scss": {
-    "file": "vanilla\\upsell/style.scss-legacy.DAXEeqxI.js",
-    "name": "vanilla\\upsell/style.scss",
+    "file": "vanilla/upsell/style.scss-legacy.DAXEeqxI.js",
+    "name": "vanilla/upsell/style.scss",
     "src": "src/vanilla/upsell/style-legacy.scss",
     "isEntry": true
   },

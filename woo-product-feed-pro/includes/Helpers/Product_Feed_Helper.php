@@ -142,6 +142,34 @@ class Product_Feed_Helper {
     }
 
     /**
+     * Determine whether a legacy cron_projects value holds at least one real feed.
+     *
+     * A "real" feed is any entry carrying a non-empty `project_hash`. Blank,
+     * hashless placeholder entries (which some migration paths create) do not
+     * count. Used to decide whether the prefixed `adt_cron_projects` option can be
+     * trusted, or whether the unprefixed `cron_projects` should be used instead.
+     *
+     * @since 13.5.7
+     * @access public
+     *
+     * @param mixed $projects The (maybe-unserialized) cron_projects value.
+     * @return bool True if at least one entry has a non-empty project_hash.
+     */
+    public static function has_valid_projects( $projects ) {
+        if ( ! is_array( $projects ) ) {
+            return false;
+        }
+
+        foreach ( $projects as $project_data ) {
+            if ( is_array( $project_data ) && ! empty( $project_data['project_hash'] ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Count total product feed projects.
      *
      * @since 13.3.5
@@ -243,7 +271,16 @@ class Product_Feed_Helper {
             $batch_size = intval( $batch_size_option );
         }
 
-        return $batch_size;
+        /**
+         * Filter the batch size for feed generation.
+         *
+         * @since 13.5.7
+         *
+         * @param int          $batch_size         The batch size.
+         * @param Product_Feed $feed               The product feed instance.
+         * @param int          $published_products The total number of published products.
+         */
+        return (int) apply_filters( 'adt_product_feed_batch_size', $batch_size, $feed, $published_products );
     }
 
     /**
@@ -888,5 +925,53 @@ class Product_Feed_Helper {
         }
 
         return $parse_detail;
+    }
+
+    /**
+     * Format a postal code for the feed shipping block's postal_code sub-attribute.
+     *
+     * Google Merchant Center (and Facebook, which mirrors Google's shipping format)
+     * rejects the full alphanumeric postal code for GB and CA in the shipping block —
+     * it only accepts the outward/area portion. Sending the full postcode causes an
+     * "Invalid ZIP code [postal_code]" error that limits the row's visibility.
+     *
+     * - GB: outward code — the part before the space (e.g. "LE7 2HA" -> "LE7"). When the
+     *       space is missing, a full postcode (5-7 chars) has the 3-char inward code
+     *       stripped (e.g. "LE72HA" -> "LE7"); an already-outward code (2-4 chars, e.g.
+     *       "SW1A") is returned unchanged so a merchant's manual mitigation is preserved.
+     * - CA: Forward Sortation Area — the first three characters (e.g. "K1A 0B1" -> "K1A").
+     * - Any other country is returned unchanged.
+     *
+     * @since 13.5.7
+     * @access public
+     *
+     * @param string $postcode The raw postal code.
+     * @param string $country  The ISO 3166-1 alpha-2 country code for the location.
+     * @return string The postal code formatted for the shipping block.
+     */
+    public static function format_shipping_postal_code( $postcode, $country ) {
+        $postcode = trim( (string) $postcode );
+        if ( '' === $postcode ) {
+            return $postcode;
+        }
+
+        $country = strtoupper( trim( (string) $country ) );
+
+        if ( 'GB' === $country ) {
+            $normalized = strtoupper( $postcode );
+            $space_pos  = strpos( $normalized, ' ' );
+            if ( false !== $space_pos ) {
+                return trim( substr( $normalized, 0, $space_pos ) );
+            }
+            $compact = str_replace( ' ', '', $normalized );
+            return strlen( $compact ) > 4 ? substr( $compact, 0, -3 ) : $compact;
+        }
+
+        if ( 'CA' === $country ) {
+            $compact = strtoupper( str_replace( ' ', '', $postcode ) );
+            return substr( $compact, 0, 3 );
+        }
+
+        return $postcode;
     }
 }

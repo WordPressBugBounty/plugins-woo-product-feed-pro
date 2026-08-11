@@ -304,6 +304,21 @@ class Export_Import_Tools extends Abstract_Class {
             'polylang',
         );
 
+        /**
+         * Filters the Product_Feed properties included in an exported feed.
+         *
+         * Lets add-ons (e.g. Elite) register their own feed props so the Export/Import
+         * tool round-trips them, mirroring how import is delegated to add-ons via the
+         * `adt_tools_action_import_feeds` action. Any property the feed does not expose
+         * is skipped safely by the read loop below.
+         *
+         * @since 13.5.7
+         *
+         * @param array        $data_properties List of feed property keys to export.
+         * @param Product_Feed $feed            The feed being exported.
+         */
+        $data_properties = (array) apply_filters( 'adt_pfp_export_feed_data_properties', $data_properties, $feed );
+
         foreach ( $data_properties as $property ) {
             try {
                 $feed_data[ $property ] = $feed->$property;

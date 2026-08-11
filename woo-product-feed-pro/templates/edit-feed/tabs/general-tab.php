@@ -191,6 +191,15 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                                 </div>
                             </td>
                         </tr>
+                        <?php
+                        /**
+                         * Action hook to add content after the include-all-shipping-countries field.
+                         *
+                         * @since 13.5.7
+                         * @param array|Product_Feed|null $feed Product_Feed object or array of project data.
+                         */
+                        do_action( 'adt_general_feed_settings_after_shipping_countries', $feed );
+                        ?>
                         <tr id="file">
                             <td><span><?php esc_html_e( 'File format', 'woo-product-feed-pro' ); ?>:</span></td>
                             <td>

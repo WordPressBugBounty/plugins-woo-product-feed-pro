@@ -38,6 +38,19 @@ class Version_13_3_5_Update extends Abstract_Update {
      */
     public function update() {
         $cron_projects = maybe_unserialize( get_option( 'adt_cron_projects' ), array() );
+
+        // Self-heal: if the prefixed option is missing or holds only blank,
+        // hashless placeholder entries, fall back to the unprefixed cron_projects,
+        // which may still hold the real feeds. This happens when the 13.4.8 prefix
+        // migration skipped copying cron_projects because a blank adt_cron_projects
+        // already existed. Re-running Sync then restores the real feeds. See #1028.
+        if ( ! Product_Feed_Helper::has_valid_projects( $cron_projects ) ) {
+            $legacy_cron_projects = maybe_unserialize( get_option( 'cron_projects' ) );
+            if ( Product_Feed_Helper::has_valid_projects( $legacy_cron_projects ) ) {
+                $cron_projects = $legacy_cron_projects;
+            }
+        }
+
         if ( $cron_projects ) {
             foreach ( $cron_projects as $key => $project_data ) {
 

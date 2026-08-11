@@ -572,6 +572,33 @@ class Edit_Feed_Page extends Admin_Page {
             return array();
         }
 
+        // Detach the whitespace-significant extension action parameters — truncate's
+        // `suffix` and combine_fields' `segments` — before the blanket sanitize_array()
+        // pass below. That pass trims every value whose key is not `prefix`/`suffix`,
+        // which would strip a static segment separator's surrounding whitespace
+        // (e.g. a " - " value → "-"). Detaching keeps these raw so they are sanitized
+        // exactly once, later, in clean_rule_actions()/clean_rule_action_segments().
+        $detached_params = array();
+        foreach ( $rules_data as $rule_index => $rule ) {
+            if ( ! is_array( $rule ) || ! isset( $rule['then'] ) || ! is_array( $rule['then'] ) ) {
+                continue;
+            }
+            foreach ( $rule['then'] as $action_index => $action ) {
+                if ( ! is_array( $action ) ) {
+                    continue;
+                }
+                // `segments` genuinely needs detaching — its nested `value` key is not
+                // trim-exempt. `suffix` is trim-exempt by key name in sanitize_array()
+                // already, so it is detached only for loop symmetry, not necessity.
+                foreach ( array( 'suffix', 'segments' ) as $param ) {
+                    if ( isset( $action[ $param ] ) ) {
+                        $detached_params[ $rule_index ][ $action_index ][ $param ] = $action[ $param ];
+                        unset( $rules_data[ $rule_index ]['then'][ $action_index ][ $param ] );
+                    }
+                }
+            }
+        }
+
         // First, sanitize the entire array structure.
         // preserve_percent_encoded preserves URL-encoded slugs (e.g. non-Latin category slugs).
         $rules_data = Sanitization::sanitize_array(
@@ -581,6 +608,19 @@ class Edit_Feed_Page extends Admin_Page {
                 'preserve_percent_encoded' => true,
             )
         );
+
+        // Re-attach the detached parameters (still raw) so clean_rule_actions() sees the
+        // untrimmed values and sanitizes them itself.
+        foreach ( $detached_params as $rule_index => $actions ) {
+            foreach ( $actions as $action_index => $params ) {
+                if ( ! isset( $rules_data[ $rule_index ]['then'][ $action_index ] ) ) {
+                    continue;
+                }
+                foreach ( $params as $param => $raw_value ) {
+                    $rules_data[ $rule_index ]['then'][ $action_index ][ $param ] = $raw_value;
+                }
+            }
+        }
 
         $cleaned_rules    = array();
         $valid_conditions = Rules::instance()->get_conditions( true );
@@ -658,6 +698,8 @@ class Edit_Feed_Page extends Admin_Page {
      * Clean rule actions (THEN part).
      *
      * @since 13.4.4
+     * @since 13.5.7 Preserve the extension action parameters `suffix` (truncate)
+     *               and `segments` (combine_fields).
      * @param array $actions The actions to clean.
      * @param array $valid_actions Array of valid action values.
      * @return array The cleaned actions.
@@ -685,17 +727,81 @@ class Edit_Feed_Page extends Admin_Page {
 
             // Only add actions with valid attributes.
             if ( ! empty( $attribute ) ) {
-                $cleaned_actions[] = array(
+                $cleaned_action = array(
                     'attribute'      => $attribute,
                     'action'         => $action_type,
                     'value'          => $value,
                     'find'           => $find,
                     'case_sensitive' => $case_sensitive,
                 );
+
+                // Extension action parameters: the truncate suffix string and the
+                // combine_fields segment list (type: attribute|static, value: string).
+                // Gated per action type so switching an action in the builder doesn't
+                // carry a stale suffix/segments key along.
+                // wp_kses_post() (not sanitize_text_field()) on purpose: a suffix may
+                // legitimately start with whitespace (e.g. " read more"), which
+                // sanitize_text_field() would strip.
+                if ( 'truncate' === $action_type && isset( $action['suffix'] ) && is_string( $action['suffix'] ) ) {
+                    // wp_check_invalid_utf8() first to match the UTF-8 validity filtering
+                    // every sibling value gets via sanitize_text_field() (this value was
+                    // detached from that pass to preserve its leading/trailing whitespace).
+                    $cleaned_action['suffix'] = wp_kses_post( wp_check_invalid_utf8( $action['suffix'] ) );
+                }
+
+                if ( 'combine_fields' === $action_type && isset( $action['segments'] ) && is_array( $action['segments'] ) ) {
+                    $cleaned_action['segments'] = $this->clean_rule_action_segments( $action['segments'] );
+                }
+
+                $cleaned_actions[] = $cleaned_action;
             }
         }
 
         return $cleaned_actions;
+    }
+
+    /**
+     * Clean a combine_fields action's segment list.
+     *
+     * Keeps only well-formed segments: type must be `attribute` or `static`,
+     * value must be scalar (cast to string).
+     *
+     * @since 13.5.7
+     * @param array $segments The raw segments list.
+     * @return array The cleaned segments list.
+     */
+    private function clean_rule_action_segments( $segments ) {
+        $cleaned_segments = array();
+
+        foreach ( $segments as $segment ) {
+            if ( ! is_array( $segment ) || ! isset( $segment['type'] ) ) {
+                continue;
+            }
+
+            if ( ! in_array( $segment['type'], array( 'attribute', 'static' ), true ) ) {
+                continue;
+            }
+
+            $segment_value = $segment['value'] ?? '';
+            if ( ! is_scalar( $segment_value ) ) {
+                continue;
+            }
+
+            // wp_kses_post() (not sanitize_text_field()) on purpose: static separator
+            // segments legitimately carry surrounding whitespace (e.g. " - "), which
+            // sanitize_text_field() would strip.
+            // wp_check_invalid_utf8() first to match the UTF-8 validity filtering every
+            // sibling value gets via sanitize_text_field() (segment values were detached
+            // from that pass to preserve legitimate surrounding whitespace).
+            $cleaned_segments[] = array(
+                'type'  => $segment['type'],
+                'value' => wp_kses_post( wp_check_invalid_utf8( (string) $segment_value ) ),
+            );
+        }
+
+        // [] appends already yield a sequential list, but be explicit so skipped
+        // segments can never produce a JSON object instead of an array.
+        return array_values( $cleaned_segments );
     }
 
     /**

@@ -187,16 +187,36 @@ class Product_Feed_Admin extends Abstract_Class {
             return;
         }
 
+        $this->cancel_feed_processing( $feed );
+
+        wp_send_json_success(
+            array(
+                'feed_id' => $feed_id,
+                'message' => __( 'Feed processing has been cancelled.', 'woo-product-feed-pro' ),
+            )
+        );
+    }
+
+    /**
+     * Cancel a feed's in-progress processing and reset its run state.
+     *
+     * Shared by the single-feed and bulk cancel AJAX handlers so the reset
+     * (including the adaptive_batch_attempt write-ahead marker) stays in sync
+     * across both paths.
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @param Product_Feed_Factory $feed The feed to cancel.
+     * @return void
+     */
+    private function cancel_feed_processing( $feed ) {
         do_action( 'adt_before_cancel_product_feed', $feed );
 
         // Remove the scheduled event.
         as_unschedule_all_actions( '', array(), 'adt_pfp_as_generate_product_feed_batch_' . $feed->id );
 
-        $feed->total_products_processed = 0;
-        $feed->batch_size               = 0;
-        $feed->executed_from            = '';
-        $feed->status                   = 'stopped';
-        $feed->last_updated             = gmdate( 'd M Y H:i:s' );
+        $feed->cancel_run();
         $feed->save();
 
         /**
@@ -205,13 +225,6 @@ class Product_Feed_Admin extends Abstract_Class {
         as_schedule_single_action( time() + 1, 'adt_pfp_as_product_feed_update_stats', array( 'feed_id' => $feed->id ) );
 
         do_action( 'adt_after_cancel_product_feed', $feed );
-
-        wp_send_json_success(
-            array(
-                'feed_id' => $feed_id,
-                'message' => __( 'Feed processing has been cancelled.', 'woo-product-feed-pro' ),
-            )
-        );
     }
 
     /**
@@ -432,23 +445,7 @@ class Product_Feed_Admin extends Abstract_Class {
 
                 case 'cancel':
                     try {
-                        do_action( 'adt_before_cancel_product_feed', $feed );
-
-                        // Remove the scheduled event using Action Scheduler.
-                        as_unschedule_all_actions( '', array(), 'adt_pfp_as_generate_product_feed_batch_' . $feed->id );
-
-                        // Update feed status.
-                        $feed->total_products_processed = 0;
-                        $feed->batch_size               = 0;
-                        $feed->executed_from            = '';
-                        $feed->status                   = 'stopped';
-                        $feed->last_updated             = gmdate( 'd M Y H:i:s' );
-                        $feed->save();
-
-                        // Schedule stats update.
-                        as_schedule_single_action( time() + 1, 'adt_pfp_as_product_feed_update_stats', array( 'feed_id' => $feed->id ) );
-
-                        do_action( 'adt_after_cancel_product_feed', $feed );
+                        $this->cancel_feed_processing( $feed );
                         ++$processed_count;
                     } catch ( \Exception $e ) {
                         // translators: %s is the error message.
@@ -687,6 +684,61 @@ class Product_Feed_Admin extends Abstract_Class {
     }
 
     /**
+     * Render a warning for feeds whose scheduled generation was parked after
+     * repeated crashed runs (adaptive batch sizing crash tracking).
+     *
+     * Shown only on the plugin's own admin pages. The notice clears itself:
+     * a successful run (e.g. a manual refresh) resets the crash counter and
+     * removes the feed from the parked list.
+     *
+     * @since 13.5.7
+     * @access public
+     *
+     * @return void
+     */
+    public function render_adaptive_parked_feeds_notice() {
+        if ( ! Helper::is_plugin_page() || ! Helper::is_current_user_allowed() ) {
+            return;
+        }
+
+        $blocked = get_option( Product_Feed::ADAPTIVE_BLOCKED_OPTION, array() );
+        if ( empty( $blocked ) || ! is_array( $blocked ) ) {
+            return;
+        }
+
+        $titles = array();
+        foreach ( $blocked as $blocked_feed ) {
+            if ( ! empty( $blocked_feed['title'] ) ) {
+                $titles[] = $blocked_feed['title'];
+            }
+        }
+
+        if ( empty( $titles ) ) {
+            return;
+        }
+
+        ?>
+        <div class="notice notice-warning adt-pfp-parked-feeds-notice">
+            <p>
+                <strong><?php esc_html_e( 'Product Feed Pro: automatic feed generation paused.', 'woo-product-feed-pro' ); ?></strong>
+            </p>
+            <p>
+                <?php
+                printf(
+                    /* translators: %s: comma-separated list of feed names. */
+                    esc_html__( 'Generation of the following feed(s) crashed repeatedly, usually because the server ran out of memory or execution time: %s. Scheduled generation is paused for these feeds.', 'woo-product-feed-pro' ),
+                    '<strong>' . esc_html( implode( ', ', $titles ) ) . '</strong>'
+                );
+                ?>
+            </p>
+            <p>
+                <?php esc_html_e( 'To retry, refresh the feed manually - a successful run resumes the schedule automatically. If it keeps failing, ask your host to raise the PHP memory limit or set a smaller fixed batch size in the plugin settings.', 'woo-product-feed-pro' ); ?>
+            </p>
+        </div>
+        <?php
+    }
+
+    /**
      * Run the class
      *
      * @codeCoverageIgnore
@@ -704,5 +756,8 @@ class Product_Feed_Admin extends Abstract_Class {
 
         add_action( 'wp_ajax_woosea_project_status', array( $this, 'ajax_update_product_feed_status' ) );
         add_action( 'wp_ajax_woosea_print_channels', array( $this, 'ajax_print_channels' ) );
+
+        // Admin notice for feeds parked after repeated crashed generation runs.
+        add_action( 'admin_notices', array( $this, 'render_adaptive_parked_feeds_notice' ) );
     }
 }

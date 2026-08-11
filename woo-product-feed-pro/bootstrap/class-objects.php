@@ -7,6 +7,7 @@
  */
 
 use AdTribes\PFP\Classes\WP_Admin;
+use AdTribes\PFP\Classes\Abilities;
 use AdTribes\PFP\Classes\Notices;
 use AdTribes\PFP\Classes\Product_Feed_Admin;
 use AdTribes\PFP\Classes\Product_Feed_Attributes;
@@ -21,6 +22,7 @@ use AdTribes\PFP\Classes\Marketing;
 use AdTribes\PFP\Classes\Usage;
 use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
 use AdTribes\PFP\Classes\Plugin_Installer;
+use AdTribes\PFP\Classes\Setup_Checklist;
 use AdTribes\PFP\Classes\Admin_Pages\Manage_Feeds_Page;
 use AdTribes\PFP\Classes\Admin_Pages\Settings_Page;
 use AdTribes\PFP\Classes\Admin_Pages\Edit_Feed_Page;
@@ -52,10 +54,12 @@ return array(
     Cron::instance(),
     Heartbeat::instance(),
     WP_Admin::instance(),
+    Abilities::instance(),
     Marketing::instance(),
     Usage::instance(),
     Google_Product_Taxonomy_Fetcher::instance(),
     Plugin_Installer::instance(),
+    Setup_Checklist::instance(),
     Manage_Feeds_Page::instance(),
     Settings_Page::instance(),
     Edit_Feed_Page::instance(),

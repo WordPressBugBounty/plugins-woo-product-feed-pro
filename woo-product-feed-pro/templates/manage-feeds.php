@@ -47,10 +47,28 @@ $feeds_query = new Product_Feed_Query(
     <div class="adt-container lg:adt-tw-px-8 sm:adt-tw-py-4 adt-tw-py-0">
         <?php
             Helper::locate_admin_template( 'header.php', true );
+
+            /**
+             * Fires inside the Manage Feeds wrapper, above the page title.
+             *
+             * @since 13.6.0
+             */
+            do_action( 'adt_pfp_manage_feeds_before_title' );
         ?>
-        <h1 class="adt-tw-text-2xl adt-tw-font-semibold adt-tw-text-gray-800 adt-tw-mb-6">
-            <?php esc_html_e( 'Manage Feeds', 'woo-product-feed-pro' ); ?>
-        </h1>
+        <div class="adt-tw-flex adt-tw-flex-wrap adt-tw-items-center adt-tw-gap-3 adt-tw-mb-6">
+            <h1 class="adt-tw-text-2xl adt-tw-font-semibold adt-tw-text-gray-800 adt-tw-mb-0">
+                <?php esc_html_e( 'Manage Feeds', 'woo-product-feed-pro' ); ?>
+            </h1>
+            <?php
+                /**
+                 * Fires next to the Manage Feeds page title.
+                 *
+                 * @since 13.6.0
+                 */
+                do_action( 'adt_pfp_manage_feeds_after_title' );
+            ?>
+        </div>
+        <hr class="wp-header-end" />
         <?php if ( $feeds_query->have_posts() ) : ?>
             <div class="adt-tw-flex adt-tw-flex-col sm:adt-tw-flex-row adt-tw-justify-between adt-tw-gap-4 adt-tw-mb-6">
                 <select 

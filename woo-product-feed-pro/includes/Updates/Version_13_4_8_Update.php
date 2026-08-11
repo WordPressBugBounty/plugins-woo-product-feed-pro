@@ -8,6 +8,7 @@
 namespace AdTribes\PFP\Updates;
 
 use AdTribes\PFP\Abstracts\Abstract_Update;
+use AdTribes\PFP\Helpers\Product_Feed_Helper;
 
 /**
  * Class Version_13_4_8_Update
@@ -120,12 +121,31 @@ class Version_13_4_8_Update extends Abstract_Update {
         foreach ( $options_to_migrate as $old_option => $new_option_config ) {
             $old_value = get_option( $old_option );
 
+            // Nothing to copy if the old option was never set.
+            if ( false === $old_value ) {
+                continue;
+            }
+
             // Handle both array and string formats for backward compatibility.
             $new_option = is_array( $new_option_config ) ? $new_option_config['value'] : $new_option_config;
             $autoload   = is_array( $new_option_config ) ? $new_option_config['autoload'] : true;
 
-            // If the old option exists and the new one doesn't, migrate the value.
-            if ( false !== $old_value && false === get_option( $new_option ) ) {
+            $new_value = get_option( $new_option );
+
+            // By default, only copy when the prefixed option does not yet exist.
+            $should_migrate = false === $new_value;
+
+            // Harden the cron_projects copy: a pre-existing but blank/hashless
+            // adt_cron_projects (created by an earlier CPT migration path) must not
+            // block copying the real feeds still held in the unprefixed
+            // cron_projects. Overwrite it when the legacy option has real feeds and
+            // the prefixed one does not. See #1028.
+            if ( ! $should_migrate && 'cron_projects' === $old_option ) {
+                $should_migrate = Product_Feed_Helper::has_valid_projects( maybe_unserialize( $old_value ) )
+                    && ! Product_Feed_Helper::has_valid_projects( maybe_unserialize( $new_value ) );
+            }
+
+            if ( $should_migrate ) {
                 update_option( $new_option, $old_value, $autoload );
             }
         }

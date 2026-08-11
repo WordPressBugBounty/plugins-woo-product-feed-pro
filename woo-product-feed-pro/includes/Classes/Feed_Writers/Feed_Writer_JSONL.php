@@ -92,7 +92,7 @@ class Feed_Writer_JSONL extends Abstract_Class {
         }
 
         // Check if file exists and should be deleted for a fresh start.
-        if ( file_exists( $local_file ) && $is_header && 0 === $feed->total_products_processed ) {
+        if ( $is_header && $feed->is_first_write_of_run() && file_exists( $local_file ) ) {
             wp_delete_file( $local_file );
         }
 

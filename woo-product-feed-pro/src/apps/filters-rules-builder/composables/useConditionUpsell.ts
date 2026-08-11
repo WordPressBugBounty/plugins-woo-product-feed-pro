@@ -12,6 +12,8 @@ const ELITE_ONLY_CONDITIONS: Record<string, string> = {
   character_count_greater_than_or_equal: 'rule_condition_character_count',
   character_count_less_than: 'rule_condition_character_count',
   character_count_less_than_or_equal: 'rule_condition_character_count',
+  in_list: 'rule_condition_in_list',
+  between: 'rule_condition_between',
 };
 
 /**

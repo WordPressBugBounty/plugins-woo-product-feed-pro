@@ -7,12 +7,26 @@ import { getValidationClasses, getContainerValidationClasses, hasValidationError
 import RuleGroup from '../groups/RuleGroup.vue';
 import GroupDropdown from '../common/GroupDrowdown.vue';
 import AttributeSelect from '../common/AttributeSelect.vue';
+import CombineFieldsSegments from '../common/CombineFieldsSegments.vue';
 import FieldMappingSelect from '../common/FieldMappingSelect.vue';
 import RuleAction from '../common/RuleAction.vue';
 import { isEliteActive, showEliteUpsellModal } from '@/helpers';
+import type { RuleActionSegment } from '../../stores/rulesStore';
 
 const store = useRulesStore();
 const { getFieldErrors } = useValidation('rules');
+
+// Elite-only action → upsell-modal-key map, consumed by the disabled-container
+// check, the action-change gate, and the template's value-column guard. The
+// per-action UI branches below (exclude, set_attribute, …) still key off the
+// action name directly, since each renders a different control.
+const ELITE_ONLY_ACTIONS: Record<string, string> = {
+  set_attribute: 'rule_action_set_attribute',
+  exclude: 'rule_action_exclude',
+  truncate: 'rule_action_truncate',
+  combine_fields: 'rule_action_combine_fields',
+};
+const ELITE_ONLY_ACTION_KEYS = Object.keys(ELITE_ONLY_ACTIONS);
 
 const props = defineProps<{
   ruleIndex: number;
@@ -47,8 +61,8 @@ const getActionErrorClasses = (baseClasses: string, actionId: string) => {
 
 const getActionContainerClasses = (action: any) => {
   const classes = getContainerValidationClasses(hasActionErrors(action.id));
-  
-  if ([ 'set_attribute', 'exclude' ].includes(action.action) && !isEliteActive()) {
+
+  if (ELITE_ONLY_ACTION_KEYS.includes(action.action) && !isEliteActive()) {
     return `${classes} adt-disabled-action-container`;
   }
 
@@ -80,16 +94,10 @@ const getValuePlaceholder = (action: any): string => {
 };
 
 const updateAction = (action: any, value: string) => {
-  // Map of Elite-only actions to their upsell modal keys
-  const eliteOnlyActions: Record<string, string> = {
-    'set_attribute': 'rule_action_set_attribute',
-    'exclude': 'rule_action_exclude'
-  };
-
   // Check if this is an Elite-only action and Elite is not active
-  if (!isEliteActive() && eliteOnlyActions[value]) {
+  if (!isEliteActive() && ELITE_ONLY_ACTIONS[value]) {
     // Show the upsell modal
-    showEliteUpsellModal(eliteOnlyActions[value]);
+    showEliteUpsellModal(ELITE_ONLY_ACTIONS[value]);
     
     // Revert to previous value and force UI re-render
     const previousValue = action.action || 'set_value';
@@ -108,6 +116,14 @@ const updateAction = (action: any, value: string) => {
 
 const updateActionFind = (actionId: string, value: string) => {
   store.updateRuleAction(props.rule.id, actionId, { find: value });
+};
+
+const updateActionSuffix = (actionId: string, value: string) => {
+  store.updateRuleAction(props.rule.id, actionId, { suffix: value });
+};
+
+const updateActionSegments = (actionId: string, segments: RuleActionSegment[]) => {
+  store.updateRuleAction(props.rule.id, actionId, { segments });
 };
 
 const updateActionCaseSensitive = (actionId: string, checked: boolean) => {
@@ -247,7 +263,7 @@ const cancelEditRuleName = () => {
               
               <!-- Action Attribute -->
               <div class="adt-tw-col-span-12 md:adt-tw-col-span-4">
-                <template v-if="[ 'exclude' ].includes(action.action)">
+                <template v-if="action.action === 'exclude'">
                   <FieldMappingSelect
                     :model-value="action.attribute || ''"
                     placeholder="Select field to exclude"
@@ -281,7 +297,7 @@ const cancelEditRuleName = () => {
               
               <!-- Action Value -->
               <div class="adt-tw-col-span-12 sm:adt-tw-col-span-4">
-                <template v-if="[ 'set_attribute' ].includes(action.action)">
+                <template v-if="action.action === 'set_attribute'">
                   <AttributeSelect
                     :model-value="action.value || ''"
                     placeholder="Select attribute"
@@ -290,7 +306,30 @@ const cancelEditRuleName = () => {
                     @update:model-value="updateActionValue(action.id, $event)"
                   />
                 </template>
-                <template v-if="!['exclude', 'set_attribute'].includes(action.action)">
+                <template v-else-if="action.action === 'truncate'">
+                  <input
+                    type="text"
+                    :value="action.value || ''"
+                    :placeholder="__('Max characters (e.g., 240)', 'woo-product-feed-pro')"
+                    :class="getActionErrorClasses('adt-tw-w-full adt-tw-px-2 adt-tw-py-1 adt-tw-mb-2 adt-tw-border adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-text-sm adt-tw-focus-ring-2 adt-tw-focus-ring-blue-500 adt-tw-focus-border-blue-500 adt-tw-focus-outline-none', action.id)"
+                    @input="updateActionValue(action.id, ($event.target as HTMLInputElement).value)"
+                  />
+                  <input
+                    type="text"
+                    :value="action.suffix || ''"
+                    :placeholder="__('Suffix (optional, e.g., …)', 'woo-product-feed-pro')"
+                    class="adt-tw-w-full adt-tw-px-2 adt-tw-py-1 adt-tw-border adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-text-sm adt-tw-focus-ring-2 adt-tw-focus-ring-blue-500 adt-tw-focus-border-blue-500 adt-tw-focus-outline-none"
+                    @input="updateActionSuffix(action.id, ($event.target as HTMLInputElement).value)"
+                  />
+                </template>
+                <template v-else-if="action.action === 'combine_fields'">
+                  <CombineFieldsSegments
+                    :model-value="action.segments || []"
+                    :has-error="hasActionErrors(action.id)"
+                    @update:model-value="updateActionSegments(action.id, $event)"
+                  />
+                </template>
+                <template v-else-if="!ELITE_ONLY_ACTION_KEYS.includes(action.action)">
                   <div v-if="action.action === 'findreplace'" class="adt-tw-flex adt-tw-items-center adt-tw-gap-2 adt-tw-mb-2">
                     <input
                       type="text"

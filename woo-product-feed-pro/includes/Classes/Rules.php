@@ -65,6 +65,17 @@ class Rules extends Abstract_Filters_Rules {
                 'value' => 'exclude',
                 'label' => __( 'Exclude Attribute (Elite)', 'woo-product-feed-pro' ),
             ),
+            // Truncate and Combine Fields are Elite features. Pro lists them with an
+            // `(Elite)` suffix as an upsell; Elite strips the suffix and applies them
+            // (mirrors the `Set Attribute (Elite)` / `Exclude Attribute (Elite)` actions).
+            array(
+                'value' => 'truncate',
+                'label' => __( 'Truncate to Character Limit (Elite)', 'woo-product-feed-pro' ),
+            ),
+            array(
+                'value' => 'combine_fields',
+                'label' => __( 'Combine Fields (Elite)', 'woo-product-feed-pro' ),
+            ),
         );
 
         /**

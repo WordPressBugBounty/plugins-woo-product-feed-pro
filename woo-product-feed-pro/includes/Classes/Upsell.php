@@ -56,6 +56,26 @@ class Upsell extends Abstract_Class {
                 'message' => __( 'In Product Feed ELITE for WooCommerce you can build filters and rules based on how many characters a field has—e.g. "if the description has more than 300 characters". Perfect for meeting channel character limits (like Google Shopping\'s title limit) and triggering actions such as truncating or rewriting oversized fields.', 'woo-product-feed-pro' ),
                 'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'charactercountcondition' ),
             ),
+            'rule_condition_in_list'         => array(
+                'title'   => __( 'Upgrade to In List conditions', 'woo-product-feed-pro' ),
+                'message' => __( 'In Product Feed ELITE for WooCommerce you can match a field against a comma-separated list of values in a single filter or rule row—e.g. "Product Id In List 101, 245, 389". Perfect for promotion feeds that target a curated set of products without stacking one row per product.', 'woo-product-feed-pro' ),
+                'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'inlistcondition' ),
+            ),
+            'rule_condition_between'         => array(
+                'title'   => __( 'Upgrade to Between conditions', 'woo-product-feed-pro' ),
+                'message' => __( 'In Product Feed ELITE for WooCommerce you can match a numeric field against an inclusive range in a single filter or rule row—e.g. "Product Id Between 100, 200". Perfect for scoping a feed to a range of ids, prices or stock levels without stacking a Greater Than row and a Less Than row.', 'woo-product-feed-pro' ),
+                'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'betweencondition' ),
+            ),
+            'rule_action_truncate'           => array(
+                'title'   => __( 'Upgrade to Truncate fields', 'woo-product-feed-pro' ),
+                'message' => __( 'In Product Feed ELITE for WooCommerce you can automatically shorten oversized fields to a character limit and append a custom suffix—e.g. cut a description down to 240 characters and add "…". Perfect for meeting channel character limits without editing your product catalog.', 'woo-product-feed-pro' ),
+                'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'truncateaction' ),
+            ),
+            'rule_action_combine_fields'     => array(
+                'title'   => __( 'Upgrade to Combine Fields', 'woo-product-feed-pro' ),
+                'message' => __( 'In Product Feed ELITE for WooCommerce you can build a field value from multiple product attributes and static text—e.g. combine color, size, and material into a structured description. Perfect for attribute-built fallbacks when a field is empty or too long for a channel.', 'woo-product-feed-pro' ),
+                'link'    => Helper::get_utm_url( 'pricing', 'pfp', 'upsell', 'combinefieldsaction' ),
+            ),
             'rules_feed_output_fields'       => array(
                 'title'   => __( 'Upgrade to target Feed Output Fields in Rules', 'woo-product-feed-pro' ),
                 'message' => __( 'In Product Feed ELITE for WooCommerce your rules can read from and write to the output columns you configured in Field Mapping (e.g. g:custom_label_0, g:custom_label_1, custom fields). Perfect for populating Google Shopping custom labels conditionally based on product data, or any other feed column derived from your mapping.', 'woo-product-feed-pro' ),

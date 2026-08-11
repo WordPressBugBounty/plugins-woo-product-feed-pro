@@ -54,6 +54,7 @@ class Formatting {
                 'google_product_review',
                 'google_shopping_promotions',
                 'pinterest',
+                'tiktok',
             )
         );
 

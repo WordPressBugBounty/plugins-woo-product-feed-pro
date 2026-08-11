@@ -584,11 +584,7 @@ class Feed_Command extends \WP_CLI_Command {
 
         as_unschedule_all_actions( '', array(), 'adt_pfp_as_generate_product_feed_batch_' . $feed->id );
 
-        $feed->total_products_processed = 0;
-        $feed->batch_size               = 0;
-        $feed->executed_from            = '';
-        $feed->status                   = 'stopped';
-        $feed->last_updated             = gmdate( 'd M Y H:i:s' );
+        $feed->cancel_run();
         $feed->save();
 
         as_schedule_single_action(

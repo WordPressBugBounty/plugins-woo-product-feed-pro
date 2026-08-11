@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-08T04:06:56+00:00\n"
+"POT-Creation-Date: 2026-08-04T03:51:42+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woo-product-feed-pro\n"
@@ -105,9 +105,624 @@ msgstr ""
 msgid "Character Count Less Than or Equal (Elite)"
 msgstr ""
 
+#: includes/Abstracts/Abstract_Filters_Rules.php:132
+msgid "In List (Elite)"
+msgstr ""
+
+#: includes/Abstracts/Abstract_Filters_Rules.php:138
+msgid "Between (Elite)"
+msgstr ""
+
 #: includes/autoload.php:64
 #: includes/autoload.php:84
 msgid "Please contact support if this issue persists."
+msgstr ""
+
+#: includes/Classes/Abilities.php:131
+msgid "AdTribes"
+msgstr ""
+
+#: includes/Classes/Abilities.php:132
+msgid "Abilities for the AdTribes plugin family."
+msgstr ""
+
+#: includes/Classes/Abilities.php:146
+msgid "The feed ID or legacy project hash."
+msgstr ""
+
+#: includes/Classes/Abilities.php:152
+msgid "Whether UTM tagging is applied to the feed product URLs."
+msgstr ""
+
+#: includes/Classes/Abilities.php:165
+msgid "List product feeds"
+msgstr ""
+
+#: includes/Classes/Abilities.php:166
+msgid "Lists product feeds with their channel, country, status, last-generated time, product count and file URL."
+msgstr ""
+
+#: includes/Classes/Abilities.php:176
+msgid "Filter by post status. Default: any."
+msgstr ""
+
+#: includes/Classes/Abilities.php:180
+msgid "Filter by channel hash or channel name (case-insensitive)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:186
+msgid "Maximum number of feeds to return. Default: 100."
+msgstr ""
+
+#: includes/Classes/Abilities.php:191
+msgid "Page number for pagination. Default: 1."
+msgstr ""
+
+#: includes/Classes/Abilities.php:204
+msgid "Get product feed"
+msgstr ""
+
+#: includes/Classes/Abilities.php:205
+msgid "Returns the full configuration for a single product feed."
+msgstr ""
+
+#: includes/Classes/Abilities.php:222
+msgid "Create product feed"
+msgstr ""
+
+#: includes/Classes/Abilities.php:223
+msgid "Creates a product feed for a channel and country. Field/category mappings and filters/rules can be set with the dedicated abilities."
+msgstr ""
+
+#: includes/Classes/Abilities.php:232
+#: includes/Classes/Abilities.php:579
+msgid "The feed title."
+msgstr ""
+
+#: includes/Classes/Abilities.php:236
+#: includes/Classes/Abilities.php:802
+msgid "Channel hash or name (case-insensitive)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:240
+#: includes/Classes/Abilities.php:583
+msgid "Two-letter country code (e.g. AU, US)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:244
+#: includes/Classes/Abilities.php:587
+msgid "File format: xml, csv, txt, tsv, jsonl, jsonl.gz, csv.gz."
+msgstr ""
+
+#: includes/Classes/Abilities.php:248
+#: includes/Classes/Abilities.php:591
+msgid "Refresh interval: empty, hourly, twicedaily, daily."
+msgstr ""
+
+#: includes/Classes/Abilities.php:253
+msgid "Initial post status. Default: draft."
+msgstr ""
+
+#: includes/Classes/Abilities.php:257
+msgid "Optional field mapping entries (see adtribes/set-field-mapping)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:262
+msgid "Optional category mapping entries (see adtribes/set-category-mapping)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:275
+msgid "Update product feed"
+msgstr ""
+
+#: includes/Classes/Abilities.php:276
+msgid "Updates an existing feed's configuration (title, channel, country, file format, refresh interval, post status)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:304
+msgid "Delete product feed"
+msgstr ""
+
+#: includes/Classes/Abilities.php:305
+msgid "Permanently deletes a product feed."
+msgstr ""
+
+#: includes/Classes/Abilities.php:322
+msgid "Regenerate product feed"
+msgstr ""
+
+#: includes/Classes/Abilities.php:323
+msgid "Regenerates a feed now. Runs asynchronously via Action Scheduler by default; pass async=false to run inline (resource-heavy)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:333
+msgid "Schedule the refresh instead of running it inline. Default: true."
+msgstr ""
+
+#: includes/Classes/Abilities.php:346
+msgid "List channels"
+msgstr ""
+
+#: includes/Classes/Abilities.php:347
+msgid "Lists supported channels with their per-country availability."
+msgstr ""
+
+#: includes/Classes/Abilities.php:356
+msgid "Two-letter country code to narrow results. Empty returns \"All countries\" channels."
+msgstr ""
+
+#: includes/Classes/Abilities.php:369
+msgid "List Google product taxonomy"
+msgstr ""
+
+#: includes/Classes/Abilities.php:370
+msgid "Returns the cached Google product taxonomy for category mapping. Supports a search substring and a result limit."
+msgstr ""
+
+#: includes/Classes/Abilities.php:379
+msgid "Case-insensitive substring to filter categories by."
+msgstr ""
+
+#: includes/Classes/Abilities.php:385
+msgid "Maximum number of categories to return. Default: 200."
+msgstr ""
+
+#: includes/Classes/Abilities.php:398
+msgid "List feed attributes"
+msgstr ""
+
+#: includes/Classes/Abilities.php:399
+msgid "Returns the WooCommerce product attributes available for field mapping, grouped as they appear in the feed editor."
+msgstr ""
+
+#: includes/Classes/Abilities.php:411
+msgid "Set field mapping"
+msgstr ""
+
+#: includes/Classes/Abilities.php:412
+msgid "Maps WooCommerce attributes to feed-channel fields for a feed. Each entry maps a channel field (attribute) to a WooCommerce source (mapfrom), with optional prefix/suffix/static value."
+msgstr ""
+
+#: includes/Classes/Abilities.php:422
+msgid "Field mapping entries."
+msgstr ""
+
+#: includes/Classes/Abilities.php:428
+msgid "The channel field name (feed_name, e.g. g:title)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:432
+msgid "The WooCommerce source attribute."
+msgstr ""
+
+#: includes/Classes/Abilities.php:452
+msgid "Set category mapping"
+msgstr ""
+
+#: includes/Classes/Abilities.php:453
+msgid "Maps WooCommerce product categories to Google/channel categories for a feed. Keyed by WooCommerce category term ID, each entry provides a map_to_category value."
+msgstr ""
+
+#: includes/Classes/Abilities.php:463
+msgid "Category mappings keyed by WooCommerce category term ID."
+msgstr ""
+
+#: includes/Classes/Abilities.php:476
+msgid "Add filter or rule"
+msgstr ""
+
+#: includes/Classes/Abilities.php:477
+msgid "Appends a product filter (include/exclude) or a transform rule to a feed."
+msgstr ""
+
+#: includes/Classes/Abilities.php:488
+msgid "Whether to add a filter or a transform rule."
+msgstr ""
+
+#: includes/Classes/Abilities.php:493
+msgid "For filters: include or exclude matching products. Default: include."
+msgstr ""
+
+#: includes/Classes/Abilities.php:498
+msgid "For filters: how this filter group joins existing groups. Default: and."
+msgstr ""
+
+#: includes/Classes/Abilities.php:502
+msgid "The attribute the condition tests."
+msgstr ""
+
+#: includes/Classes/Abilities.php:506
+msgid "The condition operator (see the feed builder for valid values)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:510
+msgid "The value the condition compares against."
+msgstr ""
+
+#: includes/Classes/Abilities.php:515
+msgid "For rules: an optional rule name."
+msgstr ""
+
+#: includes/Classes/Abilities.php:519
+msgid "For rules: the action to apply when the condition matches."
+msgstr ""
+
+#: includes/Classes/Abilities.php:523
+msgid "For rules: the attribute the action modifies. Defaults to the condition attribute."
+msgstr ""
+
+#: includes/Classes/Abilities.php:527
+msgid "For rules: the value used by the action."
+msgstr ""
+
+#: includes/Classes/Abilities.php:531
+msgid "For rules: the search term for find/replace actions."
+msgstr ""
+
+#: includes/Classes/Abilities.php:544
+msgid "Validate feed"
+msgstr ""
+
+#: includes/Classes/Abilities.php:545
+msgid "Validates a feed's configuration against its channel's field spec and reports missing required field mappings and configuration issues."
+msgstr ""
+
+#: includes/Classes/Abilities.php:569
+msgid "Create custom feed"
+msgstr ""
+
+#: includes/Classes/Abilities.php:570
+msgid "Creates a custom-schema product feed (the \"Custom Feed\" channel) whose output fields you define explicitly via the attributes mapping."
+msgstr ""
+
+#: includes/Classes/Abilities.php:599
+msgid "Output field definitions. Each entry maps an output field (attribute) to a WooCommerce source (mapfrom), with optional prefix/suffix/static value."
+msgstr ""
+
+#: includes/Classes/Abilities.php:613
+msgid "Set UTM tagging"
+msgstr ""
+
+#: includes/Classes/Abilities.php:614
+msgid "Configures the UTM parameters appended to a feed's product URLs."
+msgstr ""
+
+#: includes/Classes/Abilities.php:631
+msgid "Clone feed"
+msgstr ""
+
+#: includes/Classes/Abilities.php:632
+msgid "Duplicates an existing feed as a new draft (e.g. Google Shopping AU → NZ). Optionally retarget the copy to a different country/channel."
+msgstr ""
+
+#: includes/Classes/Abilities.php:642
+msgid "Title for the new feed. Defaults to \"Copy of {original}\"."
+msgstr ""
+
+#: includes/Classes/Abilities.php:646
+msgid "Optional new target country for the clone."
+msgstr ""
+
+#: includes/Classes/Abilities.php:650
+msgid "Optional new channel (hash or name) for the clone."
+msgstr ""
+
+#: includes/Classes/Abilities.php:663
+msgid "Bulk update feeds"
+msgstr ""
+
+#: includes/Classes/Abilities.php:664
+msgid "Applies the same configuration change (country, file format, refresh interval, post status, or UTM parameters) across multiple feeds at once."
+msgstr ""
+
+#: includes/Classes/Abilities.php:674
+msgid "The feed IDs (or legacy project hashes) to update. Maximum 500 per call."
+msgstr ""
+
+#: includes/Classes/Abilities.php:699
+msgid "Get tracking status"
+msgstr ""
+
+#: includes/Classes/Abilities.php:700
+msgid "Reports whether Facebook Pixel, Facebook Conversion API, and Google Ads dynamic remarketing are configured and enabled."
+msgstr ""
+
+#: includes/Classes/Abilities.php:717
+msgid "Set Facebook Pixel"
+msgstr ""
+
+#: includes/Classes/Abilities.php:718
+msgid "Configures the Facebook Pixel ID, enables/disables the pixel, and sets the variable-product content_ids mode. The pixel fires the standard WooCommerce events automatically."
+msgstr ""
+
+#: includes/Classes/Abilities.php:727
+msgid "The numeric Facebook Pixel ID. Pass an empty string to clear it."
+msgstr ""
+
+#: includes/Classes/Abilities.php:731
+msgid "Whether the client-side pixel is active."
+msgstr ""
+
+#: includes/Classes/Abilities.php:736
+msgid "Which ID to report for variable products in pixel events."
+msgstr ""
+
+#: includes/Classes/Abilities.php:748
+msgid "Set Google tracking"
+msgstr ""
+
+#: includes/Classes/Abilities.php:749
+msgid "Configures Google Ads dynamic remarketing: the conversion/remarketing ID and whether the remarketing tag is active."
+msgstr ""
+
+#: includes/Classes/Abilities.php:758
+msgid "The numeric Google Ads conversion/remarketing ID (used as AW-{id}). Pass an empty string to clear it."
+msgstr ""
+
+#: includes/Classes/Abilities.php:762
+msgid "Whether the remarketing tag is active."
+msgstr ""
+
+#: includes/Classes/Abilities.php:774
+msgid "Get feed statistics"
+msgstr ""
+
+#: includes/Classes/Abilities.php:775
+msgid "Returns per-feed statistics: product count, products in the generated file, approximate excluded count, file size, generation status and last-updated time."
+msgstr ""
+
+#: includes/Classes/Abilities.php:792
+msgid "Get channel summary"
+msgstr ""
+
+#: includes/Classes/Abilities.php:793
+msgid "Aggregates statistics across all feeds for a single channel: feed count, published count, feeds in error, and total product count."
+msgstr ""
+
+#: includes/Classes/Abilities.php:806
+msgid "Optional country code to narrow channel resolution."
+msgstr ""
+
+#: includes/Classes/Abilities.php:819
+msgid "Get excluded products"
+msgstr ""
+
+#: includes/Classes/Abilities.php:820
+msgid "Reports products excluded from a feed: the derived excluded count, plus products flagged with the manual per-product exclude toggle. Per-rule/per-filter attribution is not tracked by the plugin."
+msgstr ""
+
+#: includes/Classes/Abilities.php:832
+msgid "Maximum number of manually-excluded products to return. Default: 100."
+msgstr ""
+
+#: includes/Classes/Abilities.php:845
+msgid "Set feed schedule"
+msgstr ""
+
+#: includes/Classes/Abilities.php:846
+msgid "Configures a feed refresh schedule: a standard interval (hourly/twicedaily/daily) or a custom interval (every N hours, weekly, monthly, yearly, with optional day-of-week restrictions; requires Product Feed Elite)."
+msgstr ""
+
+#: includes/Classes/Abilities.php:857
+msgid "The refresh interval. Empty stops the schedule; \"custom\" uses the fields below and requires Product Feed Elite."
+msgstr ""
+
+#: includes/Classes/Abilities.php:862
+msgid "For a custom interval: the base schedule."
+msgstr ""
+
+#: includes/Classes/Abilities.php:867
+msgid "For a custom \"hours\" schedule: run every N hours."
+msgstr ""
+
+#: includes/Classes/Abilities.php:871
+msgid "For a custom interval: days of the week to run on (1=Monday … 7=Sunday). Defaults to every day."
+msgstr ""
+
+#: includes/Classes/Abilities.php:889
+msgid "Pause feed schedule"
+msgstr ""
+
+#: includes/Classes/Abilities.php:890
+msgid "Pauses a feed's scheduled refresh without deleting the feed or its stored schedule. The feed stays accessible; resume it with adtribes/set-feed-schedule."
+msgstr ""
+
+#. translators: %s: channel identifier.
+#: includes/Classes/Abilities.php:994
+#: includes/Classes/Abilities.php:1064
+#: includes/Classes/Abilities.php:1179
+#: includes/Classes/Abilities.php:1840
+#: includes/Classes/Abilities.php:2275
+#, php-format
+msgid "Unknown channel: %s"
+msgstr ""
+
+#: includes/Classes/Abilities.php:1072
+msgid "title, channel, country and file_format are required."
+msgstr ""
+
+#. translators: 1: file format, 2: comma-separated list of allowed formats.
+#: includes/Classes/Abilities.php:1082
+#: includes/Classes/Abilities.php:1166
+#: includes/Classes/Abilities.php:2574
+#, php-format
+msgid "Unsupported file format: %1$s. Allowed: %2$s"
+msgstr ""
+
+#: includes/Classes/Abilities.php:1189
+msgid "Nothing to update. Provide at least one property."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1350
+msgid "The Google product taxonomy has not been fetched yet. It is downloaded on a weekly schedule; please try again later."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1359
+msgid "The Google product taxonomy cache is empty."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1434
+msgid "A non-empty attributes array is required."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1488
+msgid "A non-empty mappings object is required."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1542
+msgid "The type must be \"filter\" or \"rule\"."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1566
+msgid "The feed has no channel selected, so it cannot be validated."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1610
+msgid "The feed has no target country set."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1613
+msgid "The feed has no field mappings configured."
+msgstr ""
+
+#. translators: 1: field label, 2: channel field name.
+#: includes/Classes/Abilities.php:1620
+#, php-format
+msgid "Required field \"%1$s\" (%2$s) is not mapped."
+msgstr ""
+
+#. translators: 1: field label, 2: channel field name.
+#: includes/Classes/Abilities.php:1627
+#, php-format
+msgid "Required field \"%1$s\" (%2$s) is mapped but has no source value."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1666
+msgid "title, country and file_format are required."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1680
+msgid "The built-in Custom Feed channel could not be found."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1763
+msgid "Nothing to update. Provide at least one UTM property."
+msgstr ""
+
+#. translators: %s: the original feed title.
+#. translators: %s is the original feed title.
+#. translators: %s is the feed title.
+#: includes/Classes/Abilities.php:1825
+#: includes/Classes/CLI/Feed_Command.php:479
+#: includes/Classes/Product_Feed_Admin.php:112
+#: includes/Classes/Product_Feed_Admin.php:377
+#, php-format
+msgid "Copy of %s"
+msgstr ""
+
+#: includes/Classes/Abilities.php:1898
+msgid "A non-empty feed_ids array is required."
+msgstr ""
+
+#: includes/Classes/Abilities.php:1917
+msgid "Nothing to update. Provide at least one property to apply."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2014
+msgid "The Facebook Conversion API is a Product Feed Elite feature."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2022
+msgid "Google Analytics is configured per feed via UTM tagging (see adtribes/set-utm-tagging), not as a site-wide setting."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2026
+msgid "TikTok Pixel is not a feature of this plugin."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2064
+msgid "The Facebook Pixel ID must be numeric."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2086
+msgid "Nothing to update. Provide pixel_id, enabled and/or content_ids."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2118
+msgid "The Google Ads conversion ID must be numeric."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2134
+msgid "Nothing to update. Provide conversion_id and/or enabled."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2208
+msgid "Derived as the published product total minus the count actually written to the feed file; null until the feed has generated at least once."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2211
+msgid "Products flagged with the manual per-product \"exclude from feed\" toggle. That flag applies to all feeds, not only this one. Rule/filter-based exclusions are not individually tracked, so per-rule attribution is unavailable."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2373
+msgid "Custom refresh intervals require Product Feed Elite. Use a standard interval (hourly, twicedaily, daily) instead."
+msgstr ""
+
+#. translators: %s: comma-separated list of valid schedules.
+#: includes/Classes/Abilities.php:2384
+#, php-format
+msgid "Invalid schedule. Valid values: %s"
+msgstr ""
+
+#: includes/Classes/Abilities.php:2407
+msgid "refresh_interval must be one of: (empty), hourly, twicedaily, daily, custom."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2595
+msgid "refresh_interval must be one of: (empty), hourly, twicedaily, daily."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2668
+msgid "A feed_id is required."
+msgstr ""
+
+#. translators: %s: feed identifier.
+#: includes/Classes/Abilities.php:2678
+#, php-format
+msgid "Feed not found: %s"
+msgstr ""
+
+#: includes/Classes/Abilities.php:2704
+msgid "An attribute is required for a filter."
+msgstr ""
+
+#. translators: %s: comma-separated list of valid conditions.
+#: includes/Classes/Abilities.php:2715
+#: includes/Classes/Abilities.php:2793
+#, php-format
+msgid "Invalid condition. Valid values: %s"
+msgstr ""
+
+#: includes/Classes/Abilities.php:2782
+msgid "An attribute is required for the rule condition."
+msgstr ""
+
+#. translators: %s: comma-separated list of valid actions.
+#: includes/Classes/Abilities.php:2804
+#, php-format
+msgid "Invalid action. Valid values: %s"
+msgstr ""
+
+#: includes/Classes/Abilities.php:2814
+msgid "The combine_fields action requires a segments configuration this ability does not support. Configure it in the Filters & Rules builder instead."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2882
+msgid "The channel definition could not be found."
+msgstr ""
+
+#: includes/Classes/Abilities.php:2892
+msgid "The channel does not expose a field spec."
 msgstr ""
 
 #: includes/Classes/Admin_Pages/About_Page.php:41
@@ -155,29 +770,29 @@ msgid "Conversion & Google Analytics"
 msgstr ""
 
 #. translators: %s: WooCommerce Product Feed PRO plugin rating link
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:717
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:823
 #: includes/Classes/Admin_Pages/Settings_Page.php:410
 #, php-format
 msgid "If you like our %1$s plugin please leave us a %2$s rating. Thanks in advance!"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:738
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:844
 msgid "You do not have permission to edit feeds"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:749
-#: includes/REST/Filters_Rules.php:238
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:855
+#: includes/REST/Filters_Rules.php:256
 msgid "Feed not found"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1222
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1328
 #: includes/Classes/Heartbeat.php:45
 #: includes/Classes/Heartbeat.php:182
 #: includes/Classes/Product_Feed_Admin.php:41
 #: includes/Classes/Product_Feed_Admin.php:92
-#: includes/Classes/Product_Feed_Admin.php:226
-#: includes/Classes/Product_Feed_Admin.php:262
-#: includes/Classes/Product_Feed_Admin.php:314
+#: includes/Classes/Product_Feed_Admin.php:239
+#: includes/Classes/Product_Feed_Admin.php:275
+#: includes/Classes/Product_Feed_Admin.php:327
 #: includes/Classes/Usage.php:760
 #: includes/Classes/Usage.php:790
 #: includes/Classes/WP_Admin.php:373
@@ -191,17 +806,17 @@ msgstr ""
 msgid "Invalid security token"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1226
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1332
 #: includes/Classes/Heartbeat.php:49
 #: includes/Classes/Product_Feed_Admin.php:45
 #: includes/Classes/Product_Feed_Admin.php:96
-#: includes/Classes/Product_Feed_Admin.php:230
-#: includes/Classes/Product_Feed_Admin.php:266
+#: includes/Classes/Product_Feed_Admin.php:243
+#: includes/Classes/Product_Feed_Admin.php:279
 #: includes/Classes/Product_Feed_Attributes.php:619
 msgid "You do not have permission to manage product feed."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1350
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1456
 #: includes/Classes/Export_Import_Tools.php:73
 #: includes/Classes/Usage.php:756
 #: includes/Classes/Usage.php:786
@@ -214,36 +829,36 @@ msgstr ""
 msgid "You do not have permission to perform this action."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1351
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1457
 #: includes/Classes/Notices.php:751
 msgid "Permission denied."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1362
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1468
 msgid "Feed title is required."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1367
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1473
 msgid "Channel field is required."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1372
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1478
 msgid "Field mapping is empty or you haven't saved the field mapping. Go to the Field Mapping tab and save the field mapping."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1379
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1485
 msgid "Required feed configuration fields are missing."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1388
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1494
 msgid "All required fields are filled."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1412
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1518
 msgid "Feed settings updated successfully."
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1416
+#: includes/Classes/Admin_Pages/Edit_Feed_Page.php:1522
 msgid "Failed to update feed settings."
 msgstr ""
 
@@ -263,15 +878,15 @@ msgid "License"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/License_Page.php:108
-#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:44
+#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:45
 #: includes/Post_Types/Product_Feed_Post_Type.php:33
 #: includes/Post_Types/Product_Feed_Post_Type.php:48
 msgid "Product Feed"
 msgstr ""
 
 #: includes/Classes/Admin_Pages/License_Page.php:166
-#: includes/Helpers/Formatting.php:245
-#: i18n.js:32
+#: includes/Helpers/Formatting.php:246
+#: i18n.js:86
 msgid "Inactive"
 msgstr ""
 
@@ -283,34 +898,34 @@ msgstr ""
 msgid "Expired"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:43
-#: includes/Classes/Upsell.php:117
+#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:44
+#: includes/Classes/Upsell.php:137
 msgid "Product Feed Pro for WooCommerce"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:97
-#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:98
+#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:111
+#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:112
 msgid "Manage feeds"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:169
+#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:183
 #: templates/edit-feed/edit-feed.php:31
 msgid "Edit Feed"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:174
+#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:188
 msgid "Duplicate Feed"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:179
+#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:193
 msgid "Refresh Feed"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:184
+#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:198
 msgid "Cancel Feed Processing"
 msgstr ""
 
-#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:189
+#: includes/Classes/Admin_Pages/Manage_Feeds_Page.php:203
 msgid "Delete Feed"
 msgstr ""
 
@@ -487,15 +1102,6 @@ msgstr ""
 msgid "Upgrade To Elite"
 msgstr ""
 
-#. translators: %s is the original feed title.
-#. translators: %s is the feed title.
-#: includes/Classes/CLI/Feed_Command.php:479
-#: includes/Classes/Product_Feed_Admin.php:112
-#: includes/Classes/Product_Feed_Admin.php:364
-#, php-format
-msgid "Copy of %s"
-msgstr ""
-
 #: includes/Classes/Export_Import_Tools.php:69
 msgid "Invalid nonce"
 msgstr ""
@@ -590,8 +1196,8 @@ msgstr ""
 #: includes/Classes/Heartbeat.php:191
 #: includes/Classes/Product_Feed_Admin.php:53
 #: includes/Classes/Product_Feed_Admin.php:101
-#: includes/Classes/Product_Feed_Admin.php:237
-#: includes/Classes/Product_Feed_Admin.php:273
+#: includes/Classes/Product_Feed_Admin.php:250
+#: includes/Classes/Product_Feed_Admin.php:286
 msgid "Product feed not found."
 msgstr ""
 
@@ -601,6 +1207,7 @@ msgid "You are not allowed to perform this action."
 msgstr ""
 
 #: includes/Classes/Marketing.php:51
+#: includes/Classes/Setup_Checklist.php:103
 #: templates/about-page.php:40
 msgid "Advanced Coupons"
 msgstr ""
@@ -727,140 +1334,154 @@ msgid "You do not have permission to cancel feeds."
 msgstr ""
 
 #: includes/Classes/Product_Feed_Admin.php:173
-#: includes/Classes/Product_Feed_Admin.php:592
-#: includes/Classes/Product_Feed_Admin.php:653
+#: includes/Classes/Product_Feed_Admin.php:589
+#: includes/Classes/Product_Feed_Admin.php:650
 msgid "No feed ID provided."
 msgstr ""
 
 #: includes/Classes/Product_Feed_Admin.php:184
-#: includes/Classes/Product_Feed_Admin.php:602
-#: includes/Classes/Product_Feed_Admin.php:663
+#: includes/Classes/Product_Feed_Admin.php:599
+#: includes/Classes/Product_Feed_Admin.php:660
 #: templates/edit-feed/edit-feed.php:51
 msgid "Feed not found."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:212
+#: includes/Classes/Product_Feed_Admin.php:195
 msgid "Feed processing has been cancelled."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:282
+#: includes/Classes/Product_Feed_Admin.php:295
 msgid "Product feed has been deleted."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:294
+#: includes/Classes/Product_Feed_Admin.php:307
 msgid "Nonce verification failed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:318
+#: includes/Classes/Product_Feed_Admin.php:331
 msgid "You do not have permission to manage product feeds."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:325
+#: includes/Classes/Product_Feed_Admin.php:338
 msgid "Invalid request. Feed IDs or action missing."
 msgstr ""
 
 #. translators: %s is the feed ID.
-#: includes/Classes/Product_Feed_Admin.php:337
+#: includes/Classes/Product_Feed_Admin.php:350
 #, php-format
 msgid "Feed with ID %d not found."
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:350
+#: includes/Classes/Product_Feed_Admin.php:363
 #, php-format
 msgid "Error deleting feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:391
+#: includes/Classes/Product_Feed_Admin.php:404
 #, php-format
 msgid "Error duplicating feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:403
+#: includes/Classes/Product_Feed_Admin.php:416
 #, php-format
 msgid "Error setting feed ID %1$d as ready: %2$s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:415
+#: includes/Classes/Product_Feed_Admin.php:428
 #, php-format
 msgid "Error deactivating feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:429
+#: includes/Classes/Product_Feed_Admin.php:442
 #, php-format
 msgid "Error refreshing feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/Classes/Product_Feed_Admin.php:455
+#: includes/Classes/Product_Feed_Admin.php:452
 #, php-format
 msgid "Error canceling feed ID %1$d: %2$s"
 msgstr ""
 
 #. translators: %s is the action name.
-#: includes/Classes/Product_Feed_Admin.php:461
+#: includes/Classes/Product_Feed_Admin.php:458
 #, php-format
 msgid "Unknown action: %s"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:471
+#: includes/Classes/Product_Feed_Admin.php:468
 msgid "deleted"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:474
+#: includes/Classes/Product_Feed_Admin.php:471
 msgid "duplicated"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:477
+#: includes/Classes/Product_Feed_Admin.php:474
 msgid "activated"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:480
+#: includes/Classes/Product_Feed_Admin.php:477
 msgid "deactivated"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:483
+#: includes/Classes/Product_Feed_Admin.php:480
 msgid "refreshed"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:486
+#: includes/Classes/Product_Feed_Admin.php:483
 msgid "cancelled"
 msgstr ""
 
 #. translators: %1$d is the number of feeds processed, %2$s is the action name.
-#: includes/Classes/Product_Feed_Admin.php:492
+#: includes/Classes/Product_Feed_Admin.php:489
 #, php-format
 msgid "%1$d feed was successfully %2$s."
 msgid_plural "%1$d feeds were successfully %2$s."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Classes/Product_Feed_Admin.php:503
+#: includes/Classes/Product_Feed_Admin.php:500
 msgid "However, some errors occurred:"
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:560
+#: includes/Classes/Product_Feed_Admin.php:557
 msgid "Failed to process any feeds."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:581
+#: includes/Classes/Product_Feed_Admin.php:578
 msgid "You do not have permission to activate feeds."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:616
+#: includes/Classes/Product_Feed_Admin.php:613
 msgid "Feed activated successfully."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:642
+#: includes/Classes/Product_Feed_Admin.php:639
 msgid "You do not have permission to deactivate feeds."
 msgstr ""
 
-#: includes/Classes/Product_Feed_Admin.php:677
+#: includes/Classes/Product_Feed_Admin.php:674
 msgid "Feed deactivated successfully."
+msgstr ""
+
+#: includes/Classes/Product_Feed_Admin.php:723
+msgid "Product Feed Pro: automatic feed generation paused."
+msgstr ""
+
+#. translators: %s: comma-separated list of feed names.
+#: includes/Classes/Product_Feed_Admin.php:729
+#, php-format
+msgid "Generation of the following feed(s) crashed repeatedly, usually because the server ran out of memory or execution time: %s. Scheduled generation is paused for these feeds."
+msgstr ""
+
+#: includes/Classes/Product_Feed_Admin.php:735
+msgid "To retry, refresh the feed manually - a successful run resumes the schedule automatically. If it keeps failing, ask your host to raise the PHP memory limit or set a smaller fixed batch size in the plugin settings."
 msgstr ""
 
 #: includes/Classes/Product_Feed_Attributes.php:625
@@ -907,6 +1528,113 @@ msgstr ""
 msgid "Exclude Attribute (Elite)"
 msgstr ""
 
+#: includes/Classes/Rules.php:73
+msgid "Truncate to Character Limit (Elite)"
+msgstr ""
+
+#: includes/Classes/Rules.php:77
+msgid "Combine Fields (Elite)"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:95
+msgid "SaveTo Wishlist Lite"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:96
+msgid "Wishlists that bring shoppers back to buy"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:99
+msgid "StoreAgent AI"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:100
+msgid "AI chatbot that answers product questions"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:104
+msgid "BOGO deals, store credit & smart coupons"
+msgstr ""
+
+#. translators: 1: PHP version, 2: WordPress version, 3: WooCommerce version.
+#: includes/Classes/Setup_Checklist.php:304
+#, php-format
+msgid "WooCommerce active · PHP %1$s · WP %2$s · WooCommerce %3$s"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:309
+msgid "WooCommerce is not active — activate it to generate feeds"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:312
+msgid "Your store passed all environment checks"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:313
+msgid "Check your store environment"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:323
+msgid "Create your first feed"
+msgstr ""
+
+#. translators: %d: number of feeds detected.
+#: includes/Classes/Setup_Checklist.php:327
+#, php-format
+msgid "%d feed detected — nothing to do here"
+msgid_plural "%d feeds detected — nothing to do here"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Classes/Setup_Checklist.php:330
+msgid "No feeds yet — create your first feed to get started"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:340
+msgid "Submit a feed to a marketing channel"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:342
+msgid "Copy your feed URL and add it as a data source"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:344
+msgid "Publish a feed first — draft feeds have no public URL yet"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:345
+msgid "Create and publish a feed first, then submit its URL"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:374
+msgid "Add a free sister plugin"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:375
+msgid "Pick one — we install & activate it for you in one click"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:384
+msgid "Upgrade to unlock Elite features & addons"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:385
+msgid "Multi-currency, translations, priority support"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:523
+#: i18n.js:59
+msgid "Show setup checklist"
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:584
+msgid "You are not allowed to do this."
+msgstr ""
+
+#: includes/Classes/Setup_Checklist.php:609
+msgid "Unknown checklist task."
+msgstr ""
+
 #: includes/Classes/Upsell.php:40
 msgid "Upgrade to Product Feed Elite for WooCommerce"
 msgstr ""
@@ -940,38 +1668,70 @@ msgid "In Product Feed ELITE for WooCommerce you can build filters and rules bas
 msgstr ""
 
 #: includes/Classes/Upsell.php:60
-msgid "Upgrade to target Feed Output Fields in Rules"
+msgid "Upgrade to In List conditions"
 msgstr ""
 
 #: includes/Classes/Upsell.php:61
-msgid "In Product Feed ELITE for WooCommerce your rules can read from and write to the output columns you configured in Field Mapping (e.g. g:custom_label_0, g:custom_label_1, custom fields). Perfect for populating Google Shopping custom labels conditionally based on product data, or any other feed column derived from your mapping."
+msgid "In Product Feed ELITE for WooCommerce you can match a field against a comma-separated list of values in a single filter or rule row—e.g. \"Product Id In List 101, 245, 389\". Perfect for promotion feeds that target a curated set of products without stacking one row per product."
 msgstr ""
 
 #: includes/Classes/Upsell.php:65
-msgid "Upgrade to set custom refresh interval"
+msgid "Upgrade to Between conditions"
 msgstr ""
 
 #: includes/Classes/Upsell.php:66
-msgid "In Product Feed ELITE for WooCommerce you can set custom refresh intervals and specific times for your feeds. Schedule feeds to run hourly, daily, weekly, yearly or every X hours at specific times (e.g., daily at 11 PM). Perfect for optimizing server performance during off-peak hours and ensuring feeds complete before the next refresh cycle."
+msgid "In Product Feed ELITE for WooCommerce you can match a numeric field against an inclusive range in a single filter or rule row—e.g. \"Product Id Between 100, 200\". Perfect for scoping a feed to a range of ids, prices or stock levels without stacking a Greater Than row and a Less Than row."
 msgstr ""
 
 #: includes/Classes/Upsell.php:70
-msgid "Upgrade to import feeds"
+msgid "Upgrade to Truncate fields"
 msgstr ""
 
 #: includes/Classes/Upsell.php:71
+msgid "In Product Feed ELITE for WooCommerce you can automatically shorten oversized fields to a character limit and append a custom suffix—e.g. cut a description down to 240 characters and add \"…\". Perfect for meeting channel character limits without editing your product catalog."
+msgstr ""
+
+#: includes/Classes/Upsell.php:75
+msgid "Upgrade to Combine Fields"
+msgstr ""
+
+#: includes/Classes/Upsell.php:76
+msgid "In Product Feed ELITE for WooCommerce you can build a field value from multiple product attributes and static text—e.g. combine color, size, and material into a structured description. Perfect for attribute-built fallbacks when a field is empty or too long for a channel."
+msgstr ""
+
+#: includes/Classes/Upsell.php:80
+msgid "Upgrade to target Feed Output Fields in Rules"
+msgstr ""
+
+#: includes/Classes/Upsell.php:81
+msgid "In Product Feed ELITE for WooCommerce your rules can read from and write to the output columns you configured in Field Mapping (e.g. g:custom_label_0, g:custom_label_1, custom fields). Perfect for populating Google Shopping custom labels conditionally based on product data, or any other feed column derived from your mapping."
+msgstr ""
+
+#: includes/Classes/Upsell.php:85
+msgid "Upgrade to set custom refresh interval"
+msgstr ""
+
+#: includes/Classes/Upsell.php:86
+msgid "In Product Feed ELITE for WooCommerce you can set custom refresh intervals and specific times for your feeds. Schedule feeds to run hourly, daily, weekly, yearly or every X hours at specific times (e.g., daily at 11 PM). Perfect for optimizing server performance during off-peak hours and ensuring feeds complete before the next refresh cycle."
+msgstr ""
+
+#: includes/Classes/Upsell.php:90
+msgid "Upgrade to import feeds"
+msgstr ""
+
+#: includes/Classes/Upsell.php:91
 msgid "In Product Feed ELITE for WooCommerce you can import feed configurations from JSON files. Perfect for migrating feeds between sites, restoring backups, or bulk importing multiple feed setups at once. Save hours of manual configuration work."
 msgstr ""
 
-#: includes/Classes/Upsell.php:121
+#: includes/Classes/Upsell.php:141
 msgid "See all features & pricing →"
 msgstr ""
 
-#: includes/Classes/Upsell.php:195
+#: includes/Classes/Upsell.php:215
 msgid "Custom (Elite)"
 msgstr ""
 
-#: includes/Classes/Upsell.php:213
+#: includes/Classes/Upsell.php:233
 msgid "The refresh interval has been automatically set to ‘No Refresh’ because the Elite plugin is deactivated. Custom refresh intervals are only available with the Elite version."
 msgstr ""
 
@@ -1131,58 +1891,58 @@ msgstr ""
 msgid "Sample Blocks"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:217
-#: includes/Helpers/Product_Feed_Helper.php:326
+#: includes/Helpers/Formatting.php:218
+#: includes/Helpers/Product_Feed_Helper.php:363
 #: templates/upsell/custom-refresh-interval.php:33
 msgid "Hourly"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:218
-#: includes/Helpers/Product_Feed_Helper.php:327
+#: includes/Helpers/Formatting.php:219
+#: includes/Helpers/Product_Feed_Helper.php:364
 #: templates/upsell/custom-refresh-interval.php:51
 msgid "Twice Daily"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:219
-#: includes/Helpers/Product_Feed_Helper.php:328
+#: includes/Helpers/Formatting.php:220
+#: includes/Helpers/Product_Feed_Helper.php:365
 #: templates/upsell/custom-refresh-interval.php:42
 msgid "Daily"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:231
-#: includes/Helpers/Product_Feed_Helper.php:340
+#: includes/Helpers/Formatting.php:232
+#: includes/Helpers/Product_Feed_Helper.php:377
 msgid "No Refresh"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:250
-#: i18n.js:29
+#: includes/Helpers/Formatting.php:251
 #: i18n.js:83
-#: i18n.js:89
+#: i18n.js:137
 #: i18n.js:143
-#: i18n.js:149
+#: i18n.js:197
+#: i18n.js:203
 msgid "Ready"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:252
-#: i18n.js:74
-#: i18n.js:92
-#: i18n.js:95
-#: i18n.js:98
+#: includes/Helpers/Formatting.php:253
 #: i18n.js:128
+#: i18n.js:146
+#: i18n.js:149
+#: i18n.js:152
+#: i18n.js:182
 msgid "Processing"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:254
+#: includes/Helpers/Formatting.php:255
 msgid "Error"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:256
-#: i18n.js:59
-#: i18n.js:134
+#: includes/Helpers/Formatting.php:257
+#: i18n.js:113
+#: i18n.js:188
 msgid "Stopped"
 msgstr ""
 
-#: includes/Helpers/Formatting.php:258
+#: includes/Helpers/Formatting.php:259
 msgid "Unknown"
 msgstr ""
 
@@ -1232,8 +1992,8 @@ msgstr ""
 msgid "Product Feed CPT"
 msgstr ""
 
-#: includes/REST/Filters_Rules.php:143
-#: includes/REST/Filters_Rules.php:226
+#: includes/REST/Filters_Rules.php:161
+#: includes/REST/Filters_Rules.php:244
 msgid "Feed ID is required"
 msgstr ""
 
@@ -1364,7 +2124,7 @@ msgstr ""
 #: templates/about-page.php:150
 #: templates/about-page.php:170
 #: templates/about-page.php:191
-#: i18n.js:14
+#: i18n.js:68
 #: static/js/pfp-plugin-installer.js:35
 msgid "Installed"
 msgstr ""
@@ -1508,6 +2268,111 @@ msgstr ""
 msgid "The feed file is not available, refresh the feed to generate a new file."
 msgstr ""
 
+#: templates/components/setup-checklist.php:21
+#: i18n.js:23
+msgid "You're all set up!"
+msgstr ""
+
+#: templates/components/setup-checklist.php:22
+msgid "Finish setting up Product Feed PRO"
+msgstr ""
+
+#: templates/components/setup-checklist.php:24
+#: i18n.js:26
+msgid "Your feeds are ready to reach shoppers."
+msgstr ""
+
+#. translators: 1: completed essential steps, 2: total essential steps.
+#: templates/components/setup-checklist.php:28
+#: i18n.js:16
+#, php-format,js-format
+msgid "%1$d of %2$d essential steps done — almost there!"
+msgstr ""
+
+#. translators: 1: completed essential steps, 2: total essential steps.
+#: templates/components/setup-checklist.php:30
+#: i18n.js:20
+#, php-format,js-format
+msgid "%1$d of %2$d essential steps done"
+msgstr ""
+
+#: templates/components/setup-checklist.php:40
+msgid "Pip the panda"
+msgstr ""
+
+#: templates/components/setup-checklist.php:43
+msgid "Getting Started"
+msgstr ""
+
+#: templates/components/setup-checklist.php:57
+msgid "Setup checklist progress"
+msgstr ""
+
+#. translators: 1: completed essential steps, 2: total essential steps.
+#: templates/components/setup-checklist.php:66
+#: i18n.js:12
+#, php-format,js-format
+msgid "%1$d / %2$d done"
+msgstr ""
+
+#: templates/components/setup-checklist.php:95
+msgid "Optional"
+msgstr ""
+
+#: templates/components/setup-checklist.php:105
+msgid "WP-Cron is disabled. Action Scheduler will refresh your feeds instead — nothing is broken."
+msgstr ""
+
+#: templates/components/setup-checklist.php:108
+msgid "WP-Cron off"
+msgstr ""
+
+#: templates/components/setup-checklist.php:113
+msgid "Auto-detected"
+msgstr ""
+
+#: templates/components/setup-checklist.php:120
+msgid "Copy Feed URL"
+msgstr ""
+
+#: templates/components/setup-checklist.php:124
+msgid "Copied"
+msgstr ""
+
+#: templates/components/setup-checklist.php:127
+msgid "I've submitted it"
+msgstr ""
+
+#: templates/components/setup-checklist.php:135
+msgid "Upgrade"
+msgstr ""
+
+#: templates/components/setup-checklist.php:167
+#: i18n.js:38
+msgid "Installed & Active"
+msgstr ""
+
+#: templates/components/setup-checklist.php:172
+#: i18n.js:44
+#: i18n.js:50
+msgid "Install & Activate"
+msgstr ""
+
+#: templates/components/setup-checklist.php:187
+#: i18n.js:29
+msgid "All essentials complete — great work!"
+msgstr ""
+
+#. translators: 1: opening anchor tag, 2: closing anchor tag.
+#: templates/components/setup-checklist.php:195
+#, php-format
+msgid "%1$sNeed help?%2$s Check our Getting Started guide"
+msgstr ""
+
+#: templates/components/setup-checklist.php:203
+msgid "Dismiss checklist"
+msgstr ""
+
 #: templates/edit-feed/edit-feed.php:34
 msgid "Create New Feed"
 msgstr ""
@@ -1560,7 +2425,7 @@ msgstr ""
 #: templates/edit-feed/tabs/field-mapping-tab.php:302
 #: templates/edit-feed/tabs/filters-rules-tab.php:203
 #: templates/edit-feed/tabs/filters-tab.php:50
-#: templates/edit-feed/tabs/general-tab.php:315
+#: templates/edit-feed/tabs/general-tab.php:324
 #: templates/edit-feed/tabs/rules-tab.php:50
 msgid "Save & Continue"
 msgstr ""
@@ -1592,7 +2457,7 @@ msgstr ""
 #: templates/edit-feed/tabs/conversion-analytics-tab.php:112
 #: templates/edit-feed/tabs/field-mapping-tab.php:288
 #: templates/edit-feed/tabs/filters-rules-tab.php:195
-#: templates/edit-feed/tabs/general-tab.php:313
+#: templates/edit-feed/tabs/general-tab.php:322
 msgid "Save Changes"
 msgstr ""
 
@@ -1630,7 +2495,7 @@ msgstr ""
 #: templates/edit-feed/tabs/field-mapping-tab.php:293
 #: templates/edit-feed/tabs/filters-rules-tab.php:191
 #: templates/edit-feed/tabs/filters-rules-tab.php:199
-#: templates/manage-feeds.php:66
+#: templates/manage-feeds.php:84
 msgid "Delete"
 msgstr ""
 
@@ -1769,31 +2634,31 @@ msgstr ""
 msgid "Enabling this option is for advanced use cases and can cause extreme performance issues. It will generate shipping data for every country you ship to, potentially creating massive feed files. This may lead to server timeouts, high memory usage, and slow feed generation. It only affects shipping zones set to \"Everywhere\". For most stores, creating separate feeds per country is a safer alternative."
 msgstr ""
 
-#: templates/edit-feed/tabs/general-tab.php:195
+#: templates/edit-feed/tabs/general-tab.php:204
 msgid "File format"
 msgstr ""
 
-#: templates/edit-feed/tabs/general-tab.php:214
+#: templates/edit-feed/tabs/general-tab.php:223
 msgid "Delimiter"
 msgstr ""
 
-#: templates/edit-feed/tabs/general-tab.php:233
+#: templates/edit-feed/tabs/general-tab.php:242
 msgid "Refresh interval"
 msgstr ""
 
-#: templates/edit-feed/tabs/general-tab.php:276
+#: templates/edit-feed/tabs/general-tab.php:285
 msgid "Create a preview of the feed"
 msgstr ""
 
-#: templates/edit-feed/tabs/general-tab.php:292
+#: templates/edit-feed/tabs/general-tab.php:301
 msgid "Remove products that did not have sales in the last days"
 msgstr ""
 
-#: templates/edit-feed/tabs/general-tab.php:294
+#: templates/edit-feed/tabs/general-tab.php:303
 msgid "What does this do?"
 msgstr ""
 
-#: templates/edit-feed/tabs/general-tab.php:304
+#: templates/edit-feed/tabs/general-tab.php:313
 msgid "days"
 msgstr ""
 
@@ -1829,8 +2694,8 @@ msgid "Case sensitive"
 msgstr ""
 
 #: templates/filters-rules/rule-row.php:26
-#: i18n.js:301
-#: i18n.js:307
+#: i18n.js:355
+#: i18n.js:361
 msgid "Rule"
 msgstr ""
 
@@ -1920,7 +2785,7 @@ msgid "Enter your license keys below to enjoy full access, plugin updates, and s
 msgstr ""
 
 #: templates/license-page.php:31
-#: i18n.js:199
+#: i18n.js:253
 msgid "Dismiss this notice."
 msgstr ""
 
@@ -1968,143 +2833,143 @@ msgstr ""
 msgid "Product Feed Elite"
 msgstr ""
 
-#: templates/manage-feeds.php:52
+#: templates/manage-feeds.php:60
 msgid "Manage Feeds"
 msgstr ""
 
-#: templates/manage-feeds.php:60
+#: templates/manage-feeds.php:78
 msgid "Bulk Actions"
 msgstr ""
 
-#: templates/manage-feeds.php:61
+#: templates/manage-feeds.php:79
 msgid "Activate"
 msgstr ""
 
-#: templates/manage-feeds.php:62
+#: templates/manage-feeds.php:80
 msgid "Deactivate"
 msgstr ""
 
-#: templates/manage-feeds.php:63
+#: templates/manage-feeds.php:81
 msgid "Refresh"
 msgstr ""
 
-#: templates/manage-feeds.php:64
+#: templates/manage-feeds.php:82
 msgid "Cancel"
 msgstr ""
 
-#: templates/manage-feeds.php:65
+#: templates/manage-feeds.php:83
 msgid "Duplicate"
 msgstr ""
 
-#: templates/manage-feeds.php:70
-#: templates/manage-feeds.php:356
+#: templates/manage-feeds.php:88
+#: templates/manage-feeds.php:374
 msgid "Add New Feed"
 msgstr ""
 
-#: templates/manage-feeds.php:81
+#: templates/manage-feeds.php:99
 msgid "Feed Name"
 msgstr ""
 
-#: templates/manage-feeds.php:82
-#: templates/manage-feeds.php:111
+#: templates/manage-feeds.php:100
+#: templates/manage-feeds.php:129
 msgid "Format"
 msgstr ""
 
-#: templates/manage-feeds.php:83
-#: templates/manage-feeds.php:116
+#: templates/manage-feeds.php:101
+#: templates/manage-feeds.php:134
 msgid "Status"
 msgstr ""
 
-#: templates/manage-feeds.php:84
-#: templates/manage-feeds.php:131
+#: templates/manage-feeds.php:102
+#: templates/manage-feeds.php:149
 msgid "Last Updated"
 msgstr ""
 
-#: templates/manage-feeds.php:85
-#: templates/manage-feeds.php:136
+#: templates/manage-feeds.php:103
+#: templates/manage-feeds.php:154
 msgid "Refresh Interval"
 msgstr ""
 
-#: templates/manage-feeds.php:86
-#: templates/manage-feeds.php:141
+#: templates/manage-feeds.php:104
+#: templates/manage-feeds.php:159
 msgid "Feed URL"
 msgstr ""
 
-#: templates/manage-feeds.php:87
-#: templates/manage-feeds.php:146
+#: templates/manage-feeds.php:105
+#: templates/manage-feeds.php:164
 msgid "Actions"
 msgstr ""
 
-#: templates/manage-feeds.php:106
+#: templates/manage-feeds.php:124
 msgid "Feed Type:"
 msgstr ""
 
-#: templates/manage-feeds.php:123
+#: templates/manage-feeds.php:141
 msgid "Click to deactivate the feed."
 msgstr ""
 
-#: templates/manage-feeds.php:125
+#: templates/manage-feeds.php:143
 msgid "Click to activate the feed."
 msgstr ""
 
-#: templates/manage-feeds.php:158
+#: templates/manage-feeds.php:176
 msgid "Show"
 msgstr ""
 
-#: templates/manage-feeds.php:163
+#: templates/manage-feeds.php:181
 msgid "10"
 msgstr ""
 
-#: templates/manage-feeds.php:164
+#: templates/manage-feeds.php:182
 msgid "25"
 msgstr ""
 
-#: templates/manage-feeds.php:165
+#: templates/manage-feeds.php:183
 msgid "50"
 msgstr ""
 
-#: templates/manage-feeds.php:166
+#: templates/manage-feeds.php:184
 msgid "100"
 msgstr ""
 
-#: templates/manage-feeds.php:168
+#: templates/manage-feeds.php:186
 msgid "feeds per page"
 msgstr ""
 
-#: templates/manage-feeds.php:182
+#: templates/manage-feeds.php:200
 msgid "First page"
 msgstr ""
 
-#: templates/manage-feeds.php:198
+#: templates/manage-feeds.php:216
 msgid "Previous page"
 msgstr ""
 
-#: templates/manage-feeds.php:290
+#: templates/manage-feeds.php:308
 msgid "Next page"
 msgstr ""
 
-#: templates/manage-feeds.php:305
+#: templates/manage-feeds.php:323
 msgid "Last page"
 msgstr ""
 
-#: templates/manage-feeds.php:317
+#: templates/manage-feeds.php:335
 msgid "No feeds"
 msgstr ""
 
-#: templates/manage-feeds.php:320
+#: templates/manage-feeds.php:338
 msgid "Whoops! It looks like you don't have any feeds yet."
 msgstr ""
 
-#: templates/manage-feeds.php:331
+#: templates/manage-feeds.php:349
 msgid "Let's Get Started!"
 msgstr ""
 
-#: templates/manage-feeds.php:334
+#: templates/manage-feeds.php:352
 msgid "Click the <strong>Add New Feed</strong> button to begin creating your feed."
 msgstr ""
 
 #. translators: %1$s: Opening anchor tag, %2$s: Closing anchor tag.
-#: templates/manage-feeds.php:341
+#: templates/manage-feeds.php:359
 #, php-format
 msgid "<strong>Need help?</strong> Check out our %1$sGetting Started%2$s guide for step-by-step instructions and tips!"
 msgstr ""
@@ -2254,7 +3119,7 @@ msgstr ""
 #: templates/notices/notification-drawer.php:36
 #: dist/vanilla/notices/drawer-legacy.emUWq9g1.js:1
 #: dist/vanilla/notices/drawer.BanUXkiu.js:1
-#: i18n.js:20
+#: i18n.js:74
 msgid "Mark all as read"
 msgstr ""
 
@@ -2339,7 +3204,7 @@ msgid "Please select one or more feeds to export. Use search to find feeds by ti
 msgstr ""
 
 #: templates/settings/export-import-tab.php:43
-#: i18n.js:196
+#: i18n.js:250
 msgid "Select Feeds"
 msgstr ""
 
@@ -2494,356 +3359,449 @@ msgstr ""
 msgid "Local time is:"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:232
-#: i18n.js:283
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:337
+msgid "Enter two numbers separated by a comma, e.g. 100,200"
+msgstr ""
+
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:286
+#: i18n.js:328
 msgid "Attribute is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:235
-#: i18n.js:286
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:289
+#: i18n.js:331
 msgid "Condition is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:238
-#: i18n.js:289
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:292
+#: i18n.js:334
 msgid "Value is required for this condition"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:241
-#: i18n.js:262
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:295
 msgid "Action attribute is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:244
-#: i18n.js:265
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:298
 msgid "Action find text is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:256
-#: i18n.js:277
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:310
 msgid "Invalid numeric value"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:259
-#: i18n.js:280
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:313
 msgid "Division by zero is not allowed"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:250
-#: i18n.js:271
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:304
 msgid "Invalid decimal format. Use period (.) instead of comma (,) for decimal numbers (e.g., 2.5 instead of 2,5)"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:253
-#: i18n.js:274
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:307
 msgid "Invalid numeric value. Only numbers with period (.) as decimal separator are allowed"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:247
-#: i18n.js:268
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:301
+#: i18n.js:316
 msgid "Action value is required"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:298
-#: i18n.js:337
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:319
+msgid "Max characters must be a positive whole number"
+msgstr ""
+
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:322
+msgid "At least one segment is required"
+msgstr ""
+
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:325
+msgid "Each attribute segment must have an attribute selected"
+msgstr ""
+
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:340
+msgid "Select category"
+msgstr ""
+
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:343
+msgid "Min,Max (e.g., 100,200)"
+msgstr ""
+
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:352
+#: i18n.js:397
 msgid "Enter value"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:340
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:400
 msgid "Filters Successfully Migrated"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:343
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:403
 msgid "Rules Successfully Migrated"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:346
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:406
 msgid "Your existing filters have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your filter rules."
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:349
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:409
 msgid "Your existing rules have been automatically migrated to the new enhanced format. The new builder provides improved functionality and better organization of your rules."
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:295
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:349
 msgid "Enter numeric value (e.g., 2.5)"
 msgstr ""
 
-#: dist/apps/filters-rules-builder/index-legacy.BWAJv11a.js:40
-#: dist/apps/filters-rules-builder/index.CMa0sbdk.js:33
-#: i18n.js:229
+#: dist/apps/filters-rules-builder/index-legacy.MoMC2wVe.js:40
+#: dist/apps/filters-rules-builder/index.Ct03ODDx.js:33
+#: i18n.js:283
 msgid "Please fill in all required fields before submitting."
 msgstr ""
 
 #: dist/vanilla/notices/drawer-legacy.emUWq9g1.js:1
 #: dist/vanilla/notices/drawer.BanUXkiu.js:1
-#: i18n.js:17
+#: i18n.js:71
 msgid "Marking..."
 msgstr ""
 
-#: i18n.js:11
+#: i18n.js:32
+msgid "Could not copy the feed URL."
+msgstr ""
+
+#: i18n.js:35
+msgid "Installing…"
+msgstr ""
+
+#: i18n.js:41
+msgid "Installation failed."
+msgstr ""
+
+#: i18n.js:47
+#: i18n.js:53
+#: i18n.js:95
+#: i18n.js:107
+#: i18n.js:122
+#: i18n.js:140
+#: i18n.js:164
+#: i18n.js:200
+msgid "A network error occurred. Please try again."
+msgstr ""
+
+#: i18n.js:56
+msgid "Could not dismiss the checklist. Please try again."
+msgstr ""
+
+#: i18n.js:62
+msgid "Could not restore the checklist. Please try again."
+msgstr ""
+
+#: i18n.js:65
 #: static/js/pfp-plugin-installer.js:18
 msgid "Installing..."
 msgstr ""
 
-#: i18n.js:23
+#: i18n.js:77
 msgid "Are you sure you want to activate this feed?"
 msgstr ""
 
-#: i18n.js:26
+#: i18n.js:80
 msgid "Are you sure you want to deactivate this feed?"
 msgstr ""
 
-#: i18n.js:35
-#: i18n.js:47
-#: i18n.js:62
-#: i18n.js:77
-#: i18n.js:104
-#: i18n.js:137
-#: i18n.js:152
+#: i18n.js:89
+#: i18n.js:101
+#: i18n.js:116
+#: i18n.js:131
+#: i18n.js:158
+#: i18n.js:191
+#: i18n.js:206
 msgid "Error: "
 msgstr ""
 
-#: i18n.js:38
-#: i18n.js:50
-#: i18n.js:65
-#: i18n.js:80
-#: i18n.js:107
-#: i18n.js:140
+#: i18n.js:92
+#: i18n.js:104
+#: i18n.js:119
+#: i18n.js:134
+#: i18n.js:161
+#: i18n.js:194
 msgid "An unknown error occurred."
 msgstr ""
 
-#: i18n.js:41
-#: i18n.js:53
-#: i18n.js:68
-#: i18n.js:86
-#: i18n.js:110
-#: i18n.js:146
-msgid "A network error occurred. Please try again."
-msgstr ""
-
-#: i18n.js:44
+#: i18n.js:98
 msgid "Are you sure you want to duplicate this feed?"
 msgstr ""
 
-#: i18n.js:56
+#: i18n.js:110
 #: static/js/woosea_manage.js:300
 msgid "Are you sure you want to cancel processing the feed?"
 msgstr ""
 
-#: i18n.js:71
+#: i18n.js:125
 msgid "Are you sure you want to refresh this feed now?"
 msgstr ""
 
-#: i18n.js:101
+#: i18n.js:155
 msgid "Are you sure you want to delete this feed? This action cannot be undone."
 msgstr ""
 
-#: i18n.js:113
+#: i18n.js:167
 msgid "Copied!"
 msgstr ""
 
-#: i18n.js:116
-#: i18n.js:122
+#: i18n.js:170
+#: i18n.js:176
 msgid "No processing feeds selected. The cancel action only applies to feeds that are currently processing."
 msgstr ""
 
-#: i18n.js:119
-#: i18n.js:125
+#: i18n.js:173
+#: i18n.js:179
 msgid "No active feeds selected. The refresh action only applies to feeds that are currently active."
 msgstr ""
 
-#: i18n.js:131
+#: i18n.js:185
 msgid "Cancelling..."
 msgstr ""
 
-#: i18n.js:155
+#: i18n.js:209
 msgid "Sorry, when creating new custom fields only letters are allowed (so no white spaces, numbers or any other character are allowed)."
 msgstr ""
 
 #. translators: %d: minimum length required
-#: i18n.js:159
+#: i18n.js:213
 #, js-format
 msgid "Sorry, your custom field name needs to be at least %d letters long."
 msgstr ""
 
 #. translators: %d: maximum length allowed
-#: i18n.js:163
+#: i18n.js:217
 #, js-format
 msgid "Sorry, your custom field name cannot be over %d letters long."
 msgstr ""
 
-#: i18n.js:166
+#: i18n.js:220
 msgid "Are you sure you want to delete the selected field mappings?"
 msgstr ""
 
-#: i18n.js:169
+#: i18n.js:223
 msgid "Please wait for the current operation to complete."
 msgstr ""
 
-#: i18n.js:172
+#: i18n.js:226
 msgid "Please select at least one feed to export."
 msgstr ""
 
-#: i18n.js:175
+#: i18n.js:229
 msgid "Please select a file to import."
 msgstr ""
 
-#: i18n.js:178
+#: i18n.js:232
 msgid "Please select a valid JSON file."
 msgstr ""
 
-#: i18n.js:181
+#: i18n.js:235
 msgid "File too large. Maximum file size is 10MB."
 msgstr ""
 
-#: i18n.js:184
+#: i18n.js:238
 msgid "Feeds exported successfully."
 msgstr ""
 
-#: i18n.js:187
+#: i18n.js:241
 msgid "Operation completed successfully."
 msgstr ""
 
-#: i18n.js:190
-#: i18n.js:193
+#: i18n.js:244
+#: i18n.js:247
 msgid "Operation failed."
 msgstr ""
 
-#: i18n.js:202
+#: i18n.js:256
 msgid "Sorry, only letters, numbers, whitespaces, -, . and _ are allowed for the projectname"
 msgstr ""
 
 #. translators: %d: minimum length of project name
-#: i18n.js:206
+#: i18n.js:260
 #, js-format
 msgid "Sorry, your project name needs to be at least %d characters long."
 msgstr ""
 
 #. translators: %d: maximum length of project name
-#: i18n.js:210
+#: i18n.js:264
 #, js-format
 msgid "Sorry, your project name cannot be over %d characters long."
 msgstr ""
 
-#: i18n.js:213
+#: i18n.js:267
 msgid "Could not validate feed configuration. Please try again."
 msgstr ""
 
-#: i18n.js:216
+#: i18n.js:270
 msgid "Feed is currently processing. Please wait for the feed generation to complete before making changes."
 msgstr ""
 
-#: i18n.js:219
+#: i18n.js:273
 msgid "Sorry, rule value minimum length is 1 character"
 msgstr ""
 
 #. translators: %d: maximum length of rule value
-#: i18n.js:223
+#: i18n.js:277
 #, js-format
 msgid "Sorry, rule value cannot be over %d characters long."
 msgstr ""
 
-#: i18n.js:226
+#: i18n.js:280
 msgid "Leaving this page will result in losing your feed configuration. Are you sure you want to leave?"
 msgstr ""
 
-#: i18n.js:292
+#: i18n.js:346
 msgid "Add New Rule"
 msgstr ""
 
-#: i18n.js:304
+#: i18n.js:358
 msgid "Edit rule name"
 msgstr ""
 
-#: i18n.js:310
+#: i18n.js:364
 msgid "Save rule name"
 msgstr ""
 
-#: i18n.js:313
+#: i18n.js:367
 msgid "Cancel editing"
 msgstr ""
 
-#: i18n.js:316
-#: i18n.js:325
-#: i18n.js:328
-msgid "Case Sensitive"
-msgstr ""
-
-#: i18n.js:319
-msgid "IF..."
-msgstr ""
-
-#: i18n.js:322
-msgid "Remove section"
-msgstr ""
-
-#: i18n.js:331
-msgid "Remove filter group"
-msgstr ""
-
-#: i18n.js:334
-msgid "Add New \"AND\" Filter"
-msgstr ""
-
-#: i18n.js:352
-msgid "Close notification"
-msgstr ""
-
-#: i18n.js:355
-#: i18n.js:364
-msgid "Add Group"
-msgstr ""
-
-#: i18n.js:358
-msgid "AND Group"
-msgstr ""
-
-#: i18n.js:361
-msgid "OR Group"
-msgstr ""
-
-#: i18n.js:367
-msgid "Select condition"
-msgstr ""
-
 #: i18n.js:370
-msgid "Select attribute"
+msgid "Max characters (e.g., 240)"
 msgstr ""
 
 #: i18n.js:373
+msgid "Suffix (optional, e.g., …)"
+msgstr ""
+
+#: i18n.js:376
+#: i18n.js:385
+#: i18n.js:388
+msgid "Case Sensitive"
+msgstr ""
+
+#: i18n.js:379
+msgid "IF..."
+msgstr ""
+
+#: i18n.js:382
+msgid "Remove section"
+msgstr ""
+
+#: i18n.js:391
+msgid "Remove filter group"
+msgstr ""
+
+#: i18n.js:394
+msgid "Add New \"AND\" Filter"
+msgstr ""
+
+#: i18n.js:412
+msgid "Close notification"
+msgstr ""
+
+#: i18n.js:415
+#: i18n.js:424
+msgid "Add Group"
+msgstr ""
+
+#: i18n.js:418
+msgid "AND Group"
+msgstr ""
+
+#: i18n.js:421
+msgid "OR Group"
+msgstr ""
+
+#: i18n.js:427
+msgid "Select condition"
+msgstr ""
+
+#: i18n.js:430
+msgid "Segment type"
+msgstr ""
+
+#: i18n.js:433
+msgid "Attribute"
+msgstr ""
+
+#: i18n.js:436
+#: i18n.js:439
+msgid "Static text"
+msgstr ""
+
+#: i18n.js:442
+msgid "Enter static text"
+msgstr ""
+
+#: i18n.js:445
+msgid "Move segment up"
+msgstr ""
+
+#: i18n.js:448
+msgid "Move segment down"
+msgstr ""
+
+#: i18n.js:451
+msgid "Remove segment"
+msgstr ""
+
+#: i18n.js:454
+msgid "Add segment"
+msgstr ""
+
+#: i18n.js:457
+msgid "Select attribute"
+msgstr ""
+
+#: i18n.js:460
 msgid "Select action"
 msgstr ""
 

@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useFiltersStore } from '../../stores/filtersStore';
 import { useValidation } from '../../composables/useValidation';
 import { useConditionUpsell } from '../../composables/useConditionUpsell';
+import { getValuePlaceholder } from '../../helpers/placeholder';
 import type { FilterItemProps } from '../../types';
 import AttributeSelect from '../common/AttributeSelect.vue';
 import ConditionSelect from '../common/ConditionSelect.vue';
@@ -33,6 +34,8 @@ const showCaseSensitive = computed(() => {
   const noCaseSensitiveConditions = ['is_empty', 'is_not_empty'];
   return condition && !noCaseSensitiveConditions.includes(condition);
 });
+
+const valuePlaceholder = computed(() => getValuePlaceholder(props.item.data));
 
 // Validation
 const fieldErrors = computed(() => {
@@ -135,7 +138,7 @@ const updateAttribute = (value: string) => {
             <ValueInput
               v-if="isFieldData(item.data) && showValueInput"
               :model-value="item.data.value || ''"
-              :placeholder="(item.data.attribute === 'categories' || item.data.attribute === 'raw_categories') ? 'Select category' : 'Enter value'"
+              :placeholder="valuePlaceholder"
               :attribute="item.data.attribute || ''"
               :categories="store.categories"
               :input-class="getFieldErrorClasses('adt-filter-value-input adt-tw-w-full adt-tw-max-w-full adt-tw-px-2 adt-tw-py-1 adt-tw-border adt-tw-border-gray-300 adt-tw-rounded-md adt-tw-text-sm adt-tw-focus-ring-2 adt-tw-focus-ring-blue-500 adt-tw-focus-border-blue-500 adt-tw-focus-outline-none adt-tw-transition-all')"

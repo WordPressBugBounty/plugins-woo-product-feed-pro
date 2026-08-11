@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { __ } from '@wordpress/i18n';
 import api from '@/api';
+import { getBetweenValueError } from '../helpers/validation';
 
 // Types specific to Filters
 export interface FilterFieldData {
@@ -562,6 +563,11 @@ export const useFiltersStore = defineStore('filters', () => {
       if (data.condition && !noValueConditions.includes(data.condition)) {
         if (!data.value || (typeof data.value === 'string' && data.value.trim() === '')) {
           errors.push(__('Value is required for this condition', 'woo-product-feed-pro'));
+        } else if (data.condition === 'between') {
+          const betweenError = getBetweenValueError(data.value);
+          if (betweenError) {
+            errors.push(betweenError);
+          }
         }
       }
     }

@@ -81,6 +81,16 @@ class WooSEA_Caching {
     /**
      * Exclude Feed URL from being cached by WP Super
      *
+     * NOTE: Unlike the other 7 integrations in this class, WP Super Cache does NOT
+     * store its page-cache exclusion list in a WordPress option. Its real page-cache
+     * rejection list is the $cache_rejected_uri array, which lives in the file
+     * $wp_cache_config_file points at (typically wp-content/wp-cache-config.php) and is
+     * persisted through WP Super Cache's own wp_cache_replace_line() config-file helper
+     * (see wp-cache.php). The
+     * ossdl_off_exclude option belongs to the legacy OSSDL CDN off-loading module and
+     * has NO effect on whether a URL is cached/served, so this must not be "fixed"
+     * back to update_option( 'ossdl_off_exclude', ... ). See issue #1067.
+     *
      * @return false
      */
     public function wp_super_cache() {
@@ -89,12 +99,36 @@ class WooSEA_Caching {
             return false;
         }
 
-        $wp_super_ex_paths = get_option( 'ossdl_off_exclude' );
-        if ( $wp_super_ex_paths && ! str_contains( $wp_super_ex_paths, 'woo-product-feed-pro' ) ) {
-            $wp_super_ex_paths = explode( ',', $wp_super_ex_paths );
-            $wp_super_ex_paths = array_merge( $wp_super_ex_paths, array( 'woo-product-feed-pro' ) );
-            update_option( 'ossdl_off_exclude', implode( ',', $wp_super_ex_paths ), false );
+        global $cache_rejected_uri, $wp_cache_config_file;
+
+        // Both are provided by WP Super Cache once its config is loaded; bail if the
+        // config-file write helper or the config path is unavailable.
+        if ( ! function_exists( 'wp_cache_replace_line' ) || empty( $wp_cache_config_file ) ) {
+            return false;
         }
+
+        $feed_path         = '/wp-content/uploads/woo-product-feed-pro';
+        $wp_super_ex_paths = is_array( $cache_rejected_uri ) ? $cache_rejected_uri : array();
+
+        if ( in_array( $feed_path, $wp_super_ex_paths, true ) ) {
+            return false;
+        }
+
+        $wp_super_ex_paths[] = $feed_path;
+        $cache_rejected_uri  = $wp_super_ex_paths;
+
+        // Persist to wp-cache-config.php exactly as WP Super Cache does when it saves
+        // its own cache_rejected_uri setting (see wp_cache_sanitize_value() +
+        // wp_cache_update_rejected_strings() in wp-cache.php): a single-line
+        // var_export() with whitespace collapsed. The single line matters — wp_cache_replace_line()
+        // only rewrites the one line matching ^ *\$cache_rejected_uri, so a multi-line
+        // value would be corrupted the next time WP Super Cache saves the setting itself.
+        $rejected_value = preg_replace( '/[\s]+/', ' ', var_export( $wp_super_ex_paths, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- var_export() is required to serialise the array into the config file, matching WP Super Cache's own format.
+        wp_cache_replace_line(
+            '^ *\$cache_rejected_uri',
+            '$cache_rejected_uri = ' . $rejected_value . ';',
+            $wp_cache_config_file
+        );
 
         return false;
     }

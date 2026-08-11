@@ -13,6 +13,7 @@ use AdTribes\PFP\Factories\Product_Feed_Query;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
 use AdTribes\PFP\Classes\Notices;
+use AdTribes\PFP\Classes\Setup_Checklist;
 
 // Updates.
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
@@ -130,6 +131,10 @@ class Activation extends Abstract_Class {
          */
         if ( ! get_option( 'woosea_first_activation' ) ) {
             update_option( 'woosea_first_activation', time(), false );
+
+            // Opt fresh installs into the Manage Feeds "Getting Started" setup
+            // checklist. Non-autoloaded, matching the plugin option convention.
+            update_option( Setup_Checklist::OPTION_ELIGIBLE, 'yes', false );
         }
 
         if ( ! get_option( 'woosea_count_activation' ) ) {

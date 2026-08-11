@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { __ } from '@wordpress/i18n';
 import api from '@/api';
+import { getBetweenValueError } from '../helpers/validation';
 
 // Types specific to Rules
 export interface RuleFieldData {
@@ -31,6 +32,12 @@ export interface RuleGroupLogic {
 
 export type RuleConditionItem = RuleGroup | RuleGroupLogic;
 
+export interface RuleActionSegment {
+  id: string;
+  type: 'attribute' | 'static';
+  value: string;
+}
+
 export interface RuleAction {
   id: string;
   attribute: string;
@@ -38,6 +45,8 @@ export interface RuleAction {
   value: string | number | boolean;
   find?: string;
   case_sensitive?: boolean;
+  suffix?: string;
+  segments?: RuleActionSegment[];
 }
 
 export interface Rule {
@@ -215,6 +224,30 @@ export const useRulesStore = defineStore('rules', () => {
               value: action.value || '',
               find: action.find || '',
             };
+
+            // Extension action parameters: truncate suffix / combine_fields segments.
+            if (typeof action.suffix === 'string') {
+              normalizedAction.suffix = action.suffix;
+            }
+            if (Array.isArray(action.segments)) {
+              normalizedAction.segments = action.segments.reduce(
+                (acc: RuleActionSegment[], segment: { type?: string; value?: unknown }, segmentIndex: number) => {
+                  if (segment && (segment.type === 'attribute' || segment.type === 'static')) {
+                    const type: RuleActionSegment['type'] = segment.type;
+                    acc.push({
+                      // Mirror CombineFieldsSegments.vue's `segment-` prefix; the
+                      // action/segment indices disambiguate within one normalize pass
+                      // (Date.now() is constant across the synchronous loop).
+                      id: 'segment-' + Date.now() + '-' + actionIndex + '-' + segmentIndex,
+                      type,
+                      value: String(segment.value ?? ''),
+                    });
+                  }
+                  return acc;
+                },
+                []
+              );
+            }
 
             normalizedRule.then.push(normalizedAction);
           });
@@ -701,6 +734,11 @@ export const useRulesStore = defineStore('rules', () => {
       if (fieldData.condition && !noValueConditions.includes(fieldData.condition)) {
         if (!fieldData.value && fieldData.value !== 0) {
           errors.push(__('Value is required for this condition', 'woo-product-feed-pro'));
+        } else if (fieldData.condition === 'between') {
+          const betweenError = getBetweenValueError(fieldData.value);
+          if (betweenError) {
+            errors.push(betweenError);
+          }
         }
       }
     }
@@ -749,6 +787,73 @@ export const useRulesStore = defineStore('rules', () => {
   };
 
   /**
+   * Validate a single rule action (THEN part)
+   */
+  const validateRuleAction = (action: RuleAction): string[] => {
+    const errors: string[] = [];
+
+    if (!action.attribute) {
+      errors.push(__('Action attribute is required', 'woo-product-feed-pro'));
+    }
+
+    if (action.action === 'findreplace') {
+      if (!action.find) {
+        errors.push(__('Action find text is required', 'woo-product-feed-pro'));
+      }
+    } else if (['multiply', 'divide', 'minus', 'plus'].includes(action.action)) {
+      if (!action.value && action.value !== 0) {
+        errors.push(__('Action value is required', 'woo-product-feed-pro'));
+      } else if (action.value) {
+        // Validate numeric value format - only allow numbers with period as decimal separator
+        const numericValue = String(action.value).trim();
+        const validNumericPattern = /^-?\d+(\.\d+)?$/;
+
+        if (!validNumericPattern.test(numericValue)) {
+          if (numericValue.includes(',')) {
+            errors.push(
+              __(
+                'Invalid decimal format. Use period (.) instead of comma (,) for decimal numbers (e.g., 2.5 instead of 2,5)',
+                'woo-product-feed-pro'
+              )
+            );
+          } else {
+            errors.push(
+              __(
+                'Invalid numeric value. Only numbers with period (.) as decimal separator are allowed',
+                'woo-product-feed-pro'
+              )
+            );
+          }
+        } else {
+          // Additional validation for mathematical operations
+          const parsedValue = parseFloat(numericValue);
+          if (isNaN(parsedValue)) {
+            errors.push(__('Invalid numeric value', 'woo-product-feed-pro'));
+          } else if (action.action === 'divide' && parsedValue === 0) {
+            errors.push(__('Division by zero is not allowed', 'woo-product-feed-pro'));
+          }
+        }
+      }
+    } else if (action.action === 'truncate') {
+      // The value holds the maximum character count.
+      if (!action.value && action.value !== 0) {
+        errors.push(__('Action value is required', 'woo-product-feed-pro'));
+      } else if (!/^\d+$/.test(String(action.value).trim()) || parseInt(String(action.value).trim(), 10) <= 0) {
+        errors.push(__('Max characters must be a positive whole number', 'woo-product-feed-pro'));
+      }
+    } else if (action.action === 'combine_fields') {
+      const segments = action.segments || [];
+      if (segments.length === 0) {
+        errors.push(__('At least one segment is required', 'woo-product-feed-pro'));
+      } else if (segments.some((segment) => segment.type === 'attribute' && !segment.value)) {
+        errors.push(__('Each attribute segment must have an attribute selected', 'woo-product-feed-pro'));
+      }
+    }
+
+    return errors;
+  };
+
+  /**
    * Validate a complete rule
    */
   const validateRule = (rule: Rule): string[] => {
@@ -771,50 +876,7 @@ export const useRulesStore = defineStore('rules', () => {
     });
 
     rule.then.forEach((action) => {
-      // Only validate actions that have some data
-      if (!action.attribute) {
-        errors.push(__('Action attribute is required', 'woo-product-feed-pro'));
-      }
-
-      if (action.action === 'findreplace') {
-        if (!action.find) {
-          errors.push(__('Action find text is required', 'woo-product-feed-pro'));
-        }
-      } else if (['multiply', 'divide', 'minus', 'plus'].includes(action.action)) {
-        if (!action.value && action.value !== 0) {
-          errors.push(__('Action value is required', 'woo-product-feed-pro'));
-        } else if (action.value) {
-          // Validate numeric value format - only allow numbers with period as decimal separator
-          const numericValue = String(action.value).trim();
-          const validNumericPattern = /^-?\d+(\.\d+)?$/;
-
-          if (!validNumericPattern.test(numericValue)) {
-            if (numericValue.includes(',')) {
-              errors.push(
-                __(
-                  'Invalid decimal format. Use period (.) instead of comma (,) for decimal numbers (e.g., 2.5 instead of 2,5)',
-                  'woo-product-feed-pro'
-                )
-              );
-            } else {
-              errors.push(
-                __(
-                  'Invalid numeric value. Only numbers with period (.) as decimal separator are allowed',
-                  'woo-product-feed-pro'
-                )
-              );
-            }
-          } else {
-            // Additional validation for mathematical operations
-            const parsedValue = parseFloat(numericValue);
-            if (isNaN(parsedValue)) {
-              errors.push(__('Invalid numeric value', 'woo-product-feed-pro'));
-            } else if (action.action === 'divide' && parsedValue === 0) {
-              errors.push(__('Division by zero is not allowed', 'woo-product-feed-pro'));
-            }
-          }
-        }
-      }
+      errors.push(...validateRuleAction(action));
     });
 
     return errors;
@@ -871,50 +933,7 @@ export const useRulesStore = defineStore('rules', () => {
 
       // Only validate actions if there are actual field conditions with data
       rule.then.forEach((action) => {
-        const actionErrors: string[] = [];
-        if (!action.attribute) {
-          actionErrors.push(__('Action attribute is required', 'woo-product-feed-pro'));
-        }
-
-        if (action.action === 'findreplace') {
-          if (!action.find) {
-            actionErrors.push(__('Action find text is required', 'woo-product-feed-pro'));
-          }
-        } else if (['multiply', 'divide', 'minus', 'plus'].includes(action.action)) {
-          if (!action.value && action.value !== 0) {
-            actionErrors.push(__('Action value is required', 'woo-product-feed-pro'));
-          } else if (action.value) {
-            // Validate numeric value format - only allow numbers with period as decimal separator
-            const numericValue = String(action.value).trim();
-            const validNumericPattern = /^-?\d+(\.\d+)?$/;
-
-            if (!validNumericPattern.test(numericValue)) {
-              if (numericValue.includes(',')) {
-                actionErrors.push(
-                  __(
-                    'Invalid decimal format. Use period (.) instead of comma (,) for decimal numbers (e.g., 2.5 instead of 2,5)',
-                    'woo-product-feed-pro'
-                  )
-                );
-              } else {
-                actionErrors.push(
-                  __(
-                    'Invalid numeric value. Only numbers with period (.) as decimal separator are allowed',
-                    'woo-product-feed-pro'
-                  )
-                );
-              }
-            } else {
-              // Additional validation for mathematical operations
-              const parsedValue = parseFloat(numericValue);
-              if (isNaN(parsedValue)) {
-                actionErrors.push(__('Invalid numeric value', 'woo-product-feed-pro'));
-              } else if (action.action === 'divide' && parsedValue === 0) {
-                actionErrors.push(__('Division by zero is not allowed', 'woo-product-feed-pro'));
-              }
-            }
-          }
-        }
+        const actionErrors = validateRuleAction(action);
 
         if (actionErrors.length > 0) {
           fieldValidationErrors[action.id] = actionErrors;

@@ -1,0 +1,477 @@
+/**
+ * Setup checklist ("Getting Started") onboarding card — Manage Feeds page.
+ *
+ * Colours come from the plugin's global CSS custom properties (src/scss/style.scss);
+ * spacing / radii / shadows are inlined from the AdTribes design tokens.
+ */
+
+%adt-checklist-btn-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+// Rendered next to the page <h1>, outside the card itself, so it needs its
+// own button reset.
+.adt-setup-checklist-restore {
+  @extend %adt-checklist-btn-reset;
+}
+
+.adt-setup-checklist {
+  margin-bottom: 22px;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--border-subtle, #dcddeb);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(20, 20, 43, 0.08);
+  overflow: hidden;
+  font-family: var(--font-sans, inherit);
+  color: var(--text-strong, #333);
+
+  * {
+    box-sizing: border-box;
+  }
+
+  // Respect the `hidden` attribute even though children set an explicit display.
+  [hidden] {
+    display: none !important;
+  }
+
+  [class*='adt-tw-icon-'] {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    flex: none;
+  }
+
+  &__hairline {
+    height: 3px;
+    background: var(--adt-gradient-brand, linear-gradient(135deg, #441670 0%, #e63d78 100%));
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 22px 8px;
+  }
+
+  &__mascot {
+    width: 62px;
+    height: 62px;
+    object-fit: contain;
+    flex: none;
+  }
+
+  &__intro {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__eyebrow {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-primary, #e63d78);
+  }
+
+  &__headline {
+    margin: 2px 0 0;
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1.2;
+    color: var(--text-strong, #333);
+  }
+
+  &__subline {
+    font-size: 13.5px;
+    color: var(--text-muted, #6e7191);
+    margin-top: 2px;
+  }
+
+  &__body {
+    padding: 12px 20px 16px;
+  }
+
+  &__progress {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 14px;
+  }
+
+  &__progress-track {
+    flex: 1;
+    height: 7px;
+    background: var(--adt-gray-150, #eff0f6);
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+
+  &__progress-fill {
+    height: 100%;
+    background: var(--adt-success, #00974f);
+    border-radius: 9999px;
+    transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &__progress-label {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--text-muted, #6e7191);
+    white-space: nowrap;
+  }
+
+  &__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__step {
+    border: 1px solid var(--border-subtle, #dcddeb);
+    border-radius: 8px;
+    background: var(--surface-card, #fff);
+    overflow: hidden;
+  }
+
+  &__step-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+  }
+
+  &__check {
+    width: 24px;
+    height: 24px;
+    flex: none;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &--done {
+      background: var(--adt-success, #00974f);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(0, 151, 79, 0.35);
+      font-size: 15px;
+    }
+
+    &--todo {
+      border: 2px solid var(--border-strong, #d5d4dc);
+      background: var(--surface-subtle, #f9fafb);
+    }
+  }
+
+  &__step-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__step-title-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+
+  &__step-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-strong, #333);
+  }
+
+  &__badge {
+    font-size: 9.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--adt-purple-700, #441670);
+    background: var(--adt-purple-50, #f4effb);
+    padding: 2px 6px;
+    border-radius: 9999px;
+  }
+
+  &__step-sub {
+    font-size: 12.5px;
+    color: var(--text-muted, #6e7191);
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__step-actions {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    max-width: 260px;
+    flex-wrap: wrap;
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #b45309;
+    background: #fff6ed;
+    border: 1px solid #fcd9b6;
+    padding: 4px 9px;
+    border-radius: 9999px;
+    cursor: default;
+  }
+
+  &__auto {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-faint, #a0a3bd);
+  }
+
+  &__submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  &__copied {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--adt-success, #00974f);
+
+    [class*='adt-tw-icon-'] {
+      font-size: 14px;
+    }
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: var(--font-sans, inherit);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 7px 13px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1.2;
+
+    [class*='adt-tw-icon-'] {
+      font-size: 15px;
+    }
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    &--primary {
+      // The default --color-primary (#e63d78) with white text is ~3.96:1,
+      // under the 4.5:1 AA threshold; #c42c61 resting passes at 5.41:1, and
+      // hover darkens further instead of lightening so it stays compliant too.
+      background: var(--color-primary-hover, #c42c61);
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(20, 20, 43, 0.08);
+
+      &:hover:not(:disabled) {
+        background: var(--adt-purple-700, #441670);
+        color: #fff;
+      }
+    }
+
+    &--outline {
+      background: transparent;
+      border-color: var(--color-primary, #e63d78);
+      color: var(--color-primary, #e63d78);
+
+      &:hover:not(:disabled) {
+        background: var(--color-primary, #e63d78);
+        color: #fff;
+      }
+    }
+
+    &--upgrade {
+      // The light end of --adt-gradient-brand (#e63d78) with white text is
+      // ~3.96:1, under the 4.5:1 AA threshold; --adt-gradient-brand-hover's
+      // stops pass (14.90:1 / 5.41:1), so resting reuses them.
+      border-radius: 9999px;
+      border: none;
+      padding: 7px 14px;
+      background: var(--adt-gradient-brand-hover, linear-gradient(135deg, #38125c 0%, #c42c61 100%));
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(20, 20, 43, 0.08);
+    }
+  }
+
+  &__sisters {
+    padding: 0 13px 13px 49px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__sister {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 12px;
+    border: 1px solid var(--border-subtle, #dcddeb);
+    border-radius: 8px;
+    background: var(--surface-subtle, #f9fafb);
+    flex: 1 1 180px;
+    min-width: 168px;
+  }
+
+  &__sister-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+
+  &__sister-icon {
+    width: 38px;
+    height: 38px;
+    flex: none;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #fff;
+    border: 1px solid var(--border-subtle, #dcddeb);
+
+    // Compounded with the base class (rather than `&--fallback` alone) so this
+    // out-specifies the generic `[class*='adt-tw-icon-']` reset above, which
+    // would otherwise shrink the fallback glyph from 38px down to 1em (20px).
+    &.adt-setup-checklist__sister-icon--fallback {
+      width: 38px;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--color-primary, #e63d78);
+    }
+  }
+
+  &__sister-meta {
+    min-width: 0;
+  }
+
+  &__sister-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-strong, #333);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__sister-tagline {
+    font-size: 11px;
+    color: var(--text-muted, #6e7191);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__sister .adt-setup-checklist__btn {
+    width: 100%;
+    font-size: 12.5px;
+    padding: 8px 10px;
+  }
+
+  &__sister-state {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    font-weight: 700;
+    font-size: 12.5px;
+    padding: 8px 10px;
+    border-radius: 8px;
+
+    &--installing {
+      background: var(--surface-card, #fff);
+      border: 1px solid var(--border-subtle, #dcddeb);
+      color: var(--text-muted, #6e7191);
+    }
+
+    &--installed {
+      background: var(--adt-success-bg, #f0fff8);
+      border: 1px solid var(--adt-success, #00974f);
+      color: var(--adt-success, #00974f);
+    }
+  }
+
+  &__footer {
+    margin-top: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__help {
+    font-size: 12.5px;
+    color: var(--text-muted, #6e7191);
+
+    a {
+      color: var(--color-primary, #e63d78);
+      text-decoration: none;
+
+      &:hover {
+        color: var(--color-primary-hover, #c42c61);
+      }
+    }
+  }
+
+  &__celebrate {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--adt-success, #00974f);
+
+    [class*='adt-tw-icon-'] {
+      font-size: 16px;
+    }
+  }
+
+  &__dismiss {
+    @extend %adt-checklist-btn-reset;
+    font-size: 12px;
+    color: var(--text-faint, #a0a3bd);
+    white-space: nowrap;
+    text-decoration: none;
+
+    &:hover {
+      color: var(--text-muted, #6e7191);
+    }
+  }
+
+  .chk-spin {
+    animation: adt-chk-spin 0.8s linear infinite;
+  }
+}
+
+@keyframes adt-chk-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -125,6 +125,18 @@ abstract class Abstract_Filters_Rules extends Abstract_Class {
                 'value' => 'character_count_less_than_or_equal',
                 'label' => __( 'Character Count Less Than or Equal (Elite)', 'woo-product-feed-pro' ),
             ),
+            // In List is an Elite feature: match a field against a comma-separated
+            // list of values in a single row. Same upsell-suffix pattern as above.
+            array(
+                'value' => 'in_list',
+                'label' => __( 'In List (Elite)', 'woo-product-feed-pro' ),
+            ),
+            // Between is an Elite feature: match a numeric field against an inclusive
+            // `min,max` range in a single row. Same upsell-suffix pattern as above.
+            array(
+                'value' => 'between',
+                'label' => __( 'Between (Elite)', 'woo-product-feed-pro' ),
+            ),
         );
 
         /**

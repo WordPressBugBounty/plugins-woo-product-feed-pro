@@ -62,6 +62,24 @@ class Filters_Rules extends Abstract_REST {
     }
 
     /**
+     * Checks if a given request has access to get the filters and rules of a feed.
+     *
+     * Overrides the always-true default in Abstract_REST, which would otherwise leave this
+     * route reachable by unauthenticated visitors. The payload exposes a feed's rules,
+     * filters, field mapping and the full product category taxonomy, so it is gated behind
+     * `manage_woocommerce` — the capability Abstract_REST already requires for writes.
+     *
+     * @since 13.5.7
+     * @access public
+     *
+     * @param WP_REST_Request $request Full data about the request.
+     * @return bool True if the request has read access for the item, false otherwise.
+     */
+    public function get_item_permissions_check( $request ) {
+        return current_user_can( 'manage_woocommerce' );
+    }
+
+    /**
      * Get available attributes for filters and rules.
      *
      * @since 13.4.6

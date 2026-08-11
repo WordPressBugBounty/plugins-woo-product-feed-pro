@@ -12,6 +12,7 @@ use AdTribes\PFP\Factories\Vite_App;
 use AdTribes\PFP\Traits\Singleton_Trait;
 use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Classes\Notices;
+use AdTribes\PFP\Classes\Setup_Checklist;
 
 /**
  * Manage_Feeds_Page class.
@@ -82,6 +83,19 @@ class Manage_Feeds_Page extends Admin_Page {
             array( 'woocommerce_admin_styles' )
         );
         $app->enqueue();
+
+        // Setup checklist onboarding card (only when it is actually shown).
+        $checklist = Setup_Checklist::instance();
+        if ( $checklist->should_enqueue() ) {
+            $checklist_app = new Vite_App(
+                'adt-setup-checklist-script',
+                'src/vanilla/setup-checklist/index.ts',
+                array( 'jquery', 'wp-i18n' ),
+                Helper::vite_app_common_l10n( $checklist->get_l10n() ),
+                'adtSetupChecklist'
+            );
+            $checklist_app->enqueue();
+        }
     }
 
     /**

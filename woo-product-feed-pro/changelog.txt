@@ -1,3 +1,24 @@
+= 13.5.7 (2026-08-04) =
+* Bug Fix: Added Custom Attributes: Variation Product Meta Data Not Appearing in Generated Product Feed
+* Bug Fix: Feed generation silently drops rows because batch pagination orders by non-unique post_date
+* Bug Fix: Google Shopping feed sends invalid postal_code format for Local Pickup (GB/CA)
+* Bug Fix: Mall.sk: VARIABLE_PARAMS node missing from feed when mapped to Plugin Calculation
+* Bug Fix: Stuck-feed guard misfires against in-flight batches, producing duplicate (and dropped) products in scheduled feed generation
+* Bug Fix: Sync Product Feed cannot restore real feeds — 13.4.8 prefix migration skipped copying cron_projects when a blank adt_cron_projects already existed
+* Bug Fix: TikTok Product Catalog feed exports prices with locale decimal separator instead of ISO 4217 format
+* Bug Fix: Unauthenticated info disclosure via missing capability check on filters-rules REST read route
+* Bug Fix: WP Super Cache integration writes to the wrong option, so feed files aren't actually excluded from caching
+* Bug Fix: Zbozi.cz / Heureka: DELIVERY tag always outputs as empty <DELIVERY/> when shipping is configured
+* Bug Fix: Zbozi.cz / Heureka: DELIVERY_PRICE_COD missing when local pickup configured via WooCommerce Checkout block
+* Bug Fix: g:consumer_notice emits non-UCP notice_type enum values (spaces, not underscores)
+* Feature: Add WordPress Abilities API support (13 abilities) — Product Feed PRO (Free)
+* Feature: Add a post-install Setup Checklist (Getting Started) to Manage Feeds
+* Improvement: Adaptive batch sizing for feed generation (self-tuning by host time budget + memory)
+* Improvement: Add `adt_general_feed_settings_after_shipping_countries` action hook to feed General tab
+* Improvement: Export/Import: add an extension hook so add-ons can register their own feed props for export
+* Improvement: Rules Builder: support Elite Truncate/Combine Fields actions and In List condition
+* Improvement: WPML Domain Mode: non-Google feed channel links lack a filter hook (raw home_url())
+
 = 13.5.6 (2026-07-08) =
 * Bug Fix: "Upgrade To Elite" link visible on plugins page when Elite plugin is already active
 * Bug Fix: Bug: "Update plugin" link in version-requirement notice fails with "link has expired" (wrong nonce action)

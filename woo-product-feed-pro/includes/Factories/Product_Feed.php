@@ -33,6 +33,32 @@ class Product_Feed {
     const META_PREFIX = 'adt_';
 
     /**
+     * Adaptive batch sizing tuning constants.
+     *
+     * The batch size self-tunes toward a fraction of a host-derived time budget,
+     * growing gently (capped per step) and shrinking hard under time/memory pressure.
+     *
+     * @since 13.5.7
+     */
+    const ADAPTIVE_HARD_CAP_SECONDS                = 60;    // A single batch should never target more than this.
+    const ADAPTIVE_MIN_SECONDS                     = 10;    // Floor for the per-batch time budget.
+    const ADAPTIVE_TARGET_RATIO                    = 0.6;   // Aim each batch at this fraction of the budget.
+    const ADAPTIVE_MAX_GROWTH                      = 2.0;   // Never grow the batch by more than this factor per step.
+    const ADAPTIVE_MIN_BATCH                       = 50;    // Lower clamp for the adaptive batch size.
+    const ADAPTIVE_MAX_BATCH                       = 25000; // Upper clamp for the adaptive batch size.
+    const ADAPTIVE_MEMORY_RATIO                    = 0.8;   // Shrink hard if peak memory exceeds this fraction of the limit.
+    const ADAPTIVE_UNLIMITED_MEMORY_FALLBACK_BYTES = 1073741824; // 1 GB ceiling used when memory_limit is -1 (unlimited).
+    const ADAPTIVE_COLD_START_MAX                  = 500;   // First-run probe cap: a cold start never begins above this size.
+    const ADAPTIVE_CEILING_RECOVERY                = 1.25;  // A crash-learned ceiling grows by this factor per completed run.
+    const ADAPTIVE_MAX_CRASHES                     = 3;     // Park scheduled generation after this many consecutive crashed runs.
+
+    /**
+     * Option that lists feeds parked after repeated crashed runs, keyed by feed
+     * ID. Read by the admin notice; entries are cleared when a run completes.
+     */
+    const ADAPTIVE_BLOCKED_OPTION = 'adt_pfp_adaptive_blocked_feeds';
+
+    /**
      * ID for this object.
      *
      * @var int
@@ -77,6 +103,43 @@ class Product_Feed {
     private static $shutdown_handler_registered = false;
 
     /**
+     * The feed ID and batch size currently being processed in this request,
+     * or null when no batch is in flight. Static because Action Scheduler can
+     * chain several batch actions - possibly for different feeds - through one
+     * request, while the shutdown handler is only registered once with the
+     * first feed instance. Lets the handler attribute a fatal (OOM/timeout)
+     * to the batch that actually crashed.
+     *
+     * @since 13.5.7
+     * @var array|null
+     */
+    private static $current_run = null;
+
+    /**
+     * Per-instance memo for is_adaptive_batch_enabled(). The answer cannot change
+     * within a single request, and the method is called several times across a
+     * generate()/run_batch_event() cycle. Null until first resolved.
+     *
+     * @since 13.5.7
+     * @var bool|null
+     */
+    private $adaptive_batch_enabled_memo = null;
+
+    /**
+     * Per-batch memo for is_first_write_of_run(). The writers ask more than once
+     * while assembling a single batch - the XML writer alone asks three times -
+     * and every call within a batch must give the same answer, because the first
+     * one claims the temp file for the run. Deliberately per-instance rather than
+     * static: Action Scheduler can chain several batches through one request, and
+     * each of those gets its own feed instance, so only the first batch of a run
+     * may answer yes. Null until first resolved.
+     *
+     * @since 13.5.7
+     * @var bool|null
+     */
+    private $first_write_of_run = null;
+
+    /**
      * Stores product data.
      *
      * @var array
@@ -86,6 +149,20 @@ class Product_Feed {
         'products_count'                         => 0,
         'total_products_processed'               => 0,
         'batch_size'                             => 0,
+        // Resume point of the run in progress: the ( post_date, ID ) sort key of the last
+        // row the previous batch walked. Empty means "start at the top of the catalogue".
+        'batch_cursor'                           => array(),
+        'adaptive_last_batch_size'               => 0,
+        'adaptive_batch_ceiling'                 => 0,
+        'adaptive_batch_attempt'                 => 0,
+        'adaptive_crash_count'                   => 0,
+        // Identifies the generation run in flight. Every batch action carries the
+        // run ID it was queued for, so work left over from a superseded run can be
+        // recognised and discarded instead of corrupting the run that replaced it.
+        'batch_run_id'                           => '',
+        // Unix timestamp of the last batch activity in the run, which is what tells
+        // a healthy in-flight run apart from one that has genuinely stalled.
+        'batch_last_active'                      => 0,
         'executed_from'                          => '',
         'country'                                => '',
         'channel_hash'                           => '',
@@ -295,8 +372,18 @@ class Product_Feed {
      * @access public
      */
     public function save_meta_data() {
-        // Exclude data from saving.
-        $meta_keys = array_diff( array_keys( $this->data ), array( 'channel', 'file_url' ) );
+        /**
+         * Exclude data from saving.
+         *
+         * `channel` and `file_url` are derived rather than stored. The two run
+         * fields are excluded because this method rewrites every key from whatever
+         * the instance happens to hold, and a batch worker holds the snapshot it
+         * loaded when its batch began: were they included, a worker whose run has
+         * since been replaced would hand ownership of the feed back to its own
+         * dead run on save. They are written directly by the code that owns the
+         * run instead - see start_run() and touch_run_activity().
+         */
+        $meta_keys = array_diff( array_keys( $this->data ), array( 'channel', 'file_url', 'batch_run_id', 'batch_last_active' ) );
 
         foreach ( $meta_keys as $key ) {
             if ( isset( $this->data[ $key ] ) ) {
@@ -683,6 +770,56 @@ class Product_Feed {
     }
 
     /**
+     * Set the run-scoped fields that every start and end of a generation run touches.
+     *
+     * These four move as a set - how far the run got, the size it is working in, its
+     * keyset resume point, and what started it - and are assigned at six sites (run
+     * start, completion, caught error, the admin and WP-CLI cancel paths, and the
+     * race-condition harness). Keeping the list here means a field added to the run
+     * state is added once instead of in six places, one of which is easy to miss.
+     *
+     * Called with no arguments this clears the state, which is what a run that has
+     * ended wants; generate() passes the size and context the new run starts with.
+     * Status, last_updated and the adaptive counters differ per caller and stay with
+     * the caller, as does the save() - callers set other fields alongside and persist
+     * them in one write.
+     *
+     * @since 13.5.7
+     * @access public
+     *
+     * @param int    $batch_size The batch size the run starts with, or 0 when clearing.
+     * @param string $context    The context that started the run, or '' when clearing.
+     * @return void
+     */
+    public function set_run_state( $batch_size = 0, $context = '' ) {
+        $this->total_products_processed = 0;
+        $this->batch_size               = (int) $batch_size;
+        $this->batch_cursor             = array(); // A run never inherits another run's resume point.
+        $this->executed_from            = $context;
+    }
+
+    /**
+     * Put the feed into the state a user-cancelled run leaves it in.
+     *
+     * The admin AJAX handler and the WP-CLI command both cancel a run, and both have
+     * to land on the same fields; keeping that set here means a field added to
+     * "cancelled" is added once rather than in two files. Unscheduling the batches,
+     * the surrounding do_action() hooks and the stats re-count stay with the callers,
+     * as does the save() - each persists this alongside its own writes.
+     *
+     * @since 13.5.7
+     * @access public
+     *
+     * @return void
+     */
+    public function cancel_run() {
+        $this->set_run_state();
+        $this->adaptive_batch_attempt = 0; // A user cancel is not a crash - clear the write-ahead marker.
+        $this->status                 = 'stopped';
+        $this->last_updated           = gmdate( 'd M Y H:i:s' );
+    }
+
+    /**
      * Generate product feed.
      *
      * @since 13.4.1
@@ -704,6 +841,37 @@ class Product_Feed {
                 );
             }
             return false;
+        }
+
+        if ( $this->is_adaptive_batch_enabled() ) {
+            // The write-ahead marker is still set from the previous run: that
+            // batch never survived, and the process died in a way no shutdown
+            // handler could see (e.g. SIGKILL from a host process killer).
+            // Learn from it before sizing this run.
+            if ( $this->adaptive_batch_attempt > 0 ) {
+                $this->learn_from_unclean_crash();
+            }
+
+            // After repeated crashed runs, stop burning the host with scheduled
+            // retries: park the feed and surface an admin notice. A manual
+            // refresh still runs, and a completed run resets the counter and
+            // un-parks the feed.
+            if ( 'schedule' === $context && $this->adaptive_crash_count >= self::ADAPTIVE_MAX_CRASHES ) {
+                $this->save(); // Persist any crash-learning from above.
+                self::flag_blocked_feed( $this->id, $this->title, (int) $this->adaptive_crash_count );
+
+                if ( function_exists( 'wc_get_logger' ) ) {
+                    wc_get_logger()->warning(
+                        'Skipping scheduled feed generation: parked after repeated crashed runs',
+                        array(
+                            'source'      => 'woo-product-feed-pro',
+                            'feed_id'     => $this->id,
+                            'crash_count' => (int) $this->adaptive_crash_count,
+                        )
+                    );
+                }
+                return false;
+            }
         }
 
         // Log when feed generation starts.
@@ -732,17 +900,39 @@ class Product_Feed {
         $published_products = Product_Feed_Helper::get_feed_total_published_products( $this );
         $batch_size         = Product_Feed_Helper::get_batch_size( $this, $published_products );
 
+        if ( $this->is_adaptive_batch_enabled() ) {
+            if ( $this->adaptive_last_batch_size > 0 ) {
+                // Warm-start from the size the previous run sustained, so a
+                // repeat run doesn't re-learn the host's capacity each time.
+                $batch_size = (int) $this->adaptive_last_batch_size;
+            } else {
+                // Cold start: probe with a conservative size. The controller
+                // ramps up within a few batches, while a too-large first guess
+                // on a weak host would fatal before it ever gets a sample.
+                $batch_size = min( $batch_size, self::ADAPTIVE_COLD_START_MAX );
+            }
+
+            // Never start above a ceiling learned from a previous fatal (OOM /
+            // execution timeout).
+            if ( $this->adaptive_batch_ceiling > 0 ) {
+                $batch_size = min( $batch_size, (int) $this->adaptive_batch_ceiling );
+            }
+
+            $batch_size = max( self::ADAPTIVE_MIN_BATCH, min( self::ADAPTIVE_MAX_BATCH, $batch_size ) );
+        }
+
         // Set feed status to processing.
         $this->status = 'processing';
 
+        // Stamp this run so its batches can be told apart from any earlier run's.
+        $this->start_run();
+
         // Update the feed with the total number of products.
-        $this->products_count           = intval( $published_products );
-        $this->total_products_processed = 0;
-        $this->batch_size               = $batch_size;
-        $this->executed_from            = $context;
+        $this->products_count = intval( $published_products );
+        $this->set_run_state( $batch_size, $context );
         $this->save();
 
-        return Cron::schedule_next_batch( $this->id, 0, $batch_size );
+        return Cron::schedule_next_batch( $this->id, 0, $batch_size, $this->batch_run_id );
     }
 
     /**
@@ -754,13 +944,32 @@ class Product_Feed {
      * @param int    $offset     The offset of the batch.
      * @param int    $batch_size The batch size.
      * @param string $context The context of the generation. 'ajax' or 'cron'.
+     * @param string $run_id     The generation run this batch belongs to. Empty falls
+     *                           back to the feed's current run, for callers that
+     *                           continue a run rather than carrying its ID (AJAX).
      */
-    public function run_batch_event( $offset = 0, $batch_size = 0, $context = '' ) {
+    public function run_batch_event( $offset = 0, $batch_size = 0, $context = '', $run_id = '' ) {
         // Register shutdown handler only once per request to avoid duplicate registrations.
         if ( ! self::$shutdown_handler_registered ) {
             register_shutdown_function( array( $this, 'handle_fatal_error' ), $context );
             self::$shutdown_handler_registered = true;
         }
+
+        $run_id = '' !== (string) $run_id ? (string) $run_id : (string) $this->batch_run_id;
+
+        // Nothing about a superseded run should reach the file: its rows would land
+        // in the current run's output and its offsets are measured against a run
+        // that no longer exists. Checked again after the batch, in case the takeover
+        // lands while this one is working.
+        if ( $this->is_run_superseded( $run_id ) ) {
+            $this->log_superseded_batch( $offset, $run_id );
+            return;
+        }
+
+        // Mark the run as alive before the work starts, so a batch that takes a
+        // while is not mistaken for a stalled run by a scheduled run firing
+        // alongside it.
+        $this->touch_run_activity();
 
         try {
             // Log memory usage at the start of batch processing.
@@ -783,14 +992,97 @@ class Product_Feed {
             // Create the product class instance.
             $get_product_class = new \WooSEA_Get_Products();
 
+            // Record the batch in flight so a fatal (OOM/timeout) can be
+            // attributed to it by the shutdown handler. Carry the crashed feed's
+            // identity too, so the fatal-error log names it rather than the first
+            // feed instance the handler happened to be registered with.
+            self::$current_run = array(
+                'feed_id'         => $this->id,
+                'batch_size'      => (int) $batch_size,
+                'title'           => $this->title,
+                'channel'         => $this->channel,
+                'file_format'     => $this->file_format,
+                'products_count'  => $this->products_count,
+                'processed_count' => $this->total_products_processed,
+            );
+
+            // Write-ahead marker: persist the size being attempted BEFORE the
+            // batch runs. A surviving batch clears it below; if the process
+            // dies in a way no shutdown handler can see (e.g. SIGKILL from a
+            // host process killer), the next generate() finds it still set and
+            // treats it as a crash at this size.
+            if ( $this->is_adaptive_batch_enabled() ) {
+                $this->adaptive_batch_attempt = (int) $batch_size;
+                update_post_meta( $this->id, self::META_PREFIX . 'adaptive_batch_attempt', (int) $batch_size );
+            }
+
+            // Reset the peak tracker where available (PHP 8.2+) so the reading
+            // after the batch reflects THIS batch, not an earlier one in the
+            // same request. On older PHP the baseline below serves instead.
+            if ( function_exists( 'memory_reset_peak_usage' ) ) {
+                memory_reset_peak_usage();
+            }
+            $peak_before = memory_get_peak_usage( true );
+
+            // Time the batch so the size can adapt to what this host actually handled.
+            $batch_started_at = microtime( true );
+
             // This is where errors might occur.
             $get_product_class->woosea_get_products( $this, $offset, $batch_size );
+
+            $batch_elapsed = microtime( true ) - $batch_started_at;
+
+            // The batch survived - a fatal from here on is not a batch-size
+            // problem. Clear the stash and the write-ahead marker (the marker
+            // is persisted by the save() below).
+            self::$current_run            = null;
+            $this->adaptive_batch_attempt = 0;
+
+            // Stop if the run this batch belongs to has been superseded while the
+            // batch was working. Both the progress counter this worker is about to
+            // write and the next batch it would chain describe a run that no longer
+            // exists, so saving either would overwrite the current run's state.
+            if ( $this->is_run_superseded( $run_id ) ) {
+                $this->log_superseded_batch( $offset, $run_id );
+
+                // Clear the write-ahead marker this batch set, so the run that
+                // replaced it is not charged with a crash at this batch size.
+                if ( $this->is_adaptive_batch_enabled() ) {
+                    update_post_meta( $this->id, self::META_PREFIX . 'adaptive_batch_attempt', 0 );
+                }
+
+                return;
+            }
 
             // Log memory usage after processing.
             $this->log_memory_usage( 'Batch end', $offset, $batch_size );
 
-            // Update the total number of products processed.
-            $this->total_products_processed = min( $this->total_products_processed + $batch_size, $this->products_count );
+            // Update the total number of products processed. This uses the size that
+            // was just processed ($batch_size), not the next one.
+            $offset_before                  = $this->total_products_processed;
+            $this->total_products_processed = min( $offset_before + $batch_size, $this->products_count );
+            $processed_this_batch           = $this->total_products_processed - $offset_before;
+
+            // Decide the size for the NEXT batch. The completion/offset math above
+            // intentionally still uses the size just processed.
+            $next_batch_size = $batch_size;
+            if ( $this->is_adaptive_batch_enabled() ) {
+                $memory_pressed  = false;
+                $next_batch_size = $this->calculate_next_batch_size( $batch_size, $batch_elapsed, $peak_before, $memory_pressed );
+
+                // Warm-start only from a full batch that stayed within the time budget
+                // AND did not hit memory pressure, so a repeat run never *starts* larger
+                // than a size this host has actually sustained comfortably. A partial
+                // final batch finishes fast and would otherwise over-project the
+                // warm-start size; a memory-pressured batch was just halved for the next
+                // step, so persisting its (pressured) size would warm-start into the same
+                // pressure every run on a memory-constrained host.
+                if ( $processed_this_batch >= $batch_size && $batch_elapsed <= $this->get_batch_time_budget() && ! $memory_pressed ) {
+                    $this->adaptive_last_batch_size = $batch_size;
+                }
+
+                $this->log_adaptive_batch( $batch_size, $next_batch_size, $batch_elapsed );
+            }
 
             /**
              * Batch processing.
@@ -804,9 +1096,22 @@ class Product_Feed {
                 $this->status = 'ready';
 
                 // Set counters back to 0.
-                $this->total_products_processed = 0;
-                $this->batch_size               = 0;
-                $this->executed_from            = '';
+                $this->set_run_state();
+
+                // A completed run is evidence the host handles the current
+                // sizes: let a crash-learned ceiling recover gradually instead
+                // of pinning the feed forever (AIMD across runs). Fully lifted
+                // once it reaches the absolute maximum.
+                if ( $this->is_adaptive_batch_enabled() && $this->adaptive_batch_ceiling > 0 ) {
+                    $ceiling                      = (int) ceil( $this->adaptive_batch_ceiling * self::ADAPTIVE_CEILING_RECOVERY );
+                    $this->adaptive_batch_ceiling = $ceiling >= self::ADAPTIVE_MAX_BATCH ? 0 : $ceiling;
+                }
+
+                // A completed run also clears crash tracking and un-parks the
+                // feed from the repeated-crash admin notice.
+                $this->adaptive_crash_count   = 0;
+                $this->adaptive_batch_attempt = 0;
+                self::unflag_blocked_feed( $this->id );
 
                 // Set last updated date and time.
                 $this->last_updated = gmdate( 'd M Y H:i:s' );
@@ -865,18 +1170,18 @@ class Product_Feed {
                 return;
             }
 
-            // Run next batch event via AJAX or cron.
+            // Run next batch event via AJAX or cron, using the adaptively-sized next batch.
             if ( 'ajax' === $context && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
                 wp_send_json_success(
                     array(
                         'feed_id'    => $this->id,
                         'offset'     => $this->total_products_processed,
-                        'batch_size' => $batch_size,
+                        'batch_size' => $next_batch_size,
                         'status'     => $this->status,
                     )
                 );
             } else {
-                Cron::schedule_next_batch( $this->id, $this->total_products_processed, $batch_size );
+                Cron::schedule_next_batch( $this->id, $this->total_products_processed, $next_batch_size, $run_id );
             }
         } catch ( \Throwable $e ) {
 
@@ -914,9 +1219,16 @@ class Product_Feed {
             $this->status = 'error';
 
             // Set counters back to 0.
-            $this->total_products_processed = 0;
-            $this->batch_size               = 0;
-            $this->executed_from            = '';
+            $this->set_run_state();
+
+            // A caught exception is a logic/data problem, not resource
+            // exhaustion - clear the write-ahead marker so it is not counted
+            // as a batch-size crash by the next run. Also clear the in-flight
+            // stash (mirroring the success path) so a later unrelated fatal in
+            // the same request is not misattributed to this batch by the
+            // shutdown handler and used to halve its learned size.
+            self::$current_run            = null;
+            $this->adaptive_batch_attempt = 0;
 
             // Save feed changes.
             $this->save();
@@ -935,6 +1247,152 @@ class Product_Feed {
     }
 
     /**
+     * Take ownership of the feed for a new generation run.
+     *
+     * Written straight to meta rather than left to save(), because the blanket
+     * meta save deliberately skips these fields - see save_meta_data().
+     *
+     * @since 13.5.7
+     * @access private
+     */
+    private function start_run() {
+        $this->data['batch_run_id'] = wp_generate_uuid4();
+        update_post_meta( $this->id, self::META_PREFIX . 'batch_run_id', $this->data['batch_run_id'] );
+
+        $this->touch_run_activity();
+    }
+
+    /**
+     * Log a batch that was dropped because its run no longer owns the feed.
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @param int    $offset The offset of the discarded batch.
+     * @param string $run_id The run ID the batch belonged to.
+     */
+    private function log_superseded_batch( $offset, $run_id ) {
+        if ( ! function_exists( 'wc_get_logger' ) ) {
+            return;
+        }
+
+        wc_get_logger()->warning(
+            'Discarding feed batch: the generation run it belongs to has been superseded',
+            array(
+                'source'  => 'woo-product-feed-pro',
+                'feed_id' => $this->id,
+                'offset'  => $offset,
+                'run_id'  => $run_id,
+            )
+        );
+    }
+
+    /**
+     * Record that the generation run in flight is still making progress.
+     *
+     * Written straight to meta as well as to the in-memory data, because the
+     * scheduled-run guard reads it from another request while this batch is still
+     * executing - a value that only reaches the database when the batch finishes
+     * would leave a long batch looking stalled for its whole duration.
+     *
+     * @since 13.5.7
+     * @access private
+     */
+    private function touch_run_activity() {
+        $now = time();
+
+        $this->data['batch_last_active'] = $now;
+        update_post_meta( $this->id, self::META_PREFIX . 'batch_last_active', $now );
+    }
+
+    /**
+     * Whether the generation run a batch belongs to has been superseded.
+     *
+     * Reads the feed's current run ID straight from the database, bypassing the
+     * object cache: the run may have been replaced by another request after this
+     * one loaded the feed, which is precisely the case worth detecting.
+     *
+     * Busting the cache means dropping the feed post's whole meta cache, since
+     * WordPress has no per-key invalidation - that is deliberate, not an oversight.
+     * It costs one extra meta query per call, which at a couple of calls per batch
+     * and roughly a batch a minute is not worth trading a correct read for.
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @param string $run_id The run ID the batch belongs to.
+     * @return bool
+     */
+    private function is_run_superseded( $run_id ) {
+        // A batch queued before run IDs existed cannot be placed in a run, so it
+        // is given the benefit of the doubt rather than dropped.
+        if ( '' === (string) $run_id ) {
+            return false;
+        }
+
+        wp_cache_delete( $this->id, 'post_meta' );
+        $current_run_id = (string) get_post_meta( $this->id, self::META_PREFIX . 'batch_run_id', true );
+
+        return '' !== $current_run_id && $current_run_id !== (string) $run_id;
+    }
+
+    /**
+     * Whether this batch is the first of its run to write the feed file.
+     *
+     * The temp file is appended to across the batches of a run, so exactly one
+     * batch may start it: the first to write truncates any leftover file and lays
+     * down the header or XML root, and the rest append. That used to be inferred
+     * from `total_products_processed == 0`, which describes the feed's progress
+     * counter rather than the file - so a run that started over while the counter
+     * was non-zero appended to the previous run's rows instead of replacing them,
+     * duplicating every product the earlier run had already written. The file now
+     * records the run that owns it, and this returns true exactly when that
+     * ownership is about to change.
+     *
+     * The owning run is kept in its own meta key rather than on the feed's data,
+     * because it describes the file on disk and not the feed's configuration, and
+     * must not be rewritten by an unrelated save().
+     *
+     * Note that this is side-effecting: the call that answers yes claims the file
+     * for the run. It must therefore be called once per batch before any writer
+     * runs - see woosea_get_products() - because most of the call sites ask behind
+     * a file_exists() check and would skip the claim on the batch that creates the
+     * file, leaving the next batch to truncate it.
+     *
+     * @since 13.5.7
+     * @access public
+     *
+     * @return bool
+     */
+    public function is_first_write_of_run() {
+        if ( null !== $this->first_write_of_run ) {
+            return $this->first_write_of_run;
+        }
+
+        $run_id = (string) $this->batch_run_id;
+
+        // A run started before this release has no ID to key the file on: fall
+        // back to the progress counter, which is what gated truncation until now.
+        // Memoised like the run-ID branch, so that the counter advancing as the
+        // batch processes products cannot change the answer partway through it.
+        if ( '' === $run_id ) {
+            $this->first_write_of_run = 0 === (int) $this->total_products_processed;
+
+            return $this->first_write_of_run;
+        }
+
+        $owner_run_id             = (string) get_post_meta( $this->id, self::META_PREFIX . 'temp_file_run_id', true );
+        $this->first_write_of_run = $owner_run_id !== $run_id;
+
+        if ( $this->first_write_of_run ) {
+            // Claim the file for this run, so the batches that follow append to it.
+            update_post_meta( $this->id, self::META_PREFIX . 'temp_file_run_id', $run_id );
+        }
+
+        return $this->first_write_of_run;
+    }
+
+    /**
      * Handle fatal errors during batch processing.
      *
      * @since 13.5.1
@@ -950,12 +1408,22 @@ class Product_Feed {
             return;
         }
 
+        // Attribute the fatal to the feed whose batch was actually in flight.
+        // Action Scheduler can chain batches for different feeds through one
+        // request, while this handler is only registered with the first
+        // instance that processed a batch. Fall back to $this when no batch is
+        // stashed (e.g. a fatal outside batch processing).
+        $run     = is_array( self::$current_run ) ? self::$current_run : array();
+        $feed_id = ! empty( $run['feed_id'] ) ? (int) $run['feed_id'] : $this->id;
+
         // Log the fatal error.
         $logging = get_option( 'adt_enable_logging', 'no' );
         if ( 'yes' === $logging ) {
+            // Source the feed identity from the in-flight stash so the whole log
+            // block describes the crashed feed, not the handler's registered instance.
             $error_info  = array(
-                'feed_id'         => $this->id,
-                'feed_title'      => $this->title,
+                'feed_id'         => $feed_id,
+                'feed_title'      => isset( $run['title'] ) ? $run['title'] : $this->title,
                 'execution_date'  => gmdate( 'Y-m-d H:i:s' ),
                 'context'         => $context,
                 'error_type'      => $this->get_error_type_name( $error['type'] ),
@@ -964,10 +1432,10 @@ class Product_Feed {
                 'error_line'      => isset( $error['line'] ) ? absint( $error['line'] ) : 0,
                 'memory_usage'    => size_format( memory_get_usage( true ) ),
                 'memory_limit'    => ini_get( 'memory_limit' ),
-                'products_count'  => $this->products_count,
-                'processed_count' => $this->total_products_processed,
-                'channel'         => $this->channel,
-                'file_format'     => $this->file_format,
+                'products_count'  => isset( $run['products_count'] ) ? $run['products_count'] : $this->products_count,
+                'processed_count' => isset( $run['processed_count'] ) ? $run['processed_count'] : $this->total_products_processed,
+                'channel'         => isset( $run['channel'] ) ? $run['channel'] : $this->channel,
+                'file_format'     => isset( $run['file_format'] ) ? $run['file_format'] : $this->file_format,
             );
             $log_message = 'Product Feed Fatal Error: ' . print_r( $error_info, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 
@@ -975,46 +1443,72 @@ class Product_Feed {
             error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         }
 
-        // Set status to error (use direct database update to avoid memory issues).
-        global $wpdb;
-        $wpdb->update(
-            $wpdb->postmeta,
-            array( 'meta_value' => 'error' ),
-            array(
-                'post_id'  => $this->id,
-                'meta_key' => self::META_PREFIX . 'status',
-            ),
-            array( '%s' ),
-            array( '%d', '%s' )
-        );
+        // Set status to error, then reset the run state. The batch cursor belongs to the
+        // same teardown set as the counters: the batch that crashed never finished, so its
+        // resume point is meaningless, and no resume path may inherit a stale mid-catalogue
+        // cursor. (Today every restart goes through generate(), which clears it anyway -
+        // that is the only reason a stale cursor here would be harmless rather than a bug.)
+        //
+        // These are direct database writes to avoid allocating in a shutdown handler that
+        // may be running after an OOM.
+        self::update_feed_meta_direct( $feed_id, 'status', 'error' );
+        self::update_feed_meta_direct( $feed_id, 'total_products_processed', '0' );
+        self::update_feed_meta_direct( $feed_id, 'batch_size', '0' );
+        self::update_feed_meta_direct( $feed_id, 'executed_from', '' );
+        self::update_feed_meta_direct( $feed_id, 'batch_cursor', maybe_serialize( array() ) );
 
-        // Reset counters.
+        // Crash-learning: a fatal that lands here with a batch in flight is
+        // resource exhaustion (OOM or execution timeout - anything catchable is
+        // handled by the try/catch in run_batch_event, which clears the stash
+        // once the batch survives). Halve the crashed size and persist it as
+        // both the next warm-start and a ceiling the controller may not grow
+        // past, so the next run converges below the crash point instead of
+        // ramping straight back into it.
+        if ( is_array( self::$current_run ) && ! empty( self::$current_run['batch_size'] ) ) {
+            $safe_size = max( self::ADAPTIVE_MIN_BATCH, (int) floor( self::$current_run['batch_size'] / 2 ) );
+
+            foreach ( array( 'adaptive_last_batch_size', 'adaptive_batch_ceiling' ) as $meta_key ) {
+                self::update_feed_meta_direct( $feed_id, $meta_key, (string) $safe_size );
+            }
+        }
+
+        // WP caches a post's meta as one array per post ID, so a single delete covers
+        // every write above. Done once, at the end, rather than per write: under a
+        // persistent object cache each delete is a network round-trip, and only the last
+        // one would have mattered anyway - nothing repopulates the entry in between.
+        wp_cache_delete( $feed_id, 'post_meta' );
+    }
+
+    /**
+     * Write a single feed meta value straight to the database.
+     *
+     * For use from the shutdown handler only: update_post_meta() and this class' own
+     * property setters both allocate, which is not safe in a handler that may be running
+     * because the request ran out of memory.
+     *
+     * Unlike update_post_meta() a raw $wpdb->update() leaves the post-meta cache holding
+     * the pre-crash value, so under a persistent object cache (Redis/Memcached) the next
+     * request would read the state this teardown just cleared - for the batch cursor that
+     * means resuming mid-catalogue and reintroducing the duplicated/missing rows of #1081.
+     * Invalidating that cache is the caller's job: handle_fatal_error() writes several
+     * keys in a row and drops the (single, per-post) cache entry once they are all done.
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @param int    $feed_id  The feed post ID.
+     * @param string $meta_key The feed meta key, without the class' meta prefix.
+     * @param string $value    The value to store, already serialized if it is not a scalar.
+     */
+    private static function update_feed_meta_direct( $feed_id, $meta_key, $value ) {
+        global $wpdb;
+
         $wpdb->update(
             $wpdb->postmeta,
-            array( 'meta_value' => '0' ),
+            array( 'meta_value' => $value ),
             array(
-                'post_id'  => $this->id,
-                'meta_key' => self::META_PREFIX . 'total_products_processed',
-            ),
-            array( '%s' ),
-            array( '%d', '%s' )
-        );
-        $wpdb->update(
-            $wpdb->postmeta,
-            array( 'meta_value' => '0' ),
-            array(
-                'post_id'  => $this->id,
-                'meta_key' => self::META_PREFIX . 'batch_size',
-            ),
-            array( '%s' ),
-            array( '%d', '%s' )
-        );
-        $wpdb->update(
-            $wpdb->postmeta,
-            array( 'meta_value' => '' ),
-            array(
-                'post_id'  => $this->id,
-                'meta_key' => self::META_PREFIX . 'executed_from',
+                'post_id'  => $feed_id,
+                'meta_key' => self::META_PREFIX . $meta_key,
             ),
             array( '%s' ),
             array( '%d', '%s' )
@@ -1180,6 +1674,295 @@ class Product_Feed {
         if ( function_exists( 'wc_get_logger' ) ) {
             $logger = wc_get_logger();
             $logger->debug( $log_message, array( 'source' => 'woo-product-feed-pro' ) );
+        }
+
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        }
+    }
+
+    /**
+     * Whether adaptive batch sizing is enabled for this run.
+     *
+     * A user-pinned batch size (the adt_enable_batch / adt_batch_size options)
+     * always wins and disables adaptation.
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @return bool
+     */
+    private function is_adaptive_batch_enabled() {
+        if ( null !== $this->adaptive_batch_enabled_memo ) {
+            return $this->adaptive_batch_enabled_memo;
+        }
+
+        $enabled = true;
+        if ( 'yes' === get_option( 'adt_enable_batch', 'no' ) ) {
+            $manual = get_option( 'adt_batch_size', '' );
+            if ( ! empty( $manual ) && is_numeric( $manual ) ) {
+                $enabled = false;
+            }
+        }
+
+        if ( $enabled ) {
+            /**
+             * Filter whether adaptive batch sizing is enabled.
+             *
+             * @since 13.5.7
+             *
+             * @param bool $enabled Whether adaptive batch sizing is enabled. Default true.
+             * @param int  $feed_id Feed ID.
+             */
+            $enabled = (bool) apply_filters( 'adt_product_feed_adaptive_batch_enabled', true, $this->id );
+        }
+
+        $this->adaptive_batch_enabled_memo = $enabled;
+
+        return $enabled;
+    }
+
+    /**
+     * Learn from a run that died without a trace.
+     *
+     * Called when generate() finds the write-ahead marker still set: the batch
+     * it recorded never survived, and no shutdown handler ran (e.g. SIGKILL
+     * from a host process killer). Applies the same halving as the shutdown
+     * handler and merges with anything the handler may already have learned
+     * (a PHP-visible fatal writes the same values, making this idempotent).
+     *
+     * The caller is responsible for persisting via save().
+     *
+     * @since 13.5.7
+     * @access private
+     */
+    private function learn_from_unclean_crash() {
+        $safe_size = max( self::ADAPTIVE_MIN_BATCH, (int) floor( $this->adaptive_batch_attempt / 2 ) );
+
+        $this->adaptive_last_batch_size = $this->adaptive_last_batch_size > 0
+            ? min( (int) $this->adaptive_last_batch_size, $safe_size )
+            : $safe_size;
+        $this->adaptive_batch_ceiling   = $this->adaptive_batch_ceiling > 0
+            ? min( (int) $this->adaptive_batch_ceiling, $safe_size )
+            : $safe_size;
+        $this->adaptive_crash_count     = (int) $this->adaptive_crash_count + 1;
+        $this->adaptive_batch_attempt   = 0;
+
+        if ( function_exists( 'wc_get_logger' ) ) {
+            wc_get_logger()->warning(
+                'Previous feed generation run died unexpectedly; batch size reduced',
+                array(
+                    'source'      => 'woo-product-feed-pro',
+                    'feed_id'     => $this->id,
+                    'safe_size'   => $safe_size,
+                    'crash_count' => (int) $this->adaptive_crash_count,
+                )
+            );
+        }
+    }
+
+    /**
+     * Record a feed as parked after repeated crashed runs, for the admin notice.
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @param int    $feed_id Feed ID.
+     * @param string $title   Feed title.
+     * @param int    $count   Consecutive crash count.
+     */
+    private static function flag_blocked_feed( $feed_id, $title, $count ) {
+        $blocked = get_option( self::ADAPTIVE_BLOCKED_OPTION, array() );
+        if ( ! is_array( $blocked ) ) {
+            $blocked = array();
+        }
+
+        $blocked[ $feed_id ] = array(
+            'title' => $title,
+            'count' => $count,
+        );
+
+        update_option( self::ADAPTIVE_BLOCKED_OPTION, $blocked, false );
+    }
+
+    /**
+     * Remove a feed from the parked-feeds record.
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @param int $feed_id Feed ID.
+     */
+    private static function unflag_blocked_feed( $feed_id ) {
+        $blocked = get_option( self::ADAPTIVE_BLOCKED_OPTION, array() );
+        if ( ! is_array( $blocked ) || ! isset( $blocked[ $feed_id ] ) ) {
+            return;
+        }
+
+        unset( $blocked[ $feed_id ] );
+        update_option( self::ADAPTIVE_BLOCKED_OPTION, $blocked, false );
+    }
+
+    /**
+     * Host-derived per-batch time budget, in seconds.
+     *
+     * Ported from the pattern in StoreAgent's Data_Upload::get_upload_time_budget():
+     * stay under the PHP execution ceiling and Action Scheduler's failure window,
+     * capped and floored so every host makes forward progress.
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @return int The per-batch time budget in seconds.
+     */
+    private function get_batch_time_budget() {
+        // PHP execution ceiling. 0 / negative means unlimited (common on CLI/cron).
+        $max_execution = (int) ini_get( 'max_execution_time' );
+        $php_budget    = $max_execution > 0 ? (int) floor( $max_execution * 0.7 ) : self::ADAPTIVE_HARD_CAP_SECONDS;
+
+        // Action Scheduler marks an action failed once it runs past this window and
+        // re-runs it, which would duplicate work. Stay well under it.
+        $as_failure = (int) apply_filters( 'action_scheduler_failure_period', 5 * MINUTE_IN_SECONDS );
+        $as_budget  = $as_failure > 0 ? (int) floor( $as_failure * 0.8 ) : self::ADAPTIVE_HARD_CAP_SECONDS;
+
+        $budget = min( $php_budget, $as_budget, self::ADAPTIVE_HARD_CAP_SECONDS );
+
+        // Floor for forward progress, but never above the PHP-derived ceiling on a
+        // host with a very low max_execution_time.
+        $floor  = $max_execution > 0 ? min( self::ADAPTIVE_MIN_SECONDS, $php_budget ) : self::ADAPTIVE_MIN_SECONDS;
+        $budget = max( $floor, $budget );
+
+        /**
+         * Filter the per-batch time budget, in seconds, for feed generation.
+         *
+         * @since 13.5.7
+         *
+         * @param int $budget  The per-batch time budget in seconds.
+         * @param int $feed_id Feed ID.
+         */
+        return max( 1, (int) apply_filters( 'adt_product_feed_batch_time_budget', $budget, $this->id ) );
+    }
+
+    /**
+     * Compute the next batch size from the last batch's wall-time and memory use.
+     *
+     * Proportional controller: aim each batch at a target fraction of the time
+     * budget, grow gently (capped per step to avoid overshoot), and shrink hard
+     * under time or memory pressure.
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @param int   $current        The batch size that was just processed.
+     * @param float $elapsed        Seconds the last batch took.
+     * @param int   $peak_before    Peak memory in bytes recorded before the batch ran.
+     * @param bool  $memory_pressed Set by reference to whether this batch hit the memory
+     *                              guard, so the caller can avoid warm-starting from a
+     *                              pressured size. Reflects the measured reading, not the
+     *                              filtered next-size result.
+     * @return int The next batch size.
+     */
+    private function calculate_next_batch_size( $current, $elapsed, $peak_before = 0, &$memory_pressed = false ) {
+        $current = max( 1, (int) $current );
+        $budget  = $this->get_batch_time_budget();
+        $target  = max( 1, $budget * self::ADAPTIVE_TARGET_RATIO );
+
+        // Memory guard: if this batch's peak approached the limit, shrink hard.
+        $memory_pressed = false;
+        $memory_limit   = $this->convert_to_bytes( ini_get( 'memory_limit' ) );
+
+        // A memory_limit of -1 (unlimited) still runs on finite physical RAM, so fall
+        // back to a sane absolute ceiling. Otherwise nothing but the time budget bounds
+        // batch growth and a large batch can exhaust the host's real memory.
+        if ( $memory_limit <= 0 ) {
+            $memory_limit = self::ADAPTIVE_UNLIMITED_MEMORY_FALLBACK_BYTES;
+        }
+
+        /**
+         * Filter the memory limit, in bytes, used by the adaptive memory guard.
+         *
+         * Return 0 to disable the guard entirely.
+         *
+         * @since 13.5.7
+         *
+         * @param int $memory_limit Memory limit in bytes.
+         * @param int $feed_id      Feed ID.
+         */
+        $memory_limit = (int) apply_filters( 'adt_product_feed_memory_limit_bytes', $memory_limit, $this->id );
+
+        // Only count pressure when THIS batch raised the peak: the tracker is
+        // monotonic per process, and Action Scheduler can chain several batches
+        // through one request - without this, one big early batch would look
+        // like permanent pressure and shrink every batch after it. On PHP 8.2+
+        // the tracker is also reset before each batch, making the reading
+        // genuinely per-batch.
+        $peak_now = memory_get_peak_usage( true );
+        if ( $memory_limit > 0 && $peak_now >= $memory_limit * self::ADAPTIVE_MEMORY_RATIO && $peak_now > $peak_before ) {
+            $memory_pressed = true;
+        }
+
+        if ( $memory_pressed ) {
+            $next = (int) floor( $current / 2 );
+        } elseif ( $elapsed <= 0 ) {
+            // Too fast to measure — grow by the per-step cap.
+            $next = (int) floor( $current * self::ADAPTIVE_MAX_GROWTH );
+        } else {
+            $next     = (int) round( $current * ( $target / $elapsed ) );
+            $max_step = (int) floor( $current * self::ADAPTIVE_MAX_GROWTH );
+            if ( $next > $max_step ) {
+                $next = $max_step; // Cap growth per step to avoid overshoot.
+            }
+        }
+
+        // Clamp to any crash-learned ceiling, then to sane bounds.
+        if ( $this->adaptive_batch_ceiling > 0 ) {
+            $next = min( $next, (int) $this->adaptive_batch_ceiling );
+        }
+        $next = max( self::ADAPTIVE_MIN_BATCH, min( self::ADAPTIVE_MAX_BATCH, $next ) );
+
+        /**
+         * Filter the adaptively-computed next batch size.
+         *
+         * @since 13.5.7
+         *
+         * @param int   $next    The next batch size.
+         * @param int   $current The batch size just processed.
+         * @param float $elapsed Seconds the last batch took.
+         * @param int   $feed_id Feed ID.
+         */
+        return (int) apply_filters( 'adt_product_feed_adaptive_next_batch_size', $next, $current, $elapsed, $this->id );
+    }
+
+    /**
+     * Log an adaptive batch-sizing decision (only when logging is enabled).
+     *
+     * @since 13.5.7
+     * @access private
+     *
+     * @param int   $current The batch size just processed.
+     * @param int   $next    The next batch size.
+     * @param float $elapsed Seconds the last batch took.
+     */
+    private function log_adaptive_batch( $current, $next, $elapsed ) {
+        if ( 'yes' !== get_option( 'adt_enable_logging', 'no' ) ) {
+            return;
+        }
+
+        $info = array(
+            'feed_id'         => $this->id,
+            'batch_processed' => $current,
+            'elapsed_seconds' => round( $elapsed, 3 ),
+            'next_batch_size' => $next,
+            'batch_ceiling'   => (int) $this->adaptive_batch_ceiling,
+            'time_budget'     => $this->get_batch_time_budget(),
+            'memory_peak'     => size_format( memory_get_peak_usage( true ) ),
+            'memory_limit'    => ini_get( 'memory_limit' ),
+        );
+
+        $log_message = 'Product Feed Adaptive Batch: ' . print_r( $info, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+
+        if ( function_exists( 'wc_get_logger' ) ) {
+            wc_get_logger()->debug( $log_message, array( 'source' => 'woo-product-feed-pro' ) );
         }
 
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
