@@ -527,7 +527,8 @@ class Product_Feed_Attributes extends Abstract_Class {
 
         if ( ! empty( $result ) ) {
             foreach ( $result as $value ) {
-                $temp_value = maybe_unserialize( $value );
+                // This is a raw meta read, so refuse objects here the same way the feed generator does.
+                $temp_value = Helper::safely_unserialize( $value );
                 if ( is_array( $temp_value ) && ! empty( $temp_value ) ) {
                     $product_variations_attributes = array_merge( $product_variations_attributes, array_keys( $temp_value ) );
                 }

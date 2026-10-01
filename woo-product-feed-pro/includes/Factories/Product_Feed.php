@@ -9,6 +9,8 @@ namespace AdTribes\PFP\Factories;
 
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Classes\Cron;
+use AdTribes\PFP\Classes\Feed_Attributes_Migrator;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_Parquet;
 
 /**
  * Class Product_Feed.
@@ -33,6 +35,48 @@ class Product_Feed {
     const META_PREFIX = 'adt_';
 
     /**
+     * Data keys whose property reads resolve through a getter instead of the raw value.
+     *
+     * `__get()` consults this map before it returns `$this->data[ $key ]`, the way
+     * `WC_Data` prefers a `get_<key>()` method. The map is explicit rather than a
+     * naming convention, so adding a `get_<key>()` method elsewhere cannot change
+     * what a property read returns by accident.
+     *
+     * `attributes` is here because migrated feeds keep their config in
+     * `feed_attributes`, while every reader in PRO, in Elite, and in unaudited
+     * third-party code reads the `attributes` property.
+     *
+     * Note: `save_meta_data()` and `load_meta_data()` walk `$this->data` directly,
+     * so they are not affected. That matters — a resolved value must never be
+     * written back over the `adt_attributes` meta.
+     *
+     * @since 13.5.8
+     */
+    const RESOLVED_DATA_GETTERS = array(
+        'attributes' => 'get_attributes',
+    );
+
+    /**
+     * Data keys that invalidate the resolved-attributes memo when written.
+     *
+     * `channel_hash` is one of them: `get_attributes()` passes it to
+     * `Feed_Attributes_Migrator::to_legacy()`, which reads the channel's repeat
+     * limits from it, so switching channel changes the expansion.
+     *
+     * @since 13.5.8
+     */
+    const RESOLVED_ATTRIBUTES_INPUTS = array( 'attributes', 'feed_attributes', 'data_version', 'channel_hash' );
+
+    /**
+     * Memoised return value of get_attributes(), or null when not resolved yet.
+     *
+     * @since 13.5.8
+     *
+     * @var array|null
+     */
+    private $resolved_attributes = null;
+
+    /**
      * Adaptive batch sizing tuning constants.
      *
      * The batch size self-tunes toward a fraction of a host-derived time budget,
@@ -45,6 +89,7 @@ class Product_Feed {
     const ADAPTIVE_TARGET_RATIO                    = 0.6;   // Aim each batch at this fraction of the budget.
     const ADAPTIVE_MAX_GROWTH                      = 2.0;   // Never grow the batch by more than this factor per step.
     const ADAPTIVE_MIN_BATCH                       = 50;    // Lower clamp for the adaptive batch size.
+    const ADAPTIVE_MIN_BATCH_PARQUET               = 500;   // Lower clamp for Parquet - see get_adaptive_min_batch().
     const ADAPTIVE_MAX_BATCH                       = 25000; // Upper clamp for the adaptive batch size.
     const ADAPTIVE_MEMORY_RATIO                    = 0.8;   // Shrink hard if peak memory exceeds this fraction of the limit.
     const ADAPTIVE_UNLIMITED_MEMORY_FALLBACK_BYTES = 1073741824; // 1 GB ceiling used when memory_limit is -1 (unlimited).
@@ -152,6 +197,13 @@ class Product_Feed {
         // Resume point of the run in progress: the ( post_date, ID ) sort key of the last
         // row the previous batch walked. Empty means "start at the top of the catalogue".
         'batch_cursor'                           => array(),
+        // Skroutz only. Variation rows collected in a batch whose parent product row has
+        // not been written yet, keyed by parent product ID. The catalogue is walked newest
+        // first, so a parent and its variations can fall on opposite sides of a batch
+        // boundary; without this the variations are discarded and the parent writes a node
+        // with no <variations>. Anything still here when the run ends had no parent in the
+        // feed at all, and is dropped rather than written.
+        'batch_pending_variations'               => array(),
         'adaptive_last_batch_size'               => 0,
         'adaptive_batch_ceiling'                 => 0,
         'adaptive_batch_attempt'                 => 0,
@@ -186,6 +238,7 @@ class Product_Feed {
         'utm_content'                            => '',
         'utm_total_product_orders_lookback'      => '',
         'attributes'                             => array(),
+        'feed_attributes'                        => array(),
         'mappings'                               => array(),
         'rules'                                  => array(),
         'filters'                                => array(),
@@ -233,7 +286,12 @@ class Product_Feed {
     /**
      * Get class property.
      *
+     * A data key listed in self::RESOLVED_DATA_GETTERS is served by its getter
+     * instead of the raw `$this->data` value, so a property read and its getter
+     * always agree. Every other key returns the raw value.
+     *
      * @since 13.3.5
+     * @since 13.5.8 Routes a self::RESOLVED_DATA_GETTERS key through its getter.
      * @access public
      *
      * @param string $key Property name.
@@ -242,6 +300,9 @@ class Product_Feed {
      */
     public function __get( $key ) {
         if ( array_key_exists( $key, $this->data ) ) {
+            if ( isset( self::RESOLVED_DATA_GETTERS[ $key ] ) ) {
+                return $this->{self::RESOLVED_DATA_GETTERS[ $key ]}();
+            }
             return $this->data[ $key ];
         } elseif ( property_exists( $this, $key ) ) { // Check if property exists in the class.
             return $this->$key;
@@ -254,6 +315,7 @@ class Product_Feed {
      * Set class property.
      *
      * @since 13.3.5
+     * @since 13.5.8 Clears the resolved-attributes memo when the key is one of its inputs.
      * @access public
      *
      * @param string $key Property name.
@@ -263,6 +325,7 @@ class Product_Feed {
     public function __set( $key, $value ) {
         if ( array_key_exists( $key, $this->data ) ) {
             $this->data[ $key ] = $value;
+            $this->maybe_clear_resolved_attributes( $key );
         } elseif ( in_array( $key, array( 'id', 'title', 'post_status' ), true ) ) {
             $this->$key = $value;
         } else {
@@ -295,6 +358,7 @@ class Product_Feed {
      * Sets prop for the product feed object.
      *
      * @since 13.3.5
+     * @since 13.5.8 Clears the resolved-attributes memo when the prop is one of its inputs.
      * @access public
      *
      * @param string $prop Name of prop to set.
@@ -313,6 +377,7 @@ class Product_Feed {
                 $value = absint( $value );
             }
             $this->data[ $prop ] = $value;
+            $this->maybe_clear_resolved_attributes( $prop );
         } elseif ( in_array( $prop, array( 'id', 'title', 'post_status' ), true ) ) {
             $this->$prop = $value;
         } else {
@@ -321,9 +386,62 @@ class Product_Feed {
     }
 
     /**
+     * Clear the resolved-attributes memo when one of its inputs is written.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @param string $key The data key that was just written.
+     */
+    private function maybe_clear_resolved_attributes( $key ) {
+        if ( in_array( $key, self::RESOLVED_ATTRIBUTES_INPUTS, true ) ) {
+            $this->resolved_attributes = null;
+        }
+    }
+
+    /**
+     * Whether this instance carries enough identity to be inserted as a new feed.
+     *
+     * A feed is created in five places - the admin wizard, the WP-CLI `create`
+     * command, the create abilities, the clone/duplicate handlers, and the 13.3.5
+     * legacy migration. The first four set a title, a channel and a project hash
+     * before they save. The migration is the reason the project hash is one of the
+     * three: it carries `projectname` and `project_hash` across from the legacy
+     * row, and either the title or the channel may be empty there - but the hash
+     * never is, because the loop skips a legacy entry without one.
+     *
+     * An instance that holds none of the three is not a feed a caller
+     * built; it is the factory's own defaults, reached because something asked
+     * for a feed by an ID that resolved to nothing and saved the blank object it
+     * got back. Inserting it produces a post no merchant can see or use, and a
+     * scheduled caller produces one on every run (issue #1189).
+     *
+     * The check only gates the insert. An existing feed is updated whatever it
+     * holds, so a merchant who clears a field on a real feed is unaffected.
+     *
+     * What `Phantom_Feed_Cleanup::find_ids()` deletes is a strict subset of what
+     * this method rejects: it only deletes a post that holds none of these three,
+     * and it then narrows further on run history, status and age. Do not try to
+     * keep the two symmetric. Widen this guard and the cleanup simply deletes
+     * less; widen the cleanup past this guard and it deletes a feed this guard
+     * admitted.
+     *
+     * @since 13.6.0
+     * @access private
+     *
+     * @return bool True when the instance names a real feed.
+     */
+    private function has_feed_identity() {
+        return '' !== trim( (string) $this->title )
+            || '' !== trim( (string) $this->channel_hash )
+            || '' !== trim( (string) $this->legacy_project_hash );
+    }
+
+    /**
      * Save product feed.
      *
      * @since 13.3.5
+     * @since 13.6.0 Refuses to insert a feed that carries no identity - see has_feed_identity().
      * @access public
      *
      * @throws \Exception If error saving product feed.
@@ -341,6 +459,25 @@ class Product_Feed {
                 )
             );
         } else {
+            if ( ! $this->has_feed_identity() ) {
+                // Logged rather than thrown: the callers that reach this point do so
+                // by accident, and none of them expects an exception here. The entry
+                // names the request so the remaining route can be found on a site
+                // that still produces one.
+                if ( function_exists( 'wc_get_logger' ) ) {
+                    wc_get_logger()->warning(
+                        'Refused to create a product feed with no title, channel or project hash',
+                        array(
+                            'source'  => 'woo-product-feed-pro',
+                            'is_cron' => (bool) ( defined( 'DOING_CRON' ) && DOING_CRON ),
+                            'is_ajax' => (bool) ( defined( 'DOING_AJAX' ) && DOING_AJAX ),
+                        )
+                    );
+                }
+
+                return 0;
+            }
+
             $post_id = wp_insert_post(
                 array(
                     'post_title'  => $this->title,
@@ -578,6 +715,78 @@ class Product_Feed {
     }
 
     /**
+     * Get the raw legacy attribute rows exactly as stored in meta.
+     *
+     * Unlike the `attributes` accessor, this never applies any backward
+     * compatibility transformation — it always returns the raw
+     * `$data['attributes']` value.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @return array Raw legacy attribute rows.
+     */
+    public function get_raw_attributes() {
+        return $this->data['attributes'];
+    }
+
+    /**
+     * Get the legacy-shaped attribute rows.
+     *
+     * Backward compatibility accessor: once a feed is migrated to the
+     * `feed_attributes` schema, this returns
+     * `Feed_Attributes_Migrator::to_legacy( $feed->feed_attributes )`. Unmigrated
+     * feeds pass through the raw legacy `attributes` value.
+     *
+     * Every existing reader in PRO and Elite uses the property
+     * (`$feed->attributes`), not this method, so `__get()` routes the `attributes`
+     * key here through self::RESOLVED_DATA_GETTERS. Keep the two in step:
+     * `$feed->attributes` must always equal `$feed->get_attributes()`.
+     *
+     * The resolved value is memoised, because the property sits on a per-product
+     * hot path during feed generation - `woosea_calculate_value()` reads it once per
+     * product, and `Shipping_Data` reads it once per shipping rate per product.
+     * Any write to `attributes`, `feed_attributes` or `data_version` clears the memo.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @return array Legacy-shaped attribute rows (rowCount, attribute, prefix, mapfrom, static_value, value, suffix).
+     */
+    public function get_attributes() {
+        if ( null !== $this->resolved_attributes ) {
+            return $this->resolved_attributes;
+        }
+
+        $data_version = is_array( $this->data['data_version'] ?? null ) ? $this->data['data_version'] : array();
+
+        if ( empty( $data_version['feed_attributes'] ) ) {
+            $this->resolved_attributes = $this->get_raw_attributes();
+            return $this->resolved_attributes;
+        }
+
+        /**
+         * Filter the legacy-shaped attribute rows a migrated feed serves to legacy consumers.
+         *
+         * @since 13.5.8
+         *
+         * @param array        $attributes Legacy-shaped attribute rows.
+         * @param Product_Feed $feed       The product feed instance.
+         * @return array Legacy-shaped attribute rows.
+         */
+        $this->resolved_attributes = apply_filters(
+            'adt_feed_attributes_to_legacy',
+            Feed_Attributes_Migrator::to_legacy(
+                (array) ( $this->data['feed_attributes'] ?? array() ),
+                (string) ( $this->data['channel_hash'] ?? '' )
+            ),
+            $this
+        );
+
+        return $this->resolved_attributes;
+    }
+
+    /**
      * Get the base file format, stripping any .gz suffix.
      *
      * For compressed formats like 'jsonl.gz' or 'csv.gz', returns the underlying
@@ -770,6 +979,84 @@ class Product_Feed {
     }
 
     /**
+     * Get the newest entry in the products history.
+     *
+     * The history records the number of products actually written to the feed file at
+     * the end of each generation, keyed by the timestamp of that count (see
+     * add_history_product()). That number is what a merchant means by "products in the
+     * feed". products_count answers a different question: it is the number of products
+     * the run started from, counted before any filter or rule ran, so a feed that
+     * filters by category reports the same products_count as one that does not.
+     *
+     * The count is null when the history is empty. That does not prove the feed never
+     * generated: a feed that generated before history tracking existed, or whose stats
+     * cron never wrote an entry, also has an empty history. Pair the null with an empty
+     * last_updated before you tell a merchant the feed has not generated yet.
+     *
+     * The date is a GMT 'd M Y H:i:s' string, empty for a history entry written before
+     * the timestamp key existed.
+     *
+     * @since 13.6.0
+     * @access public
+     *
+     * @return array {
+     *     @type int|null $count The products written by the most recent generation.
+     *     @type string   $date  When that count was taken, as a GMT date string.
+     * }
+     */
+    public function get_latest_products_in_feed() {
+        return self::parse_latest_products_in_feed( $this->history_products );
+    }
+
+    /**
+     * Read the newest entry out of a raw products history.
+     *
+     * Same contract as get_latest_products_in_feed(), but it takes the history array
+     * directly, so a caller that already holds the raw adt_history_products meta -
+     * the weekly usage check-in reads every feed in one query - does not have to load
+     * a feed object to get the count.
+     *
+     * @since 13.6.0
+     * @access public
+     *
+     * @param mixed $history The products history, as stored in adt_history_products.
+     * @return array {
+     *     @type int|null $count The products written by the most recent generation.
+     *     @type string   $date  When that count was taken, as a GMT date string.
+     * }
+     */
+    public static function parse_latest_products_in_feed( $history ) {
+        $history = (array) $history;
+
+        if ( empty( $history ) ) {
+            return array(
+                'count' => null,
+                'date'  => '',
+            );
+        }
+
+        $latest = end( $history );
+
+        // Entries are a single-element [ timestamp => count ] array, but tolerate a
+        // bare count from a history written before the timestamp key was added. A
+        // non-numeric entry is a damaged row, not a count of zero, so it reads as no
+        // recorded count - the check-in must never report a damaged feed as empty.
+        if ( ! is_array( $latest ) ) {
+            return array(
+                'count' => is_numeric( $latest ) ? (int) $latest : null,
+                'date'  => '',
+            );
+        }
+
+        $count = reset( $latest );
+
+        return array(
+            'count' => is_numeric( $count ) ? (int) $count : null,
+            'date'  => (string) key( $latest ),
+        );
+    }
+
+    /**
      * Set the run-scoped fields that every start and end of a generation run touches.
      *
      * These four move as a set - how far the run got, the size it is working in, its
@@ -795,6 +1082,7 @@ class Product_Feed {
         $this->total_products_processed = 0;
         $this->batch_size               = (int) $batch_size;
         $this->batch_cursor             = array(); // A run never inherits another run's resume point.
+        $this->batch_pending_variations = array(); // Nor another run's half-collected variations.
         $this->executed_from            = $context;
     }
 
@@ -828,6 +1116,12 @@ class Product_Feed {
      * @param string $context The context of the generation. 'schedule' or 'manual'.
      */
     public function generate( $context = 'schedule' ) {
+        // Nothing to generate for a feed that was never saved. See register_action()
+        // for why an unsaved feed must never reach the scheduler.
+        if ( $this->id <= 0 ) {
+            return false;
+        }
+
         // Guard: skip if feed is already being processed to prevent concurrent generation.
         if ( 'processing' === $this->status ) {
             if ( function_exists( 'wc_get_logger' ) ) {
@@ -840,6 +1134,51 @@ class Product_Feed {
                     )
                 );
             }
+            return false;
+        }
+
+        // Stop an XML feed before it starts when the server cannot write XML at all.
+        // Without this the run dies deep inside the writer on `new XMLWriter()` and the
+        // only trace is a caught exception, leaving the feed on `error` with nothing to
+        // read anywhere. Failing here records the real reason and names the extension.
+        $missing_extensions = Product_Feed_Helper::feed_needs_xml_php_extensions( $this )
+            ? Product_Feed_Helper::get_missing_xml_php_extensions()
+            : array();
+
+        if ( ! empty( $missing_extensions ) ) {
+            $this->log_missing_xml_php_extensions( $missing_extensions, $context );
+
+            $this->status       = 'error';
+            $this->last_updated = gmdate( 'd M Y H:i:s' );
+            $this->set_run_state();
+            $this->save();
+
+            return false;
+        }
+
+        // Same reasoning as the XML gate above, for Parquet. Without this the run walks
+        // the whole catalogue, the writer refuses every batch, no temp file is ever
+        // created, and the feed still finishes on `ready` with a fresh timestamp - so the
+        // merchant sees a successful run while the file on disk is the previous one's.
+        if ( 'parquet' === $this->file_format && ! Feed_Writer_Parquet::is_supported() ) {
+            if ( function_exists( 'wc_get_logger' ) ) {
+                wc_get_logger()->error(
+                    'Skipping feed generation: ' . Feed_Writer_Parquet::get_unsupported_reason(),
+                    array(
+                        'source'      => 'woo-product-feed-pro',
+                        'feed_id'     => $this->id,
+                        'feed_title'  => $this->title,
+                        'context'     => $context,
+                        'file_format' => $this->file_format,
+                    )
+                );
+            }
+
+            $this->status       = 'error';
+            $this->last_updated = gmdate( 'd M Y H:i:s' );
+            $this->set_run_state();
+            $this->save();
+
             return false;
         }
 
@@ -918,7 +1257,7 @@ class Product_Feed {
                 $batch_size = min( $batch_size, (int) $this->adaptive_batch_ceiling );
             }
 
-            $batch_size = max( self::ADAPTIVE_MIN_BATCH, min( self::ADAPTIVE_MAX_BATCH, $batch_size ) );
+            $batch_size = max( $this->get_adaptive_min_batch(), min( self::ADAPTIVE_MAX_BATCH, $batch_size ) );
         }
 
         // Set feed status to processing.
@@ -1124,18 +1463,43 @@ class Product_Feed {
                 // Log when feed generation ends.
                 $logging = get_option( 'adt_enable_logging', 'no' );
                 if ( 'yes' === $logging ) {
-                    $end_info    = array(
-                        'feed_id'         => $this->id,
-                        'feed_title'      => $this->title,
-                        'execution_date'  => current_time( 'Y-m-d H:i:s' ),
-                        'context'         => $context,
-                        'products_count'  => $this->products_count,
-                        'processed_count' => $this->products_count, // All products processed when status is ready.
-                        'channel'         => $this->channel,
-                        'file_format'     => $this->file_format,
-                        'file_url'        => $this->file_url,
-                        'action'          => 'Feed generation completed',
+                    // No `processed_count` here. It only ever repeated products_count:
+                    // total_products_processed is a batch-size accumulator clamped to
+                    // products_count, and completion requires it to have reached that
+                    // clamp, so the pair always matched however much the file held. The
+                    // rows the file really carries are counted off the finished file and
+                    // logged by Cron::as_product_feed_update_stats().
+                    $end_info = array(
+                        'feed_id'        => $this->id,
+                        'feed_title'     => $this->title,
+                        'execution_date' => current_time( 'Y-m-d H:i:s' ),
+                        'context'        => $context,
+                        'products_count' => $this->products_count,
+                        'channel'        => $this->channel,
+                        'file_format'    => $this->file_format,
+                        'file_url'       => $this->file_url,
+                        'action'         => 'Feed generation completed',
                     );
+
+                    // A published variation stays published when its parent product is
+                    // set to draft, pending or private - WooCommerce has no separate
+                    // status control for one - and no feed can carry it, because the row
+                    // has no published product page behind it. Those variations are left
+                    // out of products_count as well, so without this line nothing in the
+                    // log tells a merchant that part of the catalogue never reached the
+                    // file.
+                    //
+                    // The figure is catalogue-wide, not run-scoped: it counts the
+                    // published variations no feed can reach, not the ones this run
+                    // dropped. Feed filters and category restrictions are applied
+                    // per-product downstream, so a narrower feed cannot narrow it, and
+                    // the key is named for the catalogue to keep it from reading as a
+                    // count of this run. Left out of a preview, whose products_count is
+                    // a fixed 5-product sample that would make the two incomparable.
+                    if ( $this->include_product_variations && ! $this->create_preview ) {
+                        $end_info['catalogue_variations_with_unpublished_parent'] = Product_Feed_Helper::get_total_variations_with_unpublished_parent();
+                    }
+
                     $log_message = 'Product Feed Generation Completed: ' . print_r( $end_info, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 
                     $logger = new \WC_Logger();
@@ -1185,34 +1549,35 @@ class Product_Feed {
             }
         } catch ( \Throwable $e ) {
 
-            // Log the error for debugging.
-            $logging = get_option( 'adt_enable_logging', 'no' );
-            if ( 'yes' === $logging ) {
-                // Build comprehensive error information.
-                $error_info  = array(
-                    'feed_id'         => $this->id,
-                    'feed_title'      => $this->title,
-                    'execution_date'  => gmdate( 'Y-m-d H:i:s' ),
-                    'context'         => $context,
-                    'offset'          => $offset,
-                    'batch_size'      => $batch_size,
-                    'error_message'   => $e->getMessage(),
-                    'error_code'      => $e->getCode(),
-                    'error_file'      => $e->getFile(),
-                    'error_line'      => $e->getLine(),
-                    'products_count'  => $this->products_count,
-                    'processed_count' => $this->total_products_processed,
-                    'channel'         => $this->channel,
-                    'file_format'     => $this->file_format,
-                );
-                $log_message = 'Product Feed Error: ' . print_r( $error_info, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+            // Always log a failed run, whether or not "Enable logging" is on. The setting
+            // gates the routine start/end/progress entries, but an exception here is the
+            // only record of why a feed broke: it leaves no entry in the WooCommerce
+            // fatal-errors log and none in the Scheduled Actions failed list, so gating it
+            // means the site owner has nothing to read and no way to reproduce it after
+            // the fact. One entry per failed batch, so this stays quiet on a healthy site.
+            $error_info  = array(
+                'feed_id'         => $this->id,
+                'feed_title'      => $this->title,
+                'execution_date'  => gmdate( 'Y-m-d H:i:s' ),
+                'context'         => $context,
+                'offset'          => $offset,
+                'batch_size'      => $batch_size,
+                'error_message'   => $e->getMessage(),
+                'error_code'      => $e->getCode(),
+                'error_file'      => $e->getFile(),
+                'error_line'      => $e->getLine(),
+                'products_count'  => $this->products_count,
+                'processed_count' => $this->total_products_processed,
+                'channel'         => $this->channel,
+                'file_format'     => $this->file_format,
+            );
+            $log_message = 'Product Feed Error: ' . print_r( $error_info, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 
-                $logger = new \WC_Logger();
-                $logger->add( 'Product Feed Pro by AdTribes.io', $log_message, 'error' );
+            $logger = new \WC_Logger();
+            $logger->add( 'Product Feed Pro by AdTribes.io', $log_message, 'error' );
 
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-                }
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             }
 
             // Set status to error.
@@ -1456,6 +1821,7 @@ class Product_Feed {
         self::update_feed_meta_direct( $feed_id, 'batch_size', '0' );
         self::update_feed_meta_direct( $feed_id, 'executed_from', '' );
         self::update_feed_meta_direct( $feed_id, 'batch_cursor', maybe_serialize( array() ) );
+        self::update_feed_meta_direct( $feed_id, 'batch_pending_variations', maybe_serialize( array() ) );
 
         // Crash-learning: a fatal that lands here with a batch in flight is
         // resource exhaustion (OOM or execution timeout - anything catchable is
@@ -1844,6 +2210,30 @@ class Product_Feed {
     }
 
     /**
+     * Get the lower clamp for the adaptive batch size.
+     *
+     * Parquet writes one row group per batch and rewrites the whole accumulated footer
+     * each time, so footer I/O grows with the number of batches already written and the
+     * total across a run is quadratic in the batch count. That cost lands in the elapsed
+     * time this controller measures, while being independent of the row count - so a
+     * constrained host sitting near the ordinary floor reads the rising footer cost as
+     * "batches too slow" and shrinks further, which produces more batches, a bigger
+     * footer and a slower run still. A higher floor bounds the row groups a large
+     * catalogue accumulates and breaks that feedback.
+     *
+     * Crash recovery deliberately keeps the ordinary floor: a feed that fatals must still
+     * be able to halve below this, or it would relaunch into the same fatal every run.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @return int
+     */
+    private function get_adaptive_min_batch() {
+        return 'parquet' === $this->file_format ? self::ADAPTIVE_MIN_BATCH_PARQUET : self::ADAPTIVE_MIN_BATCH;
+    }
+
+    /**
      * Compute the next batch size from the last batch's wall-time and memory use.
      *
      * Proportional controller: aim each batch at a target fraction of the time
@@ -1918,7 +2308,7 @@ class Product_Feed {
         if ( $this->adaptive_batch_ceiling > 0 ) {
             $next = min( $next, (int) $this->adaptive_batch_ceiling );
         }
-        $next = max( self::ADAPTIVE_MIN_BATCH, min( self::ADAPTIVE_MAX_BATCH, $next ) );
+        $next = max( $this->get_adaptive_min_batch(), min( self::ADAPTIVE_MAX_BATCH, $next ) );
 
         /**
          * Filter the adaptively-computed next batch size.
@@ -1968,6 +2358,42 @@ class Product_Feed {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         }
+    }
+
+    /**
+     * Log an XML feed run refused because the server is missing PHP extensions.
+     *
+     * Written unconditionally, like the caught-error log in run_batch_event(): the site
+     * owner cannot turn on "Enable logging" after the fact to find out why a feed broke,
+     * and this failure produces no other trace on any diagnostic surface.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @param array  $missing_extensions Names of the missing PHP extensions.
+     * @param string $context            The generation context. 'schedule' or 'manual'.
+     */
+    private function log_missing_xml_php_extensions( $missing_extensions, $context ) {
+        if ( ! function_exists( 'wc_get_logger' ) ) {
+            return;
+        }
+
+        $extension_list = implode( ', ', $missing_extensions );
+
+        wc_get_logger()->error(
+            sprintf(
+                'Skipping feed generation: this server is missing the PHP extension(s) required to write XML feeds: %s. Ask your host to enable them.',
+                $extension_list
+            ),
+            array(
+                'source'             => 'woo-product-feed-pro',
+                'feed_id'            => $this->id,
+                'feed_title'         => $this->title,
+                'context'            => $context,
+                'file_format'        => $this->file_format,
+                'missing_extensions' => $extension_list,
+            )
+        );
     }
 
     /**
@@ -2021,6 +2447,55 @@ class Product_Feed {
                 }
                 // Delete the corrupt tmp file but preserve the existing live feed.
                 wp_delete_file( $tmp_file );
+                return;
+            }
+        }
+
+        // Parquet is a binary container whose schema and row counts live in a footer
+        // written on every batch. A run that died mid-batch leaves a file with no valid
+        // footer, and unlike a truncated text feed that is not partially usable - no
+        // reader can open it. Refuse to publish one, and keep the previous feed live.
+        // Only a negative count blocks the publish. A readable file holding zero rows is
+        // legitimate - the same position the XML guard above takes - and must not cost
+        // the merchant a full catalogue walk to rebuild.
+        if ( 'parquet' === $this->file_format ) {
+            $tmp_row_count = Feed_Writer_Parquet::count_rows( $tmp_file );
+
+            if ( $tmp_row_count < 0 ) {
+                $is_corrupt = Feed_Writer_Parquet::ROWS_CORRUPT === $tmp_row_count;
+
+                if ( function_exists( 'wc_get_logger' ) ) {
+                    wc_get_logger()->error(
+                        $is_corrupt
+                            ? 'Refusing to overwrite live feed: tmp Parquet file is corrupt (parse error)'
+                            : 'Refusing to overwrite live feed: the tmp Parquet file could not be read on this host',
+                        array(
+                            'source'         => 'woo-product-feed-pro',
+                            'feed_id'        => $this->id,
+                            'feed_title'     => $this->title,
+                            'products_count' => $this->products_count,
+                        )
+                    );
+                }
+
+                // Only a genuine parse failure condemns the file. "Could not read it at
+                // all" - an unloadable library, or the support filter flipping between
+                // the write and this move - says nothing about the file, so keep it
+                // rather than throw away a catalogue walk that may be perfectly good. The
+                // next run's first batch replaces it either way.
+                if ( $is_corrupt ) {
+                    wp_delete_file( $tmp_file );
+                }
+
+                // generate() has already set this run to `ready` and saved it, so without
+                // this the merchant reads a successful run while the file on disk is the
+                // previous one's. This is the position the is_supported() gate in
+                // generate() already takes for the analogous case.
+                $this->status       = 'error';
+                $this->last_updated = gmdate( 'd M Y H:i:s' );
+                $this->set_run_state();
+                $this->save();
+
                 return;
             }
         }
@@ -2193,6 +2668,15 @@ class Product_Feed {
      * @access public
      */
     public function register_action() {
+        // An unsaved feed has no ID, and scheduling against ID 0 is what produced
+        // the phantom feeds of #1189: the callback loaded the blank feed that
+        // `get_product_feed( 0 )` hands back and saved it. save() now refuses to
+        // insert such a feed, so a caller that ignores its return value can reach
+        // here holding one.
+        if ( $this->id <= 0 ) {
+            return;
+        }
+
         // Unschedule the Action Scheduler event if it exists.
         $this->unregister_action();
 
@@ -2256,6 +2740,7 @@ class Product_Feed {
      * Set the data version for the product feed.
      *
      * @since 13.4.6
+     * @since 13.5.8 Clears the resolved-attributes memo, because the version selects which source it reads.
      * @access public
      *
      * @param string $key The key of the data version.
@@ -2263,6 +2748,7 @@ class Product_Feed {
      */
     public function set_data_version( $key, $data_version ) {
         $this->data['data_version'][ $key ] = $data_version;
+        $this->maybe_clear_resolved_attributes( 'data_version' );
     }
 
     /***************************************************************************
@@ -2276,7 +2762,13 @@ class Product_Feed {
     /**
      * Save legacy options.
      *
+     * The `attributes` key mirrors the resolved value, not the raw one. A migrated
+     * feed edits `feed_attributes`, so the raw key keeps the pre-migration rows and
+     * would mirror a config the user has since changed. An unmigrated feed resolves
+     * to the same raw value, so its mirror is unchanged.
+     *
      * @since 13.3.5.1
+     * @since 13.5.8 Mirrors the resolved `attributes` value.
      * @access public
      */
     public function save_legacy_options() {
@@ -2299,7 +2791,7 @@ class Product_Feed {
         $data['include_all_shipping_countries'] = $this->data['include_all_shipping_countries'] ? 'on' : '';
         $data['preview_feed']                   = $this->data['create_preview'] ? 'on' : '';
         $data['products_changed']               = $this->data['refresh_only_when_product_changed'] ? 'on' : '';
-        $data['attributes']                     = $this->data['attributes'] ?? array();
+        $data['attributes']                     = $this->get_attributes();
         $data['mappings']                       = $this->data['mappings'] ?? array();
         $data['rules']                          = $this->data['filters'] ?? array();
         $data['rules2']                         = $this->data['rules'] ?? array();

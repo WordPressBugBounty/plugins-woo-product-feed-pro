@@ -139,6 +139,7 @@ function adt_pfp_delete_product_feed_custom_post_type() {
  */
 function adt_pfp_delete_all_plugin_transients() {
     delete_transient( 'adt_transient_custom_attributes' );
+    delete_transient( 'adt_pfp_google_product_taxonomy' );
 }
 
 if ( function_exists( 'is_multisite' ) && is_multisite() ) {

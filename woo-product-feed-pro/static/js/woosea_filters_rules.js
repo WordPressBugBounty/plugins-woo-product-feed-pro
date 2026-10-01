@@ -101,6 +101,7 @@ jQuery(document).ready(function ($) {
     const attributeSelect = $(this).find('select[name^="rules"][name$="[attribute]"]');
     if (attributeSelect.val() === 'categories' || attributeSelect.val() === 'raw_categories') {
       const feedId = $(this).closest('form#filters_rules').find('#feed_id').val();
+      const nonce = $('form#filters_rules #_wpnonce').val();
       const $tr = $(this).closest('tr.filter-row');
       const $value = $tr.find('input[name^="rules"][name$="[criteria]"]');
 
@@ -109,6 +110,7 @@ jQuery(document).ready(function ($) {
         url: ajaxurl,
         data: {
           action: 'woosea_categories_dropdown',
+          security: nonce,
           type: 'filter',
           feed_id: feedId,
           rowCount: rowCount,
@@ -139,6 +141,7 @@ jQuery(document).ready(function ($) {
     const attributeSelect = $(this).find('select[name^="rules2"][name$="[attribute]"]');
     if (attributeSelect.val() === 'categories' || attributeSelect.val() === 'raw_categories') {
       const feedId = $(this).closest('form#filters_rules').find('#feed_id').val();
+      const nonce = $('form#filters_rules #_wpnonce').val();
       const $tr = $(this).closest('tr.rule-row');
       const $value = $tr.find('input[name^="rules2"][name$="[criteria]"]');
 
@@ -147,6 +150,7 @@ jQuery(document).ready(function ($) {
         url: ajaxurl,
         data: {
           action: 'woosea_categories_dropdown',
+          security: nonce,
           type: 'rule',
           feed_id: feedId,
           rowCount: rowCount,
@@ -186,12 +190,14 @@ jQuery(document).ready(function ($) {
     $(selector).on('change', function () {
       if ($(this).val() === 'categories' || $(this).val() === 'raw_categories') {
         const feedId = $(this).closest('form#filters_rules').find('#feed_id').val();
+        const nonce = $('form#filters_rules #_wpnonce').val();
 
         $.ajax({
           method: 'POST',
           url: ajaxurl,
           data: {
             action: 'woosea_categories_dropdown',
+            security: nonce,
             type: type,
             feed_id: feedId,
             rowCount: rowCount,

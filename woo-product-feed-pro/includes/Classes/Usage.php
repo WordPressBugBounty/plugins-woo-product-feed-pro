@@ -12,6 +12,7 @@ use AdTribes\PFP\Traits\Singleton_Trait;
 use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Factories\Admin_Notice;
+use AdTribes\PFP\Factories\Product_Feed;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -26,6 +27,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Usage extends Abstract_Class {
 
     use Singleton_Trait;
+
+    /**
+     * The minimum gap between two check-ins.
+     *
+     * @since 13.5.9
+     * @var int
+     */
+    const CHECKIN_WINDOW = 6 * DAY_IN_SECONDS;
 
     /**
      * Property that houses all admin notices data.
@@ -44,6 +53,21 @@ class Usage extends Abstract_Class {
      * @var array
      */
     private $_product_feed_data = array();
+
+    /**
+     * Post status of each feed in $_product_feed_data, keyed by feed ID.
+     *
+     * Kept beside the meta rather than inside them, because it is a post column
+     * and not feed meta. Reported per feed so the warehouse can tell an active
+     * feed from a paused one instead of the plugin deciding which of the two
+     * counts - see _prepare_product_feed_data().
+     *
+     * @since 13.6.0
+     * @access private
+     *
+     * @var array
+     */
+    private $_product_feed_status = array();
 
     /**
      * Gather the tracking data together
@@ -65,11 +89,12 @@ class Usage extends Abstract_Class {
         // Server environment data.
         $this->_append_environment_data( $data );
 
+        // Product feed data. Runs before the effectiveness block, which sums the
+        // per-feed counts this fills in.
+        $this->_append_product_feed_data( $data );
+
         // Effectiveness data.
         $this->_append_effectiveness_data( $data );
-
-        // Product feed data.
-        $this->_append_product_feed_data( $data );
 
         // Channel attributes data.
         $this->_append_channel_attributes_data( $data );
@@ -207,13 +232,36 @@ class Usage extends Abstract_Class {
     /**
      * Prepare product feed IDs for the current week.
      *
+     * Both queries used to enumerate every `adt_product_feed` post of any status,
+     * which reported trashed feeds and the phantom posts of issue #1189 as real
+     * feeds - 342k reported against roughly 14k real ones, which made
+     * `total_product_feed` and every feeds-per-site figure derived from it
+     * unusable. Two conditions fix that:
+     *
+     * - The feed must carry a channel. The channel is what makes a feed a feed: it
+     *   selects the attribute set, the writer and the output columns, and a post
+     *   without one has never generated a file and never can. This alone removes
+     *   every phantom, which is why it does the work here.
+     * - The post must be `publish` or `draft`, which drops trashed feeds,
+     *   auto-drafts and revisions.
+     *
+     * A paused feed is deliberately still counted. Turning a feed off in Manage
+     * Feeds sets its status to `draft`, and so does creating one through the CLI or
+     * the abilities, yet it keeps its channel and its generation history. Dropping
+     * those would trade the known over-count for a quieter under-count, and would
+     * make `total_products_in_feeds` fall whenever a merchant pauses a feed - churn
+     * that did not happen. The status travels with each feed row instead, so the
+     * warehouse decides.
+     *
      * @since 13.3.9
+     * @since 13.6.0 Counts only feeds that have a channel, and drops trashed feeds.
      * @access private
      */
     private function _prepare_product_feed_data() {
         global $wpdb;
 
         $product_feeds = array();
+        $feed_statuses = array();
 
         /**
          * If the database does not support JSON_OBJECTAGG, we need to use a different query.
@@ -222,13 +270,17 @@ class Usage extends Abstract_Class {
         if ( Helper::is_db_supports_json() ) {
             $results = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT p.ID,
+                    "SELECT p.ID, p.post_status,
                         JSON_OBJECTAGG(pm.meta_key, pm.meta_value) AS post_meta
                      FROM {$wpdb->posts} p
                      INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-                     WHERE post_type = 'adt_product_feed'
+                     INNER JOIN {$wpdb->postmeta} ch ON ch.post_id = p.ID AND ch.meta_key = %s AND ch.meta_value <> ''
+                     WHERE p.post_type = %s
+                        AND p.post_status IN ( 'publish', 'draft' )
                         AND pm.meta_key LIKE %s
-                    GROUP BY p.ID",
+                    GROUP BY p.ID, p.post_status",
+                    Product_Feed::META_PREFIX . 'channel_hash',
+                    Product_Feed::POST_TYPE,
                     'adt_%'
                 )
             );
@@ -245,16 +297,21 @@ class Usage extends Abstract_Class {
                     }
 
                     $product_feeds[ $row->ID ] = $meta_data;
+                    $feed_statuses[ $row->ID ] = (string) $row->post_status;
                 }
             }
         } else {
             $results = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT p.ID, pm.meta_key, pm.meta_value
+                    "SELECT p.ID, p.post_status, pm.meta_key, pm.meta_value
                         FROM {$wpdb->posts} p
                         INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-                        WHERE post_type = 'adt_product_feed'
+                        INNER JOIN {$wpdb->postmeta} ch ON ch.post_id = p.ID AND ch.meta_key = %s AND ch.meta_value <> ''
+                        WHERE p.post_type = %s
+                            AND p.post_status IN ( 'publish', 'draft' )
                             AND pm.meta_key LIKE %s",
+                    Product_Feed::META_PREFIX . 'channel_hash',
+                    Product_Feed::POST_TYPE,
                     'adt_%'
                 )
             );
@@ -262,15 +319,20 @@ class Usage extends Abstract_Class {
             if ( ! empty( $results ) ) {
                 foreach ( $results as $row ) {
                     $product_feeds[ $row->ID ][ $row->meta_key ] = maybe_unserialize( $row->meta_value );
+                    $feed_statuses[ $row->ID ]                   = (string) $row->post_status;
                 }
             }
         }
 
-        $this->_product_feed_data = $product_feeds ?? array();
+        $this->_product_feed_data   = $product_feeds ?? array();
+        $this->_product_feed_status = $feed_statuses;
     }
 
     /**
      * Append effectiveness data.
+     *
+     * Runs after _append_product_feed_data(): total_products_in_feeds sums the
+     * per-feed rows that appender builds. Keep that order.
      *
      * @since 13.3.9
      * @access private
@@ -303,6 +365,7 @@ class Usage extends Abstract_Class {
 
         $data['effectiveness'] = array(
             'total_product_feed'      => ! empty( $this->_product_feed_data ) ? count( $this->_product_feed_data ) : 0,
+            'total_products_in_feeds' => $this->_get_total_products_in_feeds( $data['product_feeds'] ?? array() ),
             'total_product'           => $total_products_query_results->total_product ?? 0,
             'total_simple_product'    => $total_products_query_results->total_simple_product ?? 0,
             'total_variable_product'  => $total_products_query_results->total_variable_product ?? 0,
@@ -310,6 +373,39 @@ class Usage extends Abstract_Class {
             'date'                    => gmdate( 'Y-m-d H:i:s', strtotime( 'midnight', strtotime( 'sunday last week' ) ) + WEEK_IN_SECONDS - 1 ),
         );
         return $data;
+    }
+
+    /**
+     * Sum the products every feed on this site wrote on its last generation.
+     *
+     * This is the site's contribution to "products live in channel feeds". It is not
+     * the catalogue size: a feed that filters by category contributes the filtered
+     * count, which is the whole reason the number is worth sending.
+     *
+     * The feeds with no recorded count are skipped rather than added as zero, so the
+     * total is always the sum of the last_products_in_feed values in the same payload.
+     * A total of zero therefore means either that every feed wrote nothing or that no
+     * feed has a recorded count; read it against the per-feed rows, not on its own.
+     *
+     * @since 13.6.0
+     * @access private
+     *
+     * @param array $product_feeds The per-feed rows this check-in is sending.
+     * @return int Total products written across all feeds on their last generation.
+     */
+    private function _get_total_products_in_feeds( $product_feeds ) {
+        $total = 0;
+
+        foreach ( $product_feeds as $feed_data ) {
+            // _append_product_feed_data() sets this key on every row, which is why
+            // _get_data() runs it first. A missing key means the appenders were
+            // reordered, not that the feed is empty.
+            if ( isset( $feed_data['last_products_in_feed'] ) ) {
+                $total += $feed_data['last_products_in_feed'];
+            }
+        }
+
+        return $total;
     }
 
     /**
@@ -339,6 +435,10 @@ class Usage extends Abstract_Class {
             'refresh_interval'                       => '',
             'refresh_only_when_product_changed'      => '',
             'create_preview'                         => '',
+            // There is no adt_last_products_in_feed meta, so the generic loop below
+            // leaves this null and the products history fills it in.
+            'last_products_in_feed'                  => null,
+            'last_updated'                           => '',
         );
 
         if ( ! empty( $product_feeds ) ) {
@@ -357,6 +457,16 @@ class Usage extends Abstract_Class {
 
                     unset( $feed_data['channel_hash'] );
                 }
+
+                // Products written to the feed file on the last generation. Stays null when
+                // the history is empty, because an empty history does not prove the feed
+                // never generated - see Product_Feed::parse_latest_products_in_feed().
+                $feed_data['last_products_in_feed'] = Product_Feed::parse_latest_products_in_feed(
+                    $meta_data['adt_history_products'] ?? array()
+                )['count'];
+
+                // A post column rather than feed meta, so it is not in $default_data.
+                $feed_data['post_status'] = $this->_product_feed_status[ $id ] ?? '';
 
                 $data['product_feeds'][ $id ] = $feed_data;
             }
@@ -573,9 +683,11 @@ class Usage extends Abstract_Class {
             return;
         }
 
-        // Send a maximum of once per week.
         $last_send = get_option( ADT_PFP_USAGE_LAST_CHECKIN );
-        if ( is_numeric( $last_send ) && $last_send > strtotime( '-1 week' ) && ! ( $ignore_last_checkin || defined( 'ADT_PFP_TESTING_SITE' ) ) ) {
+        // The cron runs weekly but WP-Cron's variable delay lands many gaps just under 7 days (#1191).
+        // The 6-day window is deliberate: it gives 24h of slack against the weekly grid — the observed
+        // skips all fell within a few hours of 7 days — while still suppressing a double-fired run.
+        if ( is_numeric( $last_send ) && $last_send > time() - self::CHECKIN_WINDOW && ! ( $ignore_last_checkin || defined( 'ADT_PFP_TESTING_SITE' ) ) ) {
             return false;
         }
 
@@ -602,7 +714,7 @@ class Usage extends Abstract_Class {
             )
         );
 
-        // If we have completed successfully, recheck in 1 week.
+        // Record the send time. The guard above reads it to enforce the 6 day floor.
         update_option( ADT_PFP_USAGE_LAST_CHECKIN, time(), false );
         return true;
     }

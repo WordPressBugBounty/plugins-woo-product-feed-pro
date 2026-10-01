@@ -1,0 +1,464 @@
+/**
+ * AI Discovery (UCP connector) admin app — shared design system.
+ *
+ * Replicates the approved mockups (docs/adtribes-ucp-connector-mockup-*.png):
+ * AdTribes pink accents, navy headings, soft rounded cards, status pills.
+ *
+ * vue-select's stylesheet is @imported here (not in index.ts) so Vite
+ * inlines it into this entry's CSS — a JS-side import would hoist it into
+ * the shared chunk, whose CSS Vite_App only loads on the frontend
+ * (preload_imports hooks wp_head, which never fires in wp-admin).
+ */
+@import 'vue-select/dist/vue-select.css';
+
+#adt-ucp-app {
+  --adt-pink: #e42a6d;
+  --adt-pink-dark: #c81e5b;
+  --adt-pink-soft: #fdeef4;
+  --adt-navy: #32306a;
+  --adt-text: #4c4c66;
+  --adt-muted: #8083a0;
+  --adt-green: #16a34a;
+  --adt-green-bg: #e8f7ee;
+  --adt-red: #d63638;
+  --adt-red-bg: #fdf0f0;
+  --adt-orange: #c77d13;
+  --adt-orange-bg: #fdf3dd;
+  --adt-teal: #0e7490;
+  --adt-teal-bg: #ecfbfd;
+  --adt-border: #e5e5f0;
+
+  color: var(--adt-text);
+  font-size: 14px;
+  max-width: 1160px;
+}
+
+#adt-ucp-app h2,
+#adt-ucp-app h3 {
+  color: var(--adt-navy);
+  margin: 0;
+}
+
+#adt-ucp-app h2 {
+  font-size: 22px;
+}
+
+#adt-ucp-app h3 {
+  font-size: 16px;
+}
+
+/* Tabs */
+.adt-tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-bottom: 1px solid var(--adt-border);
+  margin: 14px 0 20px;
+}
+
+.adt-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 10px 16px;
+  margin-bottom: -1px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--adt-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adt-tab--active {
+  border-bottom-color: var(--adt-pink);
+  color: var(--adt-pink);
+}
+
+.adt-tab__badge {
+  background: #ececf4;
+  color: var(--adt-navy);
+  border-radius: 8px;
+  padding: 1px 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.adt-tab--link {
+  margin-left: auto;
+  text-decoration: none;
+}
+
+.adt-tab--link:hover {
+  color: var(--adt-pink);
+}
+
+/* Cards */
+.adt-card {
+  background: #fff;
+  border: 1px solid var(--adt-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 2px rgba(30, 30, 60, 0.04);
+}
+
+.adt-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.adt-card__title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.adt-card__subtitle {
+  color: var(--adt-muted);
+  margin: 2px 0 0;
+}
+
+.adt-icon-tile {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  flex: none;
+  background: var(--adt-pink-soft);
+  color: var(--adt-pink);
+}
+
+/* Buttons */
+.adt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--adt-pink);
+  color: #fff;
+  border: 1px solid var(--adt-pink);
+  border-radius: 9px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.adt-btn:hover {
+  background: var(--adt-pink-dark);
+  color: #fff;
+}
+
+.adt-btn--outline {
+  background: #fff;
+  color: var(--adt-pink);
+}
+
+.adt-btn--outline:hover {
+  background: var(--adt-pink-soft);
+  color: var(--adt-pink);
+}
+
+.adt-btn--ghost {
+  background: none;
+  border-color: transparent;
+  color: var(--adt-pink);
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.adt-btn--ghost:hover {
+  background: var(--adt-pink-soft);
+  color: var(--adt-pink);
+}
+
+.adt-btn--small {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.adt-btn:disabled {
+  background: #ececf4;
+  border-color: #ececf4;
+  color: #9a9db6;
+  cursor: not-allowed;
+}
+
+/* Pills */
+.adt-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 7px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.adt-pill--pass {
+  background: var(--adt-green-bg);
+  color: var(--adt-green);
+}
+
+.adt-pill--fail {
+  background: var(--adt-red-bg);
+  color: var(--adt-red);
+}
+
+.adt-pill--warn {
+  background: var(--adt-orange-bg);
+  color: var(--adt-orange);
+}
+
+.adt-pill--muted {
+  background: #eef0f5;
+  color: #5b5e76;
+}
+
+/* Switches */
+.adt-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex: none;
+}
+
+.adt-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.adt-switch input:focus-visible + .adt-switch__slider {
+  outline: 2px solid var(--adt-pink);
+  outline-offset: 2px;
+}
+
+.adt-switch__slider {
+  position: absolute;
+  inset: 0;
+  background: #d3d5e2;
+  border-radius: 24px;
+  transition: background 0.15s;
+}
+
+.adt-switch__slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.15s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.adt-switch input:checked + .adt-switch__slider {
+  background: var(--adt-green);
+}
+
+.adt-switch input:checked + .adt-switch__slider::before {
+  transform: translateX(20px);
+}
+
+.adt-switch input:disabled + .adt-switch__slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Status icons */
+.adt-status-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex: none;
+}
+
+.adt-status-icon--pass {
+  background: var(--adt-green-bg);
+  color: var(--adt-green);
+}
+
+.adt-status-icon--fail {
+  background: var(--adt-red-bg);
+  color: var(--adt-red);
+}
+
+.adt-status-icon--warn {
+  background: var(--adt-orange-bg);
+  color: var(--adt-orange);
+}
+
+/* Mono values */
+.adt-mono {
+  font-family: Menlo, Consolas, Monaco, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adt-navy);
+}
+
+/* Tables */
+.adt-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.adt-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--adt-muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--adt-border);
+}
+
+.adt-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f2f2f8;
+  vertical-align: middle;
+}
+
+/* Inputs */
+.adt-input,
+.adt-select {
+  border: 1px solid var(--adt-border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 14px;
+  color: var(--adt-navy);
+  background: #fff;
+  max-width: 100%;
+}
+
+.adt-input:focus,
+.adt-select:focus {
+  border-color: var(--adt-pink);
+  box-shadow: 0 0 0 1px var(--adt-pink);
+  outline: none;
+}
+
+/* vue-select (searchable dropdowns), themed to match the design system */
+#adt-ucp-app .adt-vselect {
+  --vs-border-color: var(--adt-border);
+  --vs-border-radius: 8px;
+  --vs-font-size: 14px;
+  --vs-line-height: 1.6;
+  --vs-search-input-placeholder-color: var(--adt-muted);
+  --vs-dropdown-option--active-bg: var(--adt-pink-soft);
+  --vs-dropdown-option--active-color: var(--adt-pink);
+  --vs-selected-bg: var(--adt-pink-soft);
+  --vs-selected-color: var(--adt-navy);
+  --vs-selected-border-color: #f0b3ca;
+  min-width: 240px;
+  background: #fff;
+}
+
+#adt-ucp-app .adt-vselect .vs__dropdown-toggle {
+  padding: 3px 6px;
+  background: #fff;
+}
+
+/* Neutralize wp-admin's default input styling on the embedded search input */
+#adt-ucp-app .adt-vselect .vs__search,
+#adt-ucp-app .adt-vselect .vs__search:focus {
+  border: none;
+  box-shadow: none;
+  outline: none;
+  background: transparent;
+  margin: 0;
+  padding: 2px 7px;
+  min-height: 0;
+  height: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--adt-text);
+}
+
+#adt-ucp-app .adt-vselect .vs__search::placeholder {
+  color: var(--adt-muted);
+}
+
+/* The rule above strips the search input's own focus ring, so put the
+   indicator back on the control the user sees — matching .adt-input/.adt-select
+   — instead of leaving keyboard users with no visible focus (WCAG 2.4.7). */
+#adt-ucp-app .adt-vselect:focus-within .vs__dropdown-toggle {
+  border-color: var(--adt-pink);
+  box-shadow: 0 0 0 1px var(--adt-pink);
+}
+
+#adt-ucp-app .adt-vselect .vs__selected-options {
+  min-height: 28px;
+}
+
+#adt-ucp-app .adt-vselect .vs__actions {
+  padding: 0 6px 0 3px;
+}
+
+#adt-ucp-app .adt-vselect .vs__dropdown-menu {
+  border-color: var(--adt-border);
+  border-radius: 0 0 8px 8px;
+}
+
+/* Two-column panel grid */
+.adt-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .adt-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Notices */
+.adt-note {
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 12px;
+}
+
+.adt-note--warn {
+  background: var(--adt-orange-bg);
+  color: #7a5104;
+}
+
+.adt-note--info {
+  background: var(--adt-teal-bg);
+  border: 1px solid #c9eef5;
+  color: #175d70;
+}
+
+.adt-note--error {
+  background: var(--adt-red-bg);
+  border-left: 4px solid var(--adt-red);
+  color: #7d2223;
+}
+
+.adt-note code {
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1px 5px;
+  border-radius: 4px;
+}

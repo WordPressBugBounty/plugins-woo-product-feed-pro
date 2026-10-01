@@ -94,6 +94,21 @@ do_action( 'adt_before_product_feed_manage_page', 1, $project_hash, $feed );
                 <input type="hidden" name="action" value="edit_feed_form_process" />
                 <input type="hidden" name="active_tab" value="category_mapping" />
                 <input type="hidden" name="feed_id" value="<?php echo esc_attr( $feed->id ?? '' ); ?>" />
+                <?php
+                /*
+                 * The rows below still carry their legacy `mappings[<term_id>][...]`
+                 * names, but the script collects them into this one JSON field on
+                 * submit and disables them, so the request costs one POST field
+                 * instead of four per category. Four per category put a store with
+                 * 250 categories on PHP's default `max_input_vars` of 1000, past
+                 * which PHP dropped the remaining rows and the mappings reverted to
+                 * empty with no warning. The payload keeps the rows in page order,
+                 * which decides which mapping wins for a product in two mapped
+                 * categories. The legacy names stay so a page cached before this
+                 * change, or a browser with no JavaScript, still saves.
+                 */
+                ?>
+                <input type="hidden" name="feed_mappings" id="adt-feed-mappings" value="" />
                 <table id="woosea-ajax-mapping-table" class="woo-product-feed-pro-table" border="1">
                     <thead>
                         <tr>

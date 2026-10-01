@@ -18,6 +18,7 @@ use AdTribes\PFP\Classes\Rules;
 use AdTribes\PFP\Classes\Field_Mapping_Editor_Attributes;
 use AdTribes\PFP\Classes\Cron;
 use AdTribes\PFP\Classes\Heartbeat;
+use AdTribes\PFP\Classes\Phantom_Feed_Cleanup;
 use AdTribes\PFP\Classes\Marketing;
 use AdTribes\PFP\Classes\Usage;
 use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
@@ -27,10 +28,14 @@ use AdTribes\PFP\Classes\Admin_Pages\Manage_Feeds_Page;
 use AdTribes\PFP\Classes\Admin_Pages\Settings_Page;
 use AdTribes\PFP\Classes\Admin_Pages\Edit_Feed_Page;
 use AdTribes\PFP\Classes\Admin_Pages\License_Page;
+use AdTribes\PFP\Classes\Admin_Pages\Feed_Validator_Page;
 use AdTribes\PFP\Classes\Admin_Pages\Help_Page;
 use AdTribes\PFP\Classes\Admin_Pages\About_Page;
 use AdTribes\PFP\Classes\Admin_Pages\Upgrade_To_Elite_Page;
 use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_JSONL;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_XML;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_CSV;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_Parquet;
 use AdTribes\PFP\Post_Types\Product_Feed_Post_Type;
 use AdTribes\PFP\Classes\Upsell;
 use AdTribes\PFP\Classes\Legacy\Filters_Legacy;
@@ -53,6 +58,7 @@ return array(
     Field_Mapping_Editor_Attributes::instance(),
     Cron::instance(),
     Heartbeat::instance(),
+    Phantom_Feed_Cleanup::instance(),
     WP_Admin::instance(),
     Abilities::instance(),
     Marketing::instance(),
@@ -64,10 +70,14 @@ return array(
     Settings_Page::instance(),
     Edit_Feed_Page::instance(),
     License_Page::instance(),
+    Feed_Validator_Page::instance(),
     Help_Page::instance(),
     About_Page::instance(),
     Upgrade_To_Elite_Page::instance(),
     Feed_Writer_JSONL::instance(),
+    Feed_Writer_XML::instance(),
+    Feed_Writer_CSV::instance(),
+    Feed_Writer_Parquet::instance(),
     Product_Feed_Post_Type::instance(),
     Upsell::instance(),
     Filters_Legacy::instance(),

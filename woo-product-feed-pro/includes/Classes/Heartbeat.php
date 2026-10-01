@@ -174,12 +174,17 @@ class Heartbeat extends Abstract_Class {
      * Generate product feed via AJAX.
      *
      * @since 13.4.1
+     * @since 13.6.0 Read the nonce the manage feeds script actually sends.
      * @access public
      */
     public function ajax_generate_product_feed() {
-        $security = isset( $_REQUEST['security'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ) : '';
-        if ( ! wp_verify_nonce( $security, 'woosea_ajax_nonce' ) ) {
+        $nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'adt_nonce' ) ) {
             wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
+        }
+
+        if ( ! Helper::is_current_user_allowed() ) {
+            wp_send_json_error( __( 'You do not have permission to manage product feed.', 'woo-product-feed-pro' ) );
         }
 
         $feed_id    = sanitize_text_field( wp_unslash( $_POST['feed_id'] ?? '' ) );

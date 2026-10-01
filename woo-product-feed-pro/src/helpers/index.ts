@@ -96,6 +96,23 @@ export const isEliteActive = (): boolean => {
 };
 
 /**
+ * Scroll the first validation error element into view.
+ *
+ * Shared by every builder app so the error selector stays in one place.
+ *
+ * @param {string} selector
+ */
+export const scrollToFirstError = (selector: string = '.adt-field-error, .adt-validation-error'): void => {
+  const firstErrorElement = document.querySelector(selector);
+  if (firstErrorElement) {
+    firstErrorElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }
+};
+
+/**
  * Show the Elite upsell modal.
  *
  * @param {string} id

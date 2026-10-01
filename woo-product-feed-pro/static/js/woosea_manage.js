@@ -17,6 +17,17 @@ jQuery(function ($) {
     }
   });
 
+  // Remember the saved value of every setting field, so a failed save can put it
+  // back. This runs with the handler below rather than on a later tick, so a save
+  // can never fail before the value is on record. The selector takes every
+  // general setting rather than a list of field types, so a field type added
+  // later is on record without a change here. A checkbox needs no record: the
+  // change event has just flipped it, so the saved state is the opposite of the
+  // new one.
+  $('.adt-pfp-general-setting').each(function () {
+    adt_pfp_remember_setting_value($(this));
+  });
+
   $('.get_elite .notice-dismiss').on('click', function (e) {
     var nonce = $('#_wpnonce').val();
 
@@ -104,6 +115,11 @@ jQuery(function ($) {
       adt_show_or_hide_addtitional_setting_row(group, value);
     }
 
+    // The value to put back if the save fails. A checkbox needs no record, so
+    // only a select reaches the record here: a text input has its own save
+    // button and does not use this handler.
+    var previous_value = type === 'checkbox' ? !value : $button.data('adtSavedValue');
+
     // Send AJAX request to update the setting.
     jQuery
       .ajax({
@@ -119,13 +135,16 @@ jQuery(function ($) {
       })
       .done(function (response) {
         if (response.success) {
+          adt_pfp_remember_setting_value($button);
           toastr.success(response.data.message);
         } else {
-          toastr.error(response.data.message);
+          adt_pfp_restore_setting_value($button, previous_value);
+          toastr.error(adt_pfp_get_error_message(response.data));
         }
       })
-      .fail(function (response) {
-        toastr.error(response.data.message);
+      .fail(function (jqXHR) {
+        adt_pfp_restore_setting_value($button, previous_value);
+        toastr.error(adt_pfp_get_error_message(adt_pfp_get_response_data(jqXHR)));
       })
       .always(function () {
         $button.prop('disabled', false);
@@ -149,6 +168,94 @@ jQuery(function ($) {
     } else {
       $child_group.addClass('hidden');
     }
+  }
+
+  /**
+   * Store the current value of a setting field as its last saved value.
+   *
+   * @param {Object} $field Setting field.
+   *
+   * @return {void}
+   */
+  function adt_pfp_remember_setting_value($field) {
+    var value = $field.is(':checkbox') ? $field.is(':checked') : $field.val();
+
+    $field.data('adtSavedValue', value);
+  }
+
+  /**
+   * Put a setting field back to its last saved value.
+   *
+   * The plugin saves each setting over AJAX without reloading the page, so a
+   * failed save leaves the field showing a value the database never received.
+   * This restores the field, to keep the page in step with the database.
+   *
+   * Only a checkbox or a select is restored. Text that the user typed stays on
+   * screen, so the error message can be acted on without typing it again.
+   *
+   * @param {Object}         $field         Setting field.
+   * @param {boolean|string} previous_value Value the field held before the save.
+   *
+   * @return {void}
+   */
+  function adt_pfp_restore_setting_value($field, previous_value) {
+    var is_checkbox = $field.is(':checkbox');
+
+    // A field added to the page after load has no record, and jQuery reads an
+    // undefined value as an empty string, which would clear a select instead of
+    // restoring it. Leave such a field alone.
+    if (previous_value === undefined || (!is_checkbox && !$field.is('select'))) {
+      return;
+    }
+
+    if (is_checkbox) {
+      $field.prop('checked', previous_value);
+    } else {
+      $field.val(previous_value);
+    }
+
+    var $row = $field.closest('tr');
+
+    if ($row.hasClass('group') && is_checkbox) {
+      adt_show_or_hide_addtitional_setting_row($row.data('group'), previous_value);
+    }
+  }
+
+  /**
+   * Read the response body of a failed AJAX request.
+   *
+   * jQuery gives the .fail() callback the jqXHR object, not the parsed body,
+   * so the body is only available when the server answered with JSON.
+   *
+   * @param {Object} jqXHR jqXHR object of the failed request.
+   *
+   * @return {string|Object|null} Response data, or null when there is none.
+   */
+  function adt_pfp_get_response_data(jqXHR) {
+    if (jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.data) {
+      return jqXHR.responseJSON.data;
+    }
+
+    return null;
+  }
+
+  /**
+   * Get the error message to show for a failed request.
+   *
+   * @param {string|Object|null} data Response data.
+   *
+   * @return {string} Error message.
+   */
+  function adt_pfp_get_error_message(data) {
+    if (typeof data === 'string' && data) {
+      return data;
+    }
+
+    if (data && data.message) {
+      return data.message;
+    }
+
+    return __('The setting could not be saved. Please try again.', 'woo-product-feed-pro');
   }
 
   // Save Batch Size
@@ -217,11 +324,11 @@ jQuery(function ($) {
         if (response.success) {
           toastr.success(response.data.message);
         } else {
-          toastr.error(response.data.message);
+          toastr.error(adt_pfp_get_error_message(response.data));
         }
       })
-      .fail(function (response) {
-        toastr.error(response.data.message);
+      .fail(function (jqXHR) {
+        toastr.error(adt_pfp_get_error_message(adt_pfp_get_response_data(jqXHR)));
       })
       .always(function () {
         $button.prop('disabled', false);
@@ -618,6 +725,8 @@ jQuery(function ($) {
       });
   });
 
+  // Unreachable: the markup that called this was removed. The endpoint now expects
+  // `nonce` with the `adt_nonce` action, not `security`. See includes/Classes/Heartbeat.php.
   function woosea_generate_product_feed(feed_id, offset, batch_size) {
     var nonce = $('#_wpnonce').val();
     jQuery

@@ -4,8 +4,8 @@ License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 Tags: Google Shopping Feed, Meta feed, Facebook catalog feed, WooCommerce Product Feed, Product Feed
 Requires at least: 5.4
-Tested up to: 7.0
-Stable tag: 13.5.7
+Tested up to: 7.1.2
+Stable tag: 13.5.8
 
 Most popular WooCommerce product feed plugin supporting Google shopping feed, meta/facebook feed, bing product feed & more.
 
@@ -389,26 +389,73 @@ Questions left or unanswered? Please do not hesitate to contact us at support@ad
 
 === Changelog ===
 
+= 13.5.8 (2026-09-28) =
+* Bug Fix: "Disable HTTP feed generation requests" checkbox reverts to unchecked after page refresh
+* Bug Fix: An empty category mapping tab silently discards an explicit google_product_category mapping
+* Bug Fix: Batch cursor pagination in 13.5.7 duplicates and drops products from generated feeds
+* Bug Fix: Bol.com channel stock field defaults to text availability status instead of numeric quantity
+* Bug Fix: Bol.com channel is missing the required "Deliverycode" field
+* Bug Fix: Breeze integration writes to the wrong option — the feed isn't excluded from Breeze's page cache
+* Bug Fix: CSV/TXT feeds: "Product detail" attribute produces invalid Merchant Center format by default
+* Bug Fix: Cache Enabler integration only writes the exclusion when the field is already empty, never merging with an existing value
+* Bug Fix: Cache Enabler integration writes an invalid regex, breaking preg_match() and never excluding the feed
+* Bug Fix: Category mapping tab silently drops mappings past ~200-250 categories (max_input_vars limit)
+* Bug Fix: Category filters silently fail open (pass all products through) when the feed_filters structure doesn't match the new-parser format
+* Bug Fix: Comet Cache integration writes the option directly, skipping the compiled advanced-cache.php regeneration the real cache engine reads
+* Bug Fix: Feed generation fails silently when the xmlwriter PHP extension is missing
+* Bug Fix: Feed generation hangs at "Processing (0%)" when a shipping method is mapped and a live-rate UPS method is active
+* Bug Fix: Feed generation returns zero products when Polylang's admin language filter is active
+* Bug Fix: Google Shopping channel offers attributes that are not in the Google feed specification
+* Bug Fix: Hyper Cache integration can corrupt reject_uris_enabled via an array_merge_recursive() scalar collision
+* Bug Fix: Idealo feed: Trans-o-flex delivery cost writes to a misspelled feed column name
+* Bug Fix: LiteSpeed Cache integration targets a nonexistent pre-v3.0 option — the exclusion never applies
+* Bug Fix: Missing nonce/capability checks on woosea_shipping_zones and woosea_fieldmapping_dialog_helptext AJAX handlers
+* Bug Fix: Numeric parent meta is converted to image URLs on variation rows when ACF is active
+* Bug Fix: OpenAI product feed exports prices with a locale thousands separator instead of ISO 4217 format
+* Bug Fix: OpenAI ads eligibility flag should be is_ads_eligible, not the legacy alias is_eligible_ads
+* Bug Fix: OpenAI feeds carry a UTF-8 BOM on the header row, so the first column header is not the mapped field name
+* Bug Fix: Phantom adt_product_feed posts accumulate (blank channel, 2-25 new posts per day)
+* Bug Fix: Published variations under an unpublished parent are silently dropped from the feed while still counted as processed
+* Bug Fix: Security: PHP object injection via bare unserialize() on product attribute meta (Patchstack, CVSS 7.2)
+* Bug Fix: Skroutz feed: MPN is missing from product variations
+* Bug Fix: Swift Performance integration wipes the site owner's exclusion list on every feed run after the first
+* Bug Fix: Unescaped output in the shipping zone dropdown
+* Bug Fix: WP-Optimize integration writes the option directly, skipping the on-disk cache config regeneration the real cache engine reads
+* Bug Fix: g:gtin and g:mpn are both marked as required, but MPN is only required when GTIN is absent
+* Bug Fix: g:loyalty_points is emitted as a top-level tag, but Google has no such attribute
+* Feature: Add the Parquet file format for OpenAI feeds
+* Feature: Sub-attributes / nested tags for feed attributes
+* Feature: Feed validator backend page
+* Feature: Usage tracking: send per-feed products-in-feed count and last generated time
+* Improvement: Detailed product description: enforce Google's closed value sets at mapping time
+* Improvement: Serve the Google product taxonomy file via a proxied request instead of a direct /uploads/ URL
+* Improvement: Show the per-feed product count in the Product Feed PRO interface
+* Improvement: The "Go to the Field Mapping tab" error should link to that tab
+* Improvement: additional_image_link and included_destination are repeatable, but the mapping UI offers too few fields
+* Improvement: g:availability_date should be required when availability is preorder
+* Improvement: g:shipping should be recommended rather than optional on Google Shopping
+* Integration: Integrate with the WC Vendors multi-vendor marketplace plugin
+
 = 13.5.7 (2026-08-04) =
-* Bug Fix: Added custom attributes: variation product meta data not appearing in generated product feed
+* Bug Fix: Added Custom Attributes: Variation Product Meta Data Not Appearing in Generated Product Feed
 * Bug Fix: Feed generation silently drops rows because batch pagination orders by non-unique post_date
-* Bug Fix: Google Shopping feed sends invalid postal_code format for local pickup (GB/CA)
-* Bug Fix: Mall.sk: VARIABLE_PARAMS node missing from feed when mapped to plugin calculation
+* Bug Fix: Google Shopping feed sends invalid postal_code format for Local Pickup (GB/CA)
+* Bug Fix: Mall.sk: VARIABLE_PARAMS node missing from feed when mapped to Plugin Calculation
 * Bug Fix: Stuck-feed guard misfires against in-flight batches, producing duplicate (and dropped) products in scheduled feed generation
-* Bug Fix: Sync product feed cannot restore real feeds — 13.4.8 prefix migration skipped copying cron_projects when a blank adt_cron_projects already existed
+* Bug Fix: Sync Product Feed cannot restore real feeds — 13.4.8 prefix migration skipped copying cron_projects when a blank adt_cron_projects already existed
 * Bug Fix: TikTok Product Catalog feed exports prices with locale decimal separator instead of ISO 4217 format
-* Bug Fix: Unauthenticated info disclosure via missing capability check on filters-rules REST read route
+* Bug Fix: Unauthenticated info disclosure via missing capability check on filters-rules REST read route — thanks to Shivamani Vastrala for responsibly disclosing this issue
 * Bug Fix: WP Super Cache integration writes to the wrong option, so feed files aren't actually excluded from caching
 * Bug Fix: Zbozi.cz / Heureka: DELIVERY tag always outputs as empty <DELIVERY/> when shipping is configured
-* Bug Fix: Zbozi.cz / Heureka: DELIVERY_PRICE_COD missing when local pickup configured via WooCommerce checkout block
+* Bug Fix: Zbozi.cz / Heureka: DELIVERY_PRICE_COD missing when local pickup configured via WooCommerce Checkout block
 * Bug Fix: g:consumer_notice emits non-UCP notice_type enum values (spaces, not underscores)
 * Feature: Add WordPress Abilities API support (13 abilities) — Product Feed PRO (Free)
-* Feature: Add a post-install setup checklist (getting started) to manage feeds
+* Feature: Add a post-install Setup Checklist (Getting Started) to Manage Feeds
 * Improvement: Adaptive batch sizing for feed generation (self-tuning by host time budget + memory)
-* Improvement: Add `adt_general_feed_settings_after_shipping_countries` action hook to feed general tab
+* Improvement: Add `adt_general_feed_settings_after_shipping_countries` action hook to feed General tab
 * Improvement: Export/Import: add an extension hook so add-ons can register their own feed props for export
-* Improvement: Rules builder: support Elite truncate/combine fields actions and in list condition
-* Improvement: WPML domain mode: non-Google feed channel links lack a filter hook (raw home_url())
+* Improvement: Rules Builder: support Elite Truncate/Combine Fields actions and In List condition
+* Improvement: WPML Domain Mode: non-Google feed channel links lack a filter hook (raw home_url())
 
 = 13.5.6 (2026-07-08) =
 * Bug Fix: "Upgrade To Elite" link visible on plugins page when Elite plugin is already active

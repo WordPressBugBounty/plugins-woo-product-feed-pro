@@ -7,6 +7,7 @@
 
 namespace AdTribes\PFP\Classes\CLI;
 
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_Parquet;
 use AdTribes\PFP\Classes\Product_Feed_Attributes;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
@@ -19,14 +20,24 @@ use AdTribes\PFP\Helpers\Product_Feed_Helper;
 class Formatter {
 
     /**
-     * Supported file formats. Mirrors templates/edit-feed/tabs/general-tab.php:199.
+     * Supported file formats. Mirrors the $format_arr list in
+     * templates/edit-feed/tabs/general-tab.php.
+     *
+     * `parquet` is listed only when the host can write it, so `wp adt feed create
+     * --format=parquet` fails on the format argument rather than on the first batch.
      *
      * @since 13.5.4
      *
      * @return array
      */
     public static function supported_file_formats() {
-        return array( 'xml', 'csv', 'txt', 'tsv', 'jsonl', 'jsonl.gz', 'csv.gz' );
+        $formats = array( 'xml', 'csv', 'txt', 'tsv', 'jsonl', 'jsonl.gz', 'csv.gz' );
+
+        if ( Feed_Writer_Parquet::is_supported() ) {
+            $formats[] = 'parquet';
+        }
+
+        return $formats;
     }
 
     /**

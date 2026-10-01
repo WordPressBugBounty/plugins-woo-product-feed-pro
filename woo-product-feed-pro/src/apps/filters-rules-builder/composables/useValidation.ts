@@ -1,4 +1,5 @@
 import { computed, watch } from 'vue';
+import { scrollToFirstError } from '@/helpers';
 import { useFiltersStore } from '../stores/filtersStore';
 import { useRulesStore } from '../stores/rulesStore';
 
@@ -106,17 +107,6 @@ export function useValidation(storeType: 'filters' | 'rules' = 'filters') {
     }
 
     return true;
-  };
-
-  const scrollToFirstError = () => {
-    // Find the first element with validation errors
-    const firstErrorElement = document.querySelector('.adt-field-error, .adt-validation-error');
-    if (firstErrorElement) {
-      firstErrorElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }
   };
 
   return {

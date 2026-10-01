@@ -25,3 +25,18 @@
   border-color: #fff;
 }
 /* Upgrade to Elite Menu - End */
+
+/* "NEW" tag next to a submenu item (e.g. AI Discovery) */
+#adminmenu #toplevel_page_woo-product-feed .adt-menu-new-tag {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: #e63e77;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  vertical-align: text-bottom;
+}

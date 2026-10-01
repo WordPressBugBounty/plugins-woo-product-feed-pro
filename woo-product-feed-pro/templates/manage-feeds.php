@@ -107,6 +107,17 @@ $feeds_query = new Product_Feed_Query(
                 
                 <!-- Data Row -->
                 <?php foreach ( $feeds_query->get_posts() as $feed ) : ?>
+                    <?php
+                    // The feed's meta is already loaded with the row, so the counts below cost no extra query.
+                    $latest_products    = $feed->get_latest_products_in_feed();
+                    $published_products = (int) $feed->products_count;
+
+                    // A feed that generated before history tracking existed, or whose stats cron never
+                    // populated the history, has a last_updated date but no recorded count. Only such a
+                    // feed can have a null count and a date, so gate the "not generated yet" line on both
+                    // the same way Abilities::get_feed_stats() gates its products_in_feed.
+                    $feed_has_generated = '' !== (string) $feed->last_updated;
+                    ?>
                     <div class="adt-manage-feeds-table-row" data-feed-id="<?php echo esc_attr( $feed->id ); ?>" data-post-status="<?php echo esc_attr( $feed->post_status ); ?>">
                         <div class="adt-manage-feeds-table-row-item adt-manage-feeds-table-row-checkbox">
                             <div>
@@ -121,7 +132,48 @@ $feeds_query = new Product_Feed_Query(
                                 <span class="adt-tooltip">
                                     <span class="adt-tw-icon-[lucide--circle-help] adt-tw-w-4 adt-tw-h-4 adt-tw-text-gray-400"></span>
                                     <div class="adt-tooltip-content">
-                                        <?php esc_html_e( 'Feed Type:', 'woo-product-feed-pro' ); ?> <?php echo esc_html( $feed->get_channel( 'name' ) ); ?>
+                                        <div>
+                                            <?php esc_html_e( 'Feed Type:', 'woo-product-feed-pro' ); ?> <?php echo esc_html( $feed->get_channel( 'name' ) ); ?>
+                                        </div>
+                                        <?php if ( null === $latest_products['count'] ) : ?>
+                                            <?php if ( ! $feed_has_generated ) : ?>
+                                                <div>
+                                                    <?php esc_html_e( 'Products in feed: counted once the feed generates', 'woo-product-feed-pro' ); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php else : ?>
+                                            <div>
+                                                <?php
+                                                printf(
+                                                    /* translators: %s: number of products written to the feed file. */
+                                                    esc_html__( 'Products in feed: %s', 'woo-product-feed-pro' ),
+                                                    esc_html( number_format_i18n( $latest_products['count'] ) )
+                                                );
+                                                ?>
+                                            </div>
+                                            <?php if ( $published_products > 0 ) : ?>
+                                                <div>
+                                                    <?php
+                                                    printf(
+                                                        /* translators: %s: number of published products the feed started from, before filters and rules. */
+                                                        esc_html__( 'Published products: %s', 'woo-product-feed-pro' ),
+                                                        esc_html( number_format_i18n( $published_products ) )
+                                                    );
+                                                    ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <?php if ( '' !== $latest_products['date'] ) : ?>
+                                                <div>
+                                                    <?php
+                                                    printf(
+                                                        /* translators: %s: date and time the feed last generated. */
+                                                        esc_html__( 'Last generated: %s', 'woo-product-feed-pro' ),
+                                                        esc_html( Formatting::format_date( $latest_products['date'] ) )
+                                                    );
+                                                    ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
                                     </div>
                                 </span>
                             </div>

@@ -230,11 +230,21 @@ class WooSEA_openai { // phpcs:ignore
                     'format'      => 'required',
                     'woo_suggest' => 'boolean_false',
                 ),
+                /**
+                 * No `woo_suggest`, unlike the two flags above. A feed saved before this
+                 * field was renamed from `is_eligible_ads` still carries the old name in
+                 * its own rows, so the tab shows that row as a custom field and shows this
+                 * one as unmapped. A `woo_suggest` would put this row in Auto-map's list,
+                 * and one press would add a second ads column beside the merchant's own -
+                 * setting ads to true even for a merchant who chose false, because OpenAI
+                 * reads this name in preference to the legacy alias. The spec calls the
+                 * field optional for a feed that does not run ads, so a merchant who wants
+                 * ads maps it on purpose.
+                 */
                 'Enable Ads'      => array(
-                    'name'        => 'is_eligible_ads',
-                    'feed_name'   => 'is_eligible_ads',
-                    'format'      => 'optional',
-                    'woo_suggest' => 'boolean_true',
+                    'name'      => 'is_ads_eligible',
+                    'feed_name' => 'is_ads_eligible',
+                    'format'    => 'optional',
                 ),
                 'Ads Metadata'    => array(
                     'name'      => 'ads_metadata',

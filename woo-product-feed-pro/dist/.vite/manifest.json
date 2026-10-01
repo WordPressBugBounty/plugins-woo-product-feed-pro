@@ -1,21 +1,114 @@
 {
+  "__plugin-vue_export-helper-legacy.BVIICed7.js": {
+    "file": "common/_plugin-vue_export-helper-legacy.BVIICed7.js",
+    "name": "_plugin-vue_export-helper"
+  },
+  "__plugin-vue_export-helper.DlAUqK2U.js": {
+    "file": "common/_plugin-vue_export-helper.DlAUqK2U.js",
+    "name": "_plugin-vue_export-helper"
+  },
+  "_index-legacy.mMjW-6y_.js": {
+    "file": "common/index-legacy.mMjW-6y_.js",
+    "name": "index",
+    "imports": [
+      "_vue-select.es-legacy.33HjtT_H.js"
+    ]
+  },
+  "_index.CcsdqMSe.js": {
+    "file": "common/index.CcsdqMSe.js",
+    "name": "index",
+    "imports": [
+      "_vue-select.es.DZr3BXkQ.js"
+    ],
+    "css": [
+      "css/index.DA8hhM3z.css"
+    ]
+  },
+  "_index.DA8hhM3z.css": {
+    "file": "css/index.DA8hhM3z.css",
+    "src": "_index.DA8hhM3z.css"
+  },
+  "_vue-select.es-legacy.33HjtT_H.js": {
+    "file": "common/vue-select.es-legacy.33HjtT_H.js",
+    "name": "vue-select.es"
+  },
+  "_vue-select.es.DZr3BXkQ.js": {
+    "file": "common/vue-select.es.DZr3BXkQ.js",
+    "name": "vue-select.es"
+  },
+  "src/apps/field-mapping-builder/index-legacy.ts": {
+    "file": "apps/field-mapping-builder/index-legacy.CAKosPdQ.js",
+    "name": "apps/field-mapping-builder/index",
+    "src": "src/apps/field-mapping-builder/index-legacy.ts",
+    "isEntry": true,
+    "imports": [
+      "_vue-select.es-legacy.33HjtT_H.js",
+      "_index-legacy.mMjW-6y_.js"
+    ]
+  },
+  "src/apps/field-mapping-builder/index.ts": {
+    "file": "apps/field-mapping-builder/index.C6oH7vIc.js",
+    "name": "apps/field-mapping-builder/index",
+    "src": "src/apps/field-mapping-builder/index.ts",
+    "isEntry": true,
+    "imports": [
+      "_vue-select.es.DZr3BXkQ.js",
+      "_index.CcsdqMSe.js"
+    ],
+    "css": [
+      "css/index.Cpwj0O0S.css"
+    ]
+  },
   "src/apps/filters-rules-builder/index-legacy.ts": {
-    "file": "apps/filters-rules-builder/index-legacy.MoMC2wVe.js",
+    "file": "apps/filters-rules-builder/index-legacy.BWYclVDF.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index-legacy.ts",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_index-legacy.mMjW-6y_.js",
+      "_vue-select.es-legacy.33HjtT_H.js",
+      "__plugin-vue_export-helper-legacy.BVIICed7.js"
+    ]
   },
   "src/apps/filters-rules-builder/index.ts": {
-    "file": "apps/filters-rules-builder/index.Ct03ODDx.js",
+    "file": "apps/filters-rules-builder/index.DvLyimBe.js",
     "name": "apps/filters-rules-builder/index",
     "src": "src/apps/filters-rules-builder/index.ts",
     "isEntry": true,
+    "imports": [
+      "_index.CcsdqMSe.js",
+      "_vue-select.es.DZr3BXkQ.js",
+      "__plugin-vue_export-helper.DlAUqK2U.js"
+    ],
     "css": [
-      "css/index.CxqcuHEW.css"
+      "css/index.DzGGr8Lh.css"
+    ]
+  },
+  "src/apps/ucp/index-legacy.ts": {
+    "file": "apps/ucp/index-legacy.jW93hPJ3.js",
+    "name": "apps/ucp/index",
+    "src": "src/apps/ucp/index-legacy.ts",
+    "isEntry": true,
+    "imports": [
+      "_vue-select.es-legacy.33HjtT_H.js",
+      "__plugin-vue_export-helper-legacy.BVIICed7.js"
+    ]
+  },
+  "src/apps/ucp/index.ts": {
+    "file": "apps/ucp/index.CdJ1rlTn.js",
+    "name": "apps/ucp/index",
+    "src": "src/apps/ucp/index.ts",
+    "isEntry": true,
+    "imports": [
+      "_vue-select.es.DZr3BXkQ.js",
+      "__plugin-vue_export-helper.DlAUqK2U.js"
+    ],
+    "css": [
+      "css/index.3uzq8rUA.css"
     ]
   },
   "src/vanilla/edit-feed/index-legacy.ts": {
-    "file": "vanilla/edit-feed/index-legacy.BQXEHeDM.js",
+    "file": "vanilla/edit-feed/index-legacy.BI1uLsl4.js",
     "name": "vanilla/edit-feed/index",
     "src": "src/vanilla/edit-feed/index-legacy.ts",
     "isEntry": true,
@@ -24,7 +117,7 @@
     ]
   },
   "src/vanilla/edit-feed/index.ts": {
-    "file": "vanilla/edit-feed/index.CPKoFUPL.js",
+    "file": "vanilla/edit-feed/index.DdkjyG5H.js",
     "name": "vanilla/edit-feed/index",
     "src": "src/vanilla/edit-feed/index.ts",
     "isEntry": true,
@@ -72,52 +165,23 @@
     "src": "src/vanilla/export-import-tools/style.scss",
     "isEntry": true
   },
-  "src/vanilla/field-mapping/index-legacy.ts": {
-    "file": "vanilla/field-mapping/index-legacy.CO66LcBa.js",
-    "name": "vanilla/field-mapping/index",
-    "src": "src/vanilla/field-mapping/index-legacy.ts",
-    "isEntry": true,
-    "imports": [
-      "src/vanilla/field-mapping/style-legacy.scss"
-    ]
-  },
-  "src/vanilla/field-mapping/index.ts": {
-    "file": "vanilla/field-mapping/index.Cku8OS1s.js",
-    "name": "vanilla/field-mapping/index",
-    "src": "src/vanilla/field-mapping/index.ts",
-    "isEntry": true,
-    "css": [
-      "css/vanilla/field-mapping/style.BazMgEhl.css"
-    ]
-  },
-  "src/vanilla/field-mapping/style-legacy.scss": {
-    "file": "vanilla/field-mapping/style.scss-legacy.C7GLHoaF.js",
-    "name": "vanilla/field-mapping/style.scss",
-    "src": "src/vanilla/field-mapping/style-legacy.scss",
-    "isEntry": true
-  },
-  "src/vanilla/field-mapping/style.scss": {
-    "file": "css/vanilla/field-mapping/style.BazMgEhl.css",
-    "src": "src/vanilla/field-mapping/style.scss",
-    "isEntry": true
-  },
   "src/vanilla/index-legacy.ts": {
-    "file": "vanilla/index-legacy.CdUVauyi.js",
+    "file": "vanilla/index-legacy.WVi_fnFa.js",
     "name": "vanilla/index",
     "src": "src/vanilla/index-legacy.ts",
     "isEntry": true
   },
   "src/vanilla/index.ts": {
-    "file": "vanilla/index.DvcvEJf8.js",
+    "file": "vanilla/index.3y8LKsMD.js",
     "name": "vanilla/index",
     "src": "src/vanilla/index.ts",
     "isEntry": true,
     "css": [
-      "css/index.BF_CH6pm.css"
+      "css/index.BHi_zzBa.css"
     ]
   },
   "src/vanilla/manage-feeds/index-legacy.ts": {
-    "file": "vanilla/manage-feeds/index-legacy.B_FTCmZL.js",
+    "file": "vanilla/manage-feeds/index-legacy.BcO8KvW7.js",
     "name": "vanilla/manage-feeds/index",
     "src": "src/vanilla/manage-feeds/index-legacy.ts",
     "isEntry": true,
@@ -126,7 +190,7 @@
     ]
   },
   "src/vanilla/manage-feeds/index.ts": {
-    "file": "vanilla/manage-feeds/index.CLjpadKt.js",
+    "file": "vanilla/manage-feeds/index.DhqAhXNk.js",
     "name": "vanilla/manage-feeds/index",
     "src": "src/vanilla/manage-feeds/index.ts",
     "isEntry": true,
@@ -263,7 +327,7 @@
     "isEntry": true
   },
   "vite/legacy-polyfills-legacy": {
-    "file": "polyfills-legacy.U4ugnhD2.js",
+    "file": "polyfills-legacy.DZXAVot1.js",
     "name": "polyfills",
     "src": "vite/legacy-polyfills-legacy",
     "isEntry": true

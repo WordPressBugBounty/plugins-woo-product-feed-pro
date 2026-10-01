@@ -190,7 +190,10 @@ const updateAttribute = (value: string) => {
       margin-top: 0;
       font-size: 0.875rem;
       line-height: 1.25rem;
-      padding: 0 8px;
+      // No horizontal padding: `.vs__selected-options` already insets its
+      // children and `.vs__selected` adds none, so padding here sits the
+      // placeholder 8px right of the value it stands in for.
+      padding: 0;
       
       &:focus {
         margin-top: 0;
@@ -198,7 +201,7 @@ const updateAttribute = (value: string) => {
         border: none;
         font-size: 0.875rem;
         line-height: 1.25rem;
-        padding: 0 8px;
+        padding: 0;
       }
     }
   }

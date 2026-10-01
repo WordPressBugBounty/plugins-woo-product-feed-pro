@@ -33,8 +33,8 @@ if ( file_exists( $feed->get_file_path() ) ) : ?>
             </span>
         </a>
         <?php
-        // Use download icon for CSV, TSV, TXT, and JSONL formats.
-        $downloadable_formats = array( 'csv', 'tsv', 'txt', 'jsonl' );
+        // Use download icon for CSV, TSV, TXT, JSONL and PARQUET formats.
+        $downloadable_formats = array( 'csv', 'tsv', 'txt', 'jsonl', 'parquet' );
         $is_downloadable      = in_array( strtolower( $feed->file_format ), $downloadable_formats, true );
         $icon_class           = $is_downloadable ? 'lucide--download' : 'lucide--external-link';
         $button_title         = $is_downloadable ? esc_attr__( 'Download', 'woo-product-feed-pro' ) : esc_attr__( 'Open in new tab', 'woo-product-feed-pro' );

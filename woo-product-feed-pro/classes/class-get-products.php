@@ -7,6 +7,10 @@ use AdTribes\PFP\Classes\Shipping_Data;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Helpers\Formatting;
 use AdTribes\PFP\Helpers\Sanitization;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_JSONL;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_Parquet;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_XML;
+use AdTribes\PFP\Classes\Sub_Attribute_Resolver;
 
 /**
  * Class for generating the actual feeds
@@ -20,6 +24,57 @@ class WooSEA_Get_Products {
      * @var int
      */
     const MERKANDI_MAX_PHOTOS = 7;
+
+    /**
+     * File formats that carry a nested sub-attribute payload.
+     *
+     * A constant rather than a literal in the per-product loop, so the array is
+     * allocated once per request instead of once per product.
+     *
+     * @since 13.5.8
+     * @var array
+     */
+    const NESTED_PAYLOAD_FORMATS = array( 'xml', 'jsonl', 'jsonl.gz', 'parquet' );
+
+    /**
+     * Formats whose writer consumes one structured array per product.
+     *
+     * These formats share the JSONL payload shape: nested values stay nested, and the
+     * channel transformation that produces them runs for all of them. They are gathered
+     * here because the generator has to tell them apart from the delimited formats in
+     * several places, and Parquet added a third member to every one of those checks.
+     *
+     * @since 13.5.8
+     * @var array
+     */
+    const STRUCTURED_PAYLOAD_FORMATS = array( 'jsonl', 'jsonl.gz', 'parquet' );
+
+    /**
+     * Source fields that write their element even when the value is empty.
+     *
+     * `get_weight()` and the dimension getters return `'0'` for a product measured
+     * as zero, and the product data assembly maps that falsy value to `''`. The
+     * output-stage empty guard would then drop the element entirely, so a product
+     * with a zero weight emits no `weight` element at all rather than an empty one.
+     *
+     * The assembly used to fall back to `false`, which the guard's `!== ''` test
+     * let through and wrote as an empty element. Commit 7ff2637 (2025-10-20)
+     * changed the fallback to `''` and silently removed the element instead. These
+     * four fields therefore opt out of the guard, which restores that output
+     * without putting `false` back into `$product_data`, where every other
+     * consumer (CSV, JSONL, filters and rules) would see it too.
+     *
+     * Only a mapped field opts out. A static value of `''` stays dropped.
+     *
+     * The guard runs on the single per-product output array, despite its legacy
+     * `$xml_product` name, so this restores the empty element in every feed
+     * format, not only XML. That is the output before 7ff2637, so no format
+     * regresses.
+     *
+     * @since 13.5.8
+     * @var array
+     */
+    const ALWAYS_WRITTEN_FIELDS = array( 'weight', 'height', 'length', 'width' );
 
     /**
      * File format.
@@ -323,7 +378,7 @@ class WooSEA_Get_Products {
                         $list['seopress_barcode'] = $value->type;
                     }
                 } else {
-                    $product_attr = unserialize( $value->type );
+                    $product_attr = Helper::safely_unserialize( $value->type );
 
                     if ( ( ! empty( $product_attr ) ) && ( is_array( $product_attr ) ) ) {
                         foreach ( $product_attr as $key_inner => $arr_value ) {
@@ -852,6 +907,35 @@ class WooSEA_Get_Products {
                         if ( is_array( $value ) ) {
                             if ( ! empty( $value ) ) {
                                 $product = $xml->channel->addChild( 'item' );
+
+                                /**
+                                 * Strangler-fig writer dispatch fork.
+                                 *
+                                 * A migrated feed on the Google chain writes through
+                                 * Feed_Writer_XML. Every other feed - unmigrated feeds and
+                                 * all non-Google channels - falls through to the legacy
+                                 * chain below, which stays untouched.
+                                 *
+                                 * The callback keeps the else-branch behaviour, and its
+                                 * `adt_product_feed_xml_attribute_handling` contract, in one
+                                 * place. Elite's Facebook DRM callback therefore still fires
+                                 * with the same 7 arguments for a migrated feed.
+                                 *
+                                 * @since 13.5.8
+                                 */
+                                if ( Feed_Writer_XML::uses_new_writer( $feed, $feed_config ) ) {
+                                    Feed_Writer_XML::instance()->write_product(
+                                        $product,
+                                        $value,
+                                        $feed,
+                                        $namespace,
+                                        function ( $k, $v ) use ( $product, $feed_config, $channel_attributes, $feed, $value ) {
+                                            $this->woosea_write_individual_product_to_xml( $product, $k, $v, $feed_config, $channel_attributes, $feed, $value );
+                                        }
+                                    );
+                                    continue;
+                                }
+
                                 foreach ( $value as $k => $v ) {
                                     if ( $k == 'g:shipping' ) {
                                         $ship = explode( '||', $v );
@@ -929,6 +1013,9 @@ class WooSEA_Get_Products {
                                     } elseif ( preg_match( '/g:promotion_id/i', $k ) ) {
                                         $promotion_id = $this->add_xml_child_with_escaped_entities( $product, 'g:promotion_id', $v, $namespace['g'] );
                                     } elseif ( preg_match( '/g:product_detail/i', $k ) ) {
+                                        // KEEP IN SYNC: the attribute_name clean-up below is duplicated in
+                                        // Feed_Writer_XML::write_product_detail() and in
+                                        // get_product_detail_attribute_name() (the CSV path). See #1039.
                                         if ( ! empty( $v ) ) {
                                             $product_detail_split = explode( '#', $v );
                                             $detail_complete      = count( $product_detail_split );
@@ -2710,11 +2797,32 @@ class WooSEA_Get_Products {
                 'size',
                 'quantity',
                 'manufacturersku',
+                'mpn',
                 'ean',
                 'price_with_vat',
             )
         );
-        
+
+        /**
+         * Tag names for the Skroutz Variation MPN attribute.
+         *
+         * Skroutz documents this single attribute under two tag names, so the one
+         * mapped MPN value is written into each of them. Filter this list to emit
+         * only one tag name. A tag also has to pass the attribute whitelist above,
+         * so that filter still controls which tags a variation node can carry.
+         *
+         * @since 13.5.8
+         *
+         * @param array $tags Tag names to write the Variation MPN value into.
+         */
+        $skroutz_variation_mpn_tags = apply_filters(
+            'woosea_skroutz_variation_mpn_tags',
+            array(
+                'manufacturersku',
+                'mpn',
+            )
+        );
+
         $product->addChild( 'variations' );
         foreach ( $variation_data as $variation ) {
             if ( ! is_array( $variation ) || empty( $variation ) ) {
@@ -2722,6 +2830,11 @@ class WooSEA_Get_Products {
             }
 
             $child_variation = $product->variations->addChild( 'variation' );
+
+            // Tags the merchant maps themselves in this variation, mpn excluded. An MPN alias
+            // tag in this set keeps the merchant value, so the MPN value must not overwrite it.
+            $merchant_mapped_tags = array_diff( array_keys( $variation ), array( 'mpn' ) );
+
             foreach ( $variation as $variation_key => $variation_value ) {
                 $child_variation_key = $variation_key;
                 $child_variation_value = $variation_value;
@@ -2731,8 +2844,29 @@ class WooSEA_Get_Products {
                 }
 
                 if ( in_array( $child_variation_key, $skroutz_variations_attributes ) ) {
-                    $child_variation->addChild( $child_variation_key );
-                    $child_variation->$child_variation_key = $child_variation_value;
+                    $child_variation_tags = array( $child_variation_key );
+
+                    if ( 'mpn' === $child_variation_key ) {
+                        // The MPN attribute goes into every tag name Skroutz documents for it,
+                        // but only into the tags the attribute whitelist still allows, and never
+                        // into a tag the merchant maps themselves - that mapping writes its own value.
+                        $child_variation_tags = array_intersect( $skroutz_variation_mpn_tags, $skroutz_variations_attributes );
+                        $child_variation_tags = array_diff( $child_variation_tags, $merchant_mapped_tags );
+                    }
+
+                    foreach ( $child_variation_tags as $child_variation_tag ) {
+                        // Do not emit a tag twice, e.g. when a custom attribute already wrote it.
+                        // This guard and the $merchant_mapped_tags filter above are two halves of
+                        // the same dedup. The filter drops an alias tag the merchant maps later in
+                        // the key set, which isset() cannot see yet. This catches a tag an earlier
+                        // iteration already wrote. Keep both.
+                        if ( isset( $child_variation->$child_variation_tag ) ) {
+                            continue;
+                        }
+
+                        $child_variation->addChild( $child_variation_tag );
+                        $child_variation->$child_variation_tag = $child_variation_value;
+                    }
                 }
             }
         }
@@ -2771,10 +2905,12 @@ class WooSEA_Get_Products {
         $fp = fopen( $file, 'a+' );
 
         // Set proper UTF encoding BOM for CSV files.
-        // Pinterest's CSV parser reads the BOM as part of the first column header
-        // (e.g. "\xEF\xBB\xBFid" instead of "id"), so it cannot find the required
-        // "id" field and aborts ingestion with Error 9156. Exclude it like Fruugo.
-        if ( $header == 'true' && ! preg_match( '/fruugo|pinterest/i', $fields ) ) {
+        // Some parsers read the BOM as part of the first column header
+        // (e.g. "\xEF\xBB\xBFid" instead of "id"), so they cannot find the required
+        // field and abort ingestion. Pinterest aborts with Error 9156, and the OpenAI
+        // file-upload spec asks for canonical lowercase field names in the header row,
+        // which a BOM breaks. Exclude those channels like Fruugo.
+        if ( $header == 'true' && ! preg_match( '/fruugo|pinterest|openai/i', $fields ) ) {
             fputs( $fp, $bom = chr( 0xEF ) . chr( 0xBB ) . chr( 0xBF ) );
         }
 
@@ -2926,6 +3062,161 @@ class WooSEA_Get_Products {
     }
 
     /**
+     * Get the writer that consumes the structured per-product payload for a format.
+     *
+     * @since 13.5.8
+     *
+     * @param string $file_format One of self::STRUCTURED_PAYLOAD_FORMATS.
+     * @return Feed_Writer_JSONL|Feed_Writer_Parquet
+     */
+    private function get_structured_payload_writer( $file_format ) {
+        if ( 'parquet' === $file_format ) {
+            return Feed_Writer_Parquet::instance();
+        }
+
+        return Feed_Writer_JSONL::instance();
+    }
+
+    /**
+     * Check whether a feed attribute is the Google `product_detail` attribute.
+     *
+     * Google Shopping declares it as `g:product_detail`, but a channel may
+     * declare it without the namespace prefix, so accept both spellings.
+     *
+     * @since 13.5.8
+     *
+     * @param string $attribute The feed attribute name.
+     * @return bool True when the attribute is the product detail attribute.
+     */
+    private function is_product_detail_attribute( $attribute ) {
+        return in_array( $attribute, array( 'g:product_detail', 'product_detail' ), true );
+    }
+
+    /**
+     * Build the CSV cell value for the Google `product_detail` attribute.
+     *
+     * Google reads a bare `product_detail` column as the three position
+     * `section_name:attribute_name:attribute_value` string, so an omitted
+     * section name still needs its leading colon placeholder. The CSV row
+     * builder used to write this attribute like any other one - prefix, value
+     * and suffix concatenated with nothing in between - which Merchant Center
+     * rejects with "Invalid format for sub-attributes [product_detail]".
+     *
+     * The default mirrors the XML writer: the Prefix supplies the section name
+     * and the mapped field key supplies the attribute name. See
+     * Feed_Writer_XML::write_product_detail().
+     *
+     * A merchant who types a colon into the Prefix is spelling the positions
+     * out by hand (the workaround this defect forced on them), so that Prefix
+     * supplies the leading positions as typed - any trailing delimiter is
+     * normalised - and only the value is appended. A Prefix whose only colon is
+     * a trailing one ("Diamant:") names the section alone, which is the default
+     * case rather than a hand typed one: it takes the derived attribute name
+     * too, so it cannot collapse into an invalid two position cell.
+     *
+     * A static row has no mapped field to name the attribute after, so there
+     * the Prefix becomes the attribute name and the section name stays empty.
+     *
+     * With no Prefix at all, a value that already carries the delimiters is
+     * left alone. Before this fix the only way to vary `attribute_name` per
+     * product on a CSV feed was to build the whole colon string in the mapped
+     * field, and wrapping such a value again would break it. The trade-off is
+     * that a genuine value containing a colon ("Ratio: 1:2") is passed through
+     * rather than wrapped.
+     *
+     * Array valued mapped fields (product tags, reviews, shipping rows) never
+     * reach this helper - they keep the generic joined form; see #1039.
+     *
+     * @since 13.5.8
+     *
+     * @param array  $attribute The feed attribute row: attribute, prefix, mapfrom and suffix.
+     * @param string $value     The mapped product value, or the static value for a static row.
+     * @param bool   $is_static Whether the row is mapped to a static value. Default false.
+     * @return string The colon delimited cell value, or an empty string when there is no value.
+     */
+    private function build_product_detail_csv_value( $attribute, $value, $is_static = false ) {
+        if ( '' === (string) $value ) {
+            return '';
+        }
+
+        $prefix = isset( $attribute['prefix'] ) ? (string) $attribute['prefix'] : '';
+        $value  = (string) $value . ( isset( $attribute['suffix'] ) ? $attribute['suffix'] : '' );
+
+        // A trailing delimiter is not a position of its own, and neither is the
+        // space in front of it, so normalise both away before the Prefix is
+        // read. This also keeps "Size: " from naming a position with a single
+        // space.
+        $prefix = rtrim( rtrim( $prefix ), ':' );
+
+        // The Prefix already spells out the leading positions, append the value
+        // only. A Prefix with one trailing colon and nothing else ("Diamant:")
+        // names the section alone, so the normalisation above drops it out of
+        // this case: it falls through and lets the mapped field, or the Prefix
+        // itself on a static row, still name the attribute.
+        if ( false !== strpos( $prefix, ':' ) ) {
+            return $prefix . ':' . $value;
+        }
+
+        // With no Prefix there is nothing to name the attribute with, so leave
+        // the merchant's own text alone rather than emit an empty attribute
+        // name or wrap a value that already carries the delimiters.
+        if ( '' === $prefix && ( $is_static || false !== strpos( $value, ':' ) ) ) {
+            return $value;
+        }
+
+        if ( $is_static ) {
+            return ':' . $prefix . ':' . $value;
+        }
+
+        $map_from = isset( $attribute['mapfrom'] ) ? $attribute['mapfrom'] : '';
+
+        return $prefix . ':' . $this->get_product_detail_attribute_name( $map_from ) . ':' . $value;
+    }
+
+    /**
+     * Derive the `attribute_name` position from the mapped field key.
+     *
+     * Mirrors the clean-up steps that Feed_Writer_XML::write_product_detail()
+     * runs before it writes `g:attribute_name`, so a CSV feed and an XML feed
+     * with the same mapping normally produce the same attribute name.
+     *
+     * KEEP IN SYNC with the two XML copies of this clean-up chain:
+     * Feed_Writer_XML::write_product_detail() (the migrated Google chain) and
+     * the legacy branch in woosea_create_xml_feed() below. A change to any one
+     * of the three belongs in all three until #1039 retires the duplication.
+     *
+     * Two steps of the XML copies are deliberately not mirrored here, because
+     * they read a marker string that never reaches the CSV path: the "||"
+     * section split with its "General" fallback section name, and the ucfirst()
+     * that runs before the "Pa "/"pa " strip only to capitalise that split
+     * token. This copy takes the mapped field key directly, so the ucfirst()
+     * runs once at the end. The remaining steps are identical.
+     *
+     * @since 13.5.8
+     *
+     * @param string $map_from The mapped field key.
+     * @return string The attribute name.
+     */
+    private function get_product_detail_attribute_name( $map_from ) {
+        // The derived name is constant per attribute row, so memoise it rather
+        // than re-running the clean-up once per product in the feed.
+        static $cache = array();
+
+        $key = (string) $map_from;
+
+        if ( ! isset( $cache[ $key ] ) ) {
+            $parts = explode( ':', str_replace( '_', ' ', $key ) );
+            $name  = str_replace( array( 'Pa ', 'pa ' ), '', $parts[0] );
+            $name  = str_replace( '-', ' ', $name );
+            $name  = (string) preg_replace( '/^custom attributes\s+/i', '', $name );
+
+            $cache[ $key ] = ucfirst( trim( $name ) );
+        }
+
+        return $cache[ $key ];
+    }
+
+    /**
      * Get products that are eligable for adding to the file.
      *
      * @since 13.3.5 Updated the parameters to feed id.
@@ -2938,7 +3229,7 @@ class WooSEA_Get_Products {
      * @param int          $offset The offset of the batch. Only used as a fallback, on either of the
      *                             two triggers that disable the cursor: the feed has no batch cursor
      *                             yet (first batch of a run, or a run started before the cursor
-     *                             existed), or a filter changed the query's orderby away from the
+     *                             existed), or something re-ordered the query away from the
      *                             ( post_date DESC, ID DESC ) order the cursor is built on.
      * @param int          $batch_size The batch size.
      */
@@ -2996,10 +3287,12 @@ class WooSEA_Get_Products {
          * Construct header line for CSV ans TXT files, for XML create the XML root and header
          */
         $products = array();
-        if ( $file_format == 'jsonl' || $file_format == 'jsonl.gz' ) {
-            // Initialize JSONL feed (no header needed for JSONL format).
-            $jsonl_writer = \AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_JSONL::instance();
-            $file         = $jsonl_writer->write_feed( array(), $feed, true );
+        if ( in_array( $file_format, self::STRUCTURED_PAYLOAD_FORMATS, true ) ) {
+            // Initialize the feed file. Neither format has a header row: JSONL has none at
+            // all, and Parquet keeps its column names in the footer, which is written with
+            // the first row group. Both writers only prepare the directory and clear a
+            // stale temp file from an abandoned run.
+            $file = $this->get_structured_payload_writer( $file_format )->write_feed( array(), $feed, true );
         } elseif ( $file_format != 'xml' ) {
             // The header row belongs to the batch that starts the file, which is the
             // same batch that truncates it - keep both decisions on one predicate so
@@ -3137,8 +3430,23 @@ class WooSEA_Get_Products {
             );
         }
 
+        // Skroutz collects a product's variations before the product row itself, so a
+        // parent and its variations can land in different batches. Seed this batch with
+        // the variations the previous one collected but could not attach yet, so the
+        // parent still writes a complete <variations> element when it is reached here.
+        // Preview mode pages within one request and never persists, so it starts empty.
+        if ( ! $is_preview_mode && 'skroutz' === $feed_channel['fields'] && is_array( $feed->batch_pending_variations ) ) {
+            foreach ( $feed->batch_pending_variations as $pending_parent_id => $pending_variations ) {
+                if ( ! is_array( $pending_variations ) || empty( $pending_variations ) ) {
+                    continue;
+                }
+                $xml_piece[ (int) $pending_parent_id ]['skroutz_variations'] = $pending_variations;
+            }
+        }
+
         // The order the cursor is built on. A cursor only means anything while the query
-        // still sorts by these columns, which is checked after the query args filter.
+        // still sorts by these columns, which is checked against the query's real ORDER BY
+        // clause - not against this argument - in Product_Data::apply_batch_cursor().
         $keyset_orderby = array(
             'date' => 'DESC',
             'ID'   => 'DESC',
@@ -3163,6 +3471,33 @@ class WooSEA_Get_Products {
                 'update_post_term_cache' => false,
                 'update_post_meta_cache' => false,
                 'suppress_filters'       => false,
+                // The feed decides its own contents, so it must not inherit the language of
+                // whatever request happens to run the batch. A batch does not always run
+                // detached: several admin-ajax actions run one in-process - feed refresh,
+                // publish, bulk refresh, and the Manage Feeds status poll, which pushes the
+                // next scheduled batch through ActionScheduler_QueueRunner - and Action
+                // Scheduler's own async runner loops back through admin-ajax as well.
+                // Polylang hooks the 'parse_query' action in both contexts, taking the
+                // language from the admin's filter (PLL_Admin) or from the preferred
+                // language (PLL_Frontend), and adds its clause to every query of the
+                // request. That silently emptied feeds whose products are in another
+                // language.
+                //
+                // Polylang leaves a query alone once the 'lang' query var is set
+                // (PLL_Query::is_already_filtered()), and an empty value adds no clause of
+                // its own, so the feed sees every language: the same result the admin gets
+                // with "Show all languages" selected. The key stays unconditional rather
+                // than gated on Polylang, because WPML is unaffected either way - it reads
+                // its own per-query override from 'wpml_lang' (WPML_Query_Parser::LANG_VAR)
+                // and only ever writes 'lang' itself, for URL language negotiation.
+                //
+                // 'suppress_filters' above cannot do this job. It gates the posts_* clause
+                // filters, not the 'parse_query' action, and turning it on would disable
+                // this query's own batch-cursor filters as well.
+                //
+                // Set before the query args filter below so the Translation Addon, which
+                // gives each feed its own language setting, still overrides this.
+                'lang'                   => '',
                 'custom_query'           => 'adt_published_products_and_variations', // Custom flag to trigger the filter
                 'post_password'          => '',
                 // Resume point for this batch. @see Product_Data::apply_batch_cursor().
@@ -3183,36 +3518,28 @@ class WooSEA_Get_Products {
              */
             $wp_query = apply_filters( 'adt_product_feed_get_products_query_args', $wp_query, $feed );
 
-            // Exactly one pagination mechanism may be in play. The cursor skips rows by
-            // their (post_date, ID) sort key, so it is only sound while the query is still
-            // sorted that way: if a filter re-ordered the query, or there is no cursor yet
-            // (first batch, or a run that started before this file was updated), fall back
-            // to LIMIT/OFFSET.
-            //
-            // The sort directions are upper-cased before comparing because WP_Query treats
-            // 'desc' and 'DESC' as the same thing - a filter that rebuilds the same order in
-            // lowercase must keep the cursor, not silently revert the run to OFFSET paging.
-            // The column keys are compared as they are, since WP_Query matches those against
-            // its own whitelist strictly ('id' is not 'ID' to it either).
-            //
-            // Only scalars are cast: the cast itself is load-bearing (it keeps PHP 8.1 from
-            // deprecating strtoupper( null )), but a filter that set a direction to an array
-            // would make it emit an "Array to string conversion" warning on the way to the
-            // fallback. Left as-is, a non-scalar simply fails the match, quietly.
-            $query_orderby = isset( $wp_query['orderby'] ) ? $wp_query['orderby'] : null;
-            $use_cursor    = ! empty( $batch_cursor )
-                && is_array( $query_orderby )
-                && array_map(
-                    static function ( $direction ) {
-                        return is_scalar( $direction ) ? strtoupper( (string) $direction ) : $direction;
-                    },
-                    $query_orderby
-                ) === $keyset_orderby;
+            // Exactly one pagination mechanism may be in play, and which one is not
+            // settled here: the cursor skips rows by their (post_date, ID) sort key, so
+            // it is only sound while the query really is sorted that way, and the order
+            // a query really runs with is not known until WP_Query has assembled its
+            // clauses. Product_Data::apply_batch_cursor() therefore decides from
+            // `posts_clauses_request` - the last filter before the SQL is built - and
+            // drops the LIMIT offset on the queries where it takes over. The offset set
+            // above is left in place for the queries where it does not: there is no
+            // cursor yet (first batch, or a run started before the cursor existed), or
+            // something re-ordered the query and it falls back to LIMIT/OFFSET paging.
+            Product_Data::reset_cursor_state();
 
-            // A cursor that exists but cannot be used means a filter re-ordered the query and
-            // this batch drops back to the LIMIT/OFFSET paging the cursor replaced. Say so:
-            // the symptom - rows duplicated or missing around a batch boundary - is otherwise
-            // invisible, and looks identical to "no cursor yet" from the outside.
+            $prods = new WP_Query( $wp_query );
+
+            // Which mechanism actually paged this query, as decided inside it.
+            $use_cursor = Product_Data::cursor_was_applied();
+
+            // A cursor that exists but was not used means this batch dropped back to the
+            // LIMIT/OFFSET paging the cursor replaced - because something re-ordered the
+            // query, or rebuilt its LIMIT clause into a shape the cursor cannot take over.
+            // Say so: the symptom - rows duplicated or missing around a batch boundary - is
+            // otherwise invisible, and looks identical to "no cursor yet" from the outside.
             //
             // Rate-limited to one entry per feed per hour. The trigger is a filter, so it
             // holds for every batch of the run: logging it per batch would put N-1 identical
@@ -3241,21 +3568,13 @@ class WooSEA_Get_Products {
                     $logger->add(
                         'Product Feed Pro by AdTribes.io',
                         sprintf(
-                            'Batch cursor disabled for feed #%d: the "adt_product_feed_get_products_query_args" filter changed the query orderby away from ( post_date DESC, ID DESC ), so this run falls back to LIMIT/OFFSET paging.',
+                            'Batch cursor disabled for feed #%d: a filter changed the batch query so the ( post_date DESC, ID DESC ) cursor could not be applied to it, so this run falls back to LIMIT/OFFSET paging.',
                             $feed->id
                         ),
                         'warning'
                     );
                 }
             }
-
-            if ( $use_cursor ) {
-                unset( $wp_query['offset'] );
-            } else {
-                unset( $wp_query[ Product_Data::BATCH_CURSOR_QUERY_ARG ] );
-            }
-
-            $prods = new WP_Query( $wp_query );
 
             // Increment preview query counter
             if ( $is_preview_mode ) {
@@ -3272,6 +3591,15 @@ class WooSEA_Get_Products {
             // Last row this query walked, in query order. Reset per query so an empty
             // result leaves the cursor where it was.
             $batch_last_id = 0;
+
+            /*
+             * `days_back_created` compares two calendar days, both normalised to
+             * midnight UTC. Neither the timezone object nor today's date changes
+             * while this query is walked, so both are built once here instead of
+             * once per product.
+             */
+            $utc_timezone = new DateTimeZone( 'UTC' );
+            $today_day    = new DateTime( wp_date( 'Y-m-d' ), $utc_timezone );
 
         while ( $prods->have_posts() ) :
             $prods->the_post();
@@ -3394,11 +3722,22 @@ class WooSEA_Get_Products {
 
             if ( ! empty( $creation_date_source->get_date_created() ) ) {
                 $datetime_created = $creation_date_source->get_date_created();
-                $timestamp_created = $datetime_created->getTimestamp();
-                $timestamp_now = ( new WC_DateTime() )->getTimestamp();
-                $time_delta = $timestamp_now - $timestamp_created;
 
-                $product_data['days_back_created'] = round( $time_delta / 86400 );
+                /*
+                 * Days back created is a calendar-day difference in the site timezone,
+                 * not an elapsed-time difference. A product created at any time today
+                 * is 0 days back for the whole of that day.
+                 *
+                 * The previous `round( $delta / 86400 )` flipped a product created at
+                 * 00:00 from 0 to 1 once 12 hours had passed, so the value changed
+                 * halfway through the day.
+                 *
+                 * Both dates are normalised to midnight UTC so the difference is a
+                 * whole number of days across a daylight saving change.
+                 */
+                $created_day = new DateTime( $datetime_created->date( 'Y-m-d' ), $utc_timezone );
+
+                $product_data['days_back_created'] = (int) $created_day->diff( $today_day )->days;
                 $product_data['product_creation_date'] = $datetime_created;
             }
 
@@ -4554,13 +4893,20 @@ class WooSEA_Get_Products {
                         $new_key      = 'custom_attributes_' . $custom_kk;
 
                         // This is a ACF image field (PLEASE NOTE: the ACF field needs to contain image or bild in the name)
-                        if ( preg_match( '/image|bild|immagine/i', $custom_kk ) ) {
-                            if ( class_exists( 'ACF' ) && ( $custom_value > 0 ) ) {
-                                $image = wp_get_attachment_image_src( $custom_value, 'large' );
+                        // #1095: wp_attachment_is_image() is load bearing, not a defensive extra. WordPress
+                        // writes sizes['full'] for a PDF preview, and image_downsize() then returns that
+                        // preview JPEG instead of false, so a non-image attachment ID still becomes an image
+                        // URL without this check. The variation branch below applies the same condition, so
+                        // both branches keep the same value for the same meta key.
+                        if ( class_exists( 'ACF' )
+                            && preg_match( '/image|bild|immagine/i', $custom_kk )
+                            && is_numeric( $custom_value )
+                            && $custom_value > 0
+                            && wp_attachment_is_image( (int) $custom_value ) ) {
+                            $image = wp_get_attachment_image_src( (int) $custom_value, 'large' );
 
-                                if ( isset( $image[0] ) ) {
-                                    $custom_value = $image[0];
-                                }
+                            if ( isset( $image[0] ) ) {
+                                $custom_value = $image[0];
                             }
                         }
 
@@ -4605,10 +4951,14 @@ class WooSEA_Get_Products {
                     foreach ( $data as $key => $value ) {
                         $value_display = str_replace( '_', ' ', $value->name );
                         if ( preg_match( '/_product_attributes/i', $value->name ) ) {
-                            $product_attr = unserialize( $value->type );
+                            $product_attr = Helper::safely_unserialize( $value->type );
 
-                            if ( ! empty( $product_attr ) ) {
+                            if ( ( ! empty( $product_attr ) ) && ( is_array( $product_attr ) ) ) {
                                 foreach ( $product_attr as $key => $arr_value ) {
+                                    // A poisoned array can hold a non-array element, which fatals on the index below.
+                                    if ( ! is_array( $arr_value ) ) {
+                                        continue;
+                                    }
                                     $new_key = 'custom_attributes_' . $key;
                                     if ( ! empty( $arr_value['value'] ) ) {
                                         $product_data[ $new_key ] = $arr_value['value'];
@@ -5012,9 +5362,13 @@ class WooSEA_Get_Products {
                     foreach ( $data as $key => $value ) {
                         $value_display = str_replace( '_', ' ', $value->name );
                         if ( preg_match( '/_product_attributes/i', $value->name ) ) {
-                            $product_attr = unserialize( $value->type );
+                            $product_attr = Helper::safely_unserialize( $value->type );
                             if ( ( ! empty( $product_attr ) ) && ( is_array( $product_attr ) ) ) {
                                 foreach ( $product_attr as $key => $arr_value ) {
+                                    // A poisoned array can hold a non-array element, which fatals on the index below.
+                                    if ( ! is_array( $arr_value ) ) {
+                                        continue;
+                                    }
                                     $new_key                  = 'custom_attributes_' . $key;
                                     $product_data[ $new_key ] = $arr_value['value'];
                                 }
@@ -5040,21 +5394,26 @@ class WooSEA_Get_Products {
                             // custom_attributes_ mapping key and is dropped.
                             // $new_key_m = str_replace("var","product",$new_key_m);
                             if ( ! key_exists( $new_key_m, $product_data ) && ( ! empty( $custom_value_m ) ) ) {
-                                if ( is_array( $custom_value_m ) ) {
-                                    // determine what to do with this later
+                                // #1095: only convert a value to an image URL when the meta key names an
+                                // ACF image field (the field name must contain image, bild or immagine),
+                                // which is the same guard the simple and variable parent branch uses
+                                // earlier in this method. Without the name check, any numeric parent meta
+                                // that happens to match an attachment post ID - a Rank Math primary term
+                                // ID, a related product ID - is replaced by that attachment's URL on every
+                                // variation row, while the parent row keeps the raw value.
+                                // wp_attachment_is_image() is load bearing for the reason given at the
+                                // simple and variable parent branch above. Do not drop it.
+                                $is_acf_image_field = class_exists( 'ACF' )
+                                    && preg_match( '/image|bild|immagine/i', $custom_kk_m )
+                                    && is_numeric( $custom_value_m )
+                                    && $custom_value_m > 0
+                                    && wp_attachment_is_image( (int) $custom_value_m );
+
+                                if ( $is_acf_image_field ) {
+                                    $image                      = wp_get_attachment_image_src( (int) $custom_value_m, 'large' );
+                                    $product_data[ $new_key_m ] = isset( $image[0] ) ? $image[0] : $custom_value_m;
                                 } else {
-                                    // This is most likely a ACF field
-                                    if ( class_exists( 'ACF' ) && ( $custom_value_m > 0 ) ) {
-                                        $image = wp_get_attachment_image_src( $custom_value_m, 'large' );
-                                        if ( isset( $image[0] ) ) {
-                                            $custom_value               = $image[0];
-                                            $product_data[ $new_key_m ] = $custom_value;
-                                        } else {
-                                            $product_data[ $new_key_m ] = $custom_value_m;
-                                        }
-                                    } else {
-                                        $product_data[ $new_key_m ] = $custom_value_m;
-                                    }
+                                    $product_data[ $new_key_m ] = $custom_value_m;
                                 }
                             }
                         } else {
@@ -5429,16 +5788,14 @@ class WooSEA_Get_Products {
             /**
              * Check if we need to add category taxonomy mappings (Google Shopping).
              * Skip mapping if a rule already modified the categories value — the rule takes precedence.
+             * An empty Category Mapping tab leaves the mapped value alone, because the user mapped
+             * the attribute on purpose.
              */
             if ( ! empty( $product_data ) && ! empty( $product_data['id'] ) && $feed_channel['taxonomy'] == 'google_shopping' ) {
                 $categories_modified_by_rules = ( $product_data['categories'] ?? null ) !== $categories_before_rules;
 
-                if ( ! $categories_modified_by_rules ) {
-                    if ( ! empty( $feed_mappings ) ) {
-                        $product_data = $this->woocommerce_sea_mappings( $feed_mappings, $product_data );
-                    } else {
-                        $product_data['categories'] = '';
-                    }
+                if ( ! $categories_modified_by_rules && ! empty( $feed_mappings ) ) {
+                    $product_data = $this->woocommerce_sea_mappings( $feed_mappings, $product_data );
                 }
             }
 
@@ -5464,13 +5821,17 @@ class WooSEA_Get_Products {
                     foreach ( $old_attributes_config as $attr_key => $attr_value ) {
                         if ( ! $attr_line ) {
                             if ( array_key_exists( 'static_value', $attr_value ) ) {
-                                if ( strlen( $attr_value['mapfrom'] ) ) {
+                                if ( $this->is_product_detail_attribute( $attr_value['attribute'] ) ) {
+                                    $attr_line = "'" . $this->build_product_detail_csv_value( $attr_value, $attr_value['mapfrom'], true ) . "'";
+                                } elseif ( strlen( $attr_value['mapfrom'] ) ) {
                                     $attr_line = "'" . $attr_value['prefix'] . $attr_value['mapfrom'] . $attr_value['suffix'] . "'";
                                 } else {
                                     $attr_line = "''";
                                 }
                             } elseif ( ( strlen( $attr_value['mapfrom'] ) ) && ( array_key_exists( $attr_value['mapfrom'], $product_data ) ) ) {
-                                if ( ( $attr_value['attribute'] == 'URL' ) || ( $attr_value['attribute'] == 'g:link' ) || ( $attr_value['attribute'] == 'g:link_template' ) || ( $attr_value['attribute'] == 'g:image_link' ) || ( $attr_value['attribute'] == 'link' ) || ( $attr_value['attribute'] == 'Final URL' ) || ( $attr_value['attribute'] == 'SKU' ) || ( $attr_value['attribute'] == 'g:itemid' ) ) {
+                                if ( $this->is_product_detail_attribute( $attr_value['attribute'] ) ) {
+                                    $attr_line = "'" . $this->build_product_detail_csv_value( $attr_value, $product_data[ $attr_value['mapfrom'] ] ) . "'";
+                                } elseif ( ( $attr_value['attribute'] == 'URL' ) || ( $attr_value['attribute'] == 'g:link' ) || ( $attr_value['attribute'] == 'g:link_template' ) || ( $attr_value['attribute'] == 'g:image_link' ) || ( $attr_value['attribute'] == 'link' ) || ( $attr_value['attribute'] == 'Final URL' ) || ( $attr_value['attribute'] == 'SKU' ) || ( $attr_value['attribute'] == 'g:itemid' ) ) {
                                     $attr_line = "'" . $attr_value['prefix'] . $product_data[ $attr_value['mapfrom'] ] . $attr_value['suffix'] . "'";
                                 } else {
                                     $attr_line = "'" . $attr_value['prefix'] . $product_data[ $attr_value['mapfrom'] ] . $attr_value['suffix'] . "'";
@@ -5479,7 +5840,11 @@ class WooSEA_Get_Products {
                                 $attr_line = "''";
                             }
                         } elseif ( array_key_exists( 'static_value', $attr_value ) ) {
-                            $attr_line .= ",'" . $attr_value['prefix'] . $attr_value['mapfrom'] . $attr_value['suffix'] . "'";
+                            if ( $this->is_product_detail_attribute( $attr_value['attribute'] ) ) {
+                                $attr_line .= ",'" . $this->build_product_detail_csv_value( $attr_value, $attr_value['mapfrom'], true ) . "'";
+                            } else {
+                                $attr_line .= ",'" . $attr_value['prefix'] . $attr_value['mapfrom'] . $attr_value['suffix'] . "'";
+                            }
                         } elseif( $attr_value['mapfrom'] === 'page_url' || $attr_value['mapfrom'] === 'post_url' ) {
                             $post_or_page_id = $attr_value['value'] ?? '';
                             if ( $post_or_page_id ) {
@@ -5536,7 +5901,9 @@ class WooSEA_Get_Products {
                                     }
                                 } elseif ( isset( $product_data[ $attr_value['mapfrom'] ] ) ) {
 
-                                    if ( ( $attr_value['attribute'] == 'URL' ) || ( $attr_value['attribute'] == 'g:link' ) || ( $attr_value['attribute'] == 'g:link_template' ) || ( $attr_value['attribute'] == 'g:image_link' ) || ( $attr_value['attribute'] == 'link' ) || ( $attr_value['attribute'] == 'Final URL' ) || ( $attr_value['attribute'] == 'SKU' ) || ( $attr_value['attribute'] == 'g:itemid' ) ) {
+                                    if ( $this->is_product_detail_attribute( $attr_value['attribute'] ) ) {
+                                        $attr_line .= ",'" . $this->build_product_detail_csv_value( $attr_value, $product_data[ $attr_value['mapfrom'] ] ) . "'";
+                                    } elseif ( ( $attr_value['attribute'] == 'URL' ) || ( $attr_value['attribute'] == 'g:link' ) || ( $attr_value['attribute'] == 'g:link_template' ) || ( $attr_value['attribute'] == 'g:image_link' ) || ( $attr_value['attribute'] == 'link' ) || ( $attr_value['attribute'] == 'Final URL' ) || ( $attr_value['attribute'] == 'SKU' ) || ( $attr_value['attribute'] == 'g:itemid' ) ) {
                                         if ( ( $product_data['product_type'] == 'variation' ) && ( preg_match( '/aelia_cs_currency/', $attr_value['suffix'] ) ) ) {
                                             $attr_value['suffix'] = str_replace( '?', '&', $attr_value['suffix'] );
                                             $attr_line           .= ",'" . $attr_value['prefix'] . $product_data[ $attr_value['mapfrom'] ] . $attr_value['suffix'] . "'";
@@ -5572,6 +5939,34 @@ class WooSEA_Get_Products {
                         // Remove trailing quote from last element
                         $last_index = count($pieces_row) - 1;
                         $pieces_row[$last_index] = rtrim($pieces_row[$last_index], "'");
+                    }
+
+                    /*
+                     * CSV writer dispatch fork (#1039). A migrated feed on the Google
+                     * Shopping chain hands the assembled row to Feed_Writer_CSV, which
+                     * replaces the cell of every attribute that carries a configured
+                     * sub-attribute group. Every other feed - unmigrated feeds and all
+                     * non-Google channels - keeps the row exactly as built above.
+                     *
+                     * The fork sits here, between the row assembly and the row filter,
+                     * so the column order is the legacy order and
+                     * `adt_product_feed_csv_row_data` still fires once, on the final
+                     * row, with the legacy-shaped config.
+                     *
+                     * The format guard matches the writer dispatch at the end of the
+                     * loop: an XML or JSONL feed assembles this row too and then
+                     * discards it in favour of `$xml_piece`. Resolving the groups for a
+                     * row nothing reads would cost one resolve per nested parent per
+                     * product for every migrated XML feed.
+                     */
+                    if ( ! in_array( $file_format, self::NESTED_PAYLOAD_FORMATS, true )
+                        && \AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_CSV::uses_new_writer( $feed, $feed_channel ) ) {
+                        $pieces_row = \AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_CSV::instance()->write_row(
+                            $pieces_row,
+                            $old_attributes_config,
+                            $product_data,
+                            $feed
+                        );
                     }
 
                     /**
@@ -5633,7 +6028,7 @@ class WooSEA_Get_Products {
                     $products[] = array( $attr_line );
 
                     // Track preview mode product count (CSV/TXT feeds only)
-                    if ( $is_preview_mode && $file_format != 'xml' && $file_format != 'jsonl' && $file_format != 'jsonl.gz' ) {
+                    if ( $is_preview_mode && 'xml' !== $file_format && ! in_array( $file_format, self::STRUCTURED_PAYLOAD_FORMATS, true ) ) {
                         $preview_found_count++;
                         // Exit the inner while loop if we have enough CSV products
                         if ( $preview_found_count >= $preview_target_count ) {
@@ -5657,7 +6052,7 @@ class WooSEA_Get_Products {
                     $products[] = array( $attr_line );
 
                     // Track preview mode product count (CSV/TXT feeds only)
-                    if ( $is_preview_mode && $file_format != 'xml' && $file_format != 'jsonl' && $file_format != 'jsonl.gz' ) {
+                    if ( $is_preview_mode && 'xml' !== $file_format && ! in_array( $file_format, self::STRUCTURED_PAYLOAD_FORMATS, true ) ) {
                         $preview_found_count++;
                         // Exit the inner while loop if we have enough CSV products
                         if ( $preview_found_count >= $preview_target_count ) {
@@ -5911,7 +6306,7 @@ class WooSEA_Get_Products {
                                                 $xml_product[ $attr_attribute ] = "$attr_value[prefix]||" . $attr_map_from . '#' . $attr_data_value . "$attr_value[suffix]";
                                             } elseif ( in_array( $attr_attribute, array( 'g:product_highlight', 'g:included_destination', 'g:excluded_destination' ), true ) && $attr_data_value !== '' ) {
                                                 $xml_product[ $attr_attribute . "_$ga" ] = "$attr_value[prefix]" . $attr_data_value . "$attr_value[suffix]";
-                                            } elseif ( $attr_data_value !== '' ) {
+                                            } elseif ( $attr_data_value !== '' || ( ! $is_attr_static && in_array( $attr_map_from, self::ALWAYS_WRITTEN_FIELDS, true ) ) ) {
                                                 $xml_product[ $attr_attribute ] = "$attr_value[prefix]" . $attr_data_value . "$attr_value[suffix]";
                                             }
                                         }
@@ -5925,16 +6320,48 @@ class WooSEA_Get_Products {
                 // Do we need to do some calculation on attributes for Google Shopping
                 $xml_product = $this->woosea_calculate_value( $feed, $xml_product );
 
+                // The rewrite itself lives in Product_Feed_Helper, because a consumer that
+                // has to predict these keys from the field mapping alone - the Parquet
+                // writer resolves its column list before any product is assembled - must
+                // apply exactly the same rule.
                 foreach ( $xml_product as $key_product => $value_product ) {
-                    if ( preg_match( '/custom_attributes_attribute_/', $key_product ) ) {
-                        $pieces = explode( 'custom_attributes_attribute_', $key_product );
+                    $stripped_key = Product_Feed_Helper::strip_mapped_attribute_prefix( $key_product );
+
+                    if ( $stripped_key !== $key_product ) {
                         unset( $xml_product[ $key_product ] );
-                        $xml_product[ $pieces[1] ] = $value_product;
-                    } elseif ( preg_match( '/product_attributes_/', $key_product ) ) {
-                        $pieces = explode( 'product_attributes_', $key_product );
-                        unset( $xml_product[ $key_product ] );
-                        $xml_product[ $pieces[1] ] = $value_product;
+                        $xml_product[ $stripped_key ] = $value_product;
                     }
+                }
+
+                /**
+                 * Nested sub-attribute payload placement.
+                 *
+                 * For a migrated feed, resolved sub-attribute groups replace the legacy
+                 * marker string of their parent tag. Feed_Writer_XML then writes them as
+                 * nested elements, and Feed_Writer_JSONL encodes them as nested objects,
+                 * from one payload built once.
+                 *
+                 * This runs after woosea_calculate_value() and the attribute key rewrites,
+                 * and before `adt_product_feed_jsonl_product`, so that filter still sees
+                 * and can still override the final payload. CSV keeps the legacy
+                 * flattening, so its columns are unchanged.
+                 *
+                 * The two writers need different shapes. Feed_Writer_XML needs ordered
+                 * tag/value rows, because it writes elements. Feed_Writer_JSONL encodes
+                 * the payload as-is, so it needs one flat object per group.
+                 *
+                 * @since 13.5.8
+                 */
+                if ( in_array( $file_format, self::NESTED_PAYLOAD_FORMATS, true )
+                    && Feed_Writer_XML::uses_new_writer( $feed, $feed_channel ) ) {
+                    $xml_product = Sub_Attribute_Resolver::apply_to_payload(
+                        $xml_product,
+                        $product_data,
+                        $feed,
+                        'xml' === $file_format
+                            ? Sub_Attribute_Resolver::SHAPE_ROWS
+                            : Sub_Attribute_Resolver::SHAPE_OBJECT
+                    );
                 }
 
                 // For Skroutz template
@@ -5943,14 +6370,30 @@ class WooSEA_Get_Products {
                         $product_id = $product->get_parent_id();
                         $xml_piece[ $product_id ]['skroutz_variations'][] = $xml_product;
                     } else {
+                        // The catalogue is walked newest first, so the variations of this
+                        // product are usually collected before the product row itself.
+                        // Carry them over, else this assignment discards them.
+                        //
+                        // Variations collected in an earlier batch are seeded back into
+                        // $xml_piece at the start of this one, so this covers the
+                        // cross-batch case too.
+                        if ( isset( $xml_piece[ $product->get_id() ]['skroutz_variations'] ) ) {
+                            $xml_product['skroutz_variations'] = $xml_piece[ $product->get_id() ]['skroutz_variations'];
+                        }
+
                         $xml_piece[ $product->get_id() ] = $xml_product;
                     }
                 } else {
                     // For JSONL formats, allow channel-specific product-level transformations
                     // (e.g. shipping parsing and HTML entity decoding for OpenAI).
-                    if ( $file_format === 'jsonl' || $file_format === 'jsonl.gz' ) {
+                    if ( in_array( $file_format, self::STRUCTURED_PAYLOAD_FORMATS, true ) ) {
                         /**
                          * Filter a single JSONL product array before it is added to the batch.
+                         *
+                         * Parquet consumes the same payload, because the shape this filter
+                         * produces is the typed one: real booleans, lists as arrays and
+                         * nested objects as arrays. The filter keeps its JSONL name so the
+                         * channel modules already hooked to it keep working unchanged.
                          *
                          * @since 13.5.2
                          *
@@ -5959,12 +6402,28 @@ class WooSEA_Get_Products {
                          * @param object $feed         The feed object.
                          */
                         $xml_product = apply_filters( 'adt_product_feed_jsonl_product', $xml_product, $feed_channel, $feed );
+                    } elseif ( 'xml' === $file_format ) {
+                        /**
+                         * Filter a single XML product array before it is added to the batch.
+                         *
+                         * Mirrors `adt_product_feed_jsonl_product` for the XML format so
+                         * channel modules can inject attributes that are not part of the
+                         * merchant's field mapping (e.g. UCP `g:native_commerce`).
+                         *
+                         * @since 13.6.0
+                         *
+                         * @param array  $xml_product  The product data key/value array.
+                         * @param array  $feed_channel The active channel configuration.
+                         * @param object $feed         The feed object.
+                         * @param object $product      The WooCommerce product object.
+                         */
+                        $xml_product = apply_filters( 'adt_product_feed_xml_product', $xml_product, $feed_channel, $feed, $product );
                     }
                     $xml_piece[] = $xml_product;
                 }
 
                 // Track preview mode product count (XML/JSONL feeds only)
-                if ( $is_preview_mode && ( $file_format == 'xml' || $file_format == 'jsonl' || $file_format == 'jsonl.gz' ) ) {
+                if ( $is_preview_mode && ( 'xml' === $file_format || in_array( $file_format, self::STRUCTURED_PAYLOAD_FORMATS, true ) ) ) {
                     $preview_found_count++;
                     // Exit the inner while loop if we have enough products
                     if ( $preview_found_count >= $preview_target_count ) {
@@ -6029,12 +6488,42 @@ class WooSEA_Get_Products {
         // update_option($channel_duplicates, $prevent_duplicates, 'no');
         // }
 
+        // Skroutz: an entry that holds nothing but collected variations has no product row
+        // behind it. Either the parent falls in a later batch, or it is filtered out of the
+        // feed altogether. It is not a product, so it must never reach the writer - that
+        // would emit a node containing only <variations>. Hold it for the next batch, where
+        // the parent either arrives and claims it or it is dropped when the run ends.
+        $pending_variations = array();
+        if ( 'skroutz' === $feed_channel['fields'] && is_array( $xml_piece ) ) {
+            foreach ( $xml_piece as $piece_key => $piece_value ) {
+                if ( is_array( $piece_value ) && array( 'skroutz_variations' ) === array_keys( $piece_value ) ) {
+                    $pending_variations[ (int) $piece_key ] = $piece_value['skroutz_variations'];
+                    unset( $xml_piece[ $piece_key ] );
+                }
+            }
+
+            /**
+             * Maximum number of parent products whose variations are carried to the next batch.
+             *
+             * The carry-over is written to feed meta after every batch. A catalogue that
+             * excludes many variable parents while including their variations would grow it
+             * without limit, so it is capped. Oldest entries are dropped first.
+             *
+             * @since 13.5.8
+             *
+             * @param int $max Maximum number of parent products to carry over.
+             */
+            $max_pending = (int) apply_filters( 'woosea_skroutz_max_pending_variation_parents', 500 );
+            if ( $max_pending > 0 && count( $pending_variations ) > $max_pending ) {
+                $pending_variations = array_slice( $pending_variations, -$max_pending, null, true );
+            }
+        }
+
         /**
          * Write row to CSV/TXT or XML or JSONL file
          */
-        if ( ( $file_format == 'jsonl' || $file_format == 'jsonl.gz' ) && is_array( $xml_piece ) && ! empty( $xml_piece ) ) {
-            $jsonl_writer = \AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_JSONL::instance();
-            $file         = $jsonl_writer->write_feed( array_filter( $xml_piece ), $feed, false );
+        if ( in_array( $file_format, self::STRUCTURED_PAYLOAD_FORMATS, true ) && is_array( $xml_piece ) && ! empty( $xml_piece ) ) {
+            $file = $this->get_structured_payload_writer( $file_format )->write_feed( array_filter( $xml_piece ), $feed, false );
             unset( $xml_piece );
         } elseif ( $file_format != 'xml' && is_array( $products ) && ! empty( $products ) ) {
             $file = $this->woosea_create_csvtxt_feed( array_filter( $products ), $feed, 'false' );
@@ -6048,9 +6537,11 @@ class WooSEA_Get_Products {
 
         // Hand the resume point to the next batch of this run. Preview mode pages
         // entirely within this request, so it keeps its cursor local and never persists
-        // it onto the feed.
+        // it onto the feed. The unattached Skroutz variations travel with it, because
+        // they are only meaningful against the batch that follows this one.
         if ( ! $is_preview_mode ) {
-            $feed->batch_cursor = $batch_cursor;
+            $feed->batch_cursor             = $batch_cursor;
+            $feed->batch_pending_variations = $pending_variations;
         }
 
         $feed->save();
@@ -6229,6 +6720,22 @@ class WooSEA_Get_Products {
         $tmp_cat = '';
         $match   = 'false';
 
+        /**
+         * The Category Mapping tab writes a row per product category, so one save of the tab
+         * persists a row for every category, blank "map to category" included. A table where
+         * no row carries a value says nothing about any product, so treat it the same as an
+         * empty tab and leave the mapped value alone instead of clearing it.
+         */
+        $table_has_value = (bool) array_filter( array_column( $project_mappings, 'map_to_category' ) );
+
+        // The product's own category term ids do not change between mapping rows.
+        $prod_id_cat = $product_data['id'];
+        if ( ( $product_data['product_type'] ?? '' ) == 'variation' ) {
+            $prod_id_cat = $product_data['item_group_id'] ?? $product_data['id'];
+        }
+        // Cast both sides so the term id match below stays strict. Mapping rows keep their ids as strings.
+        $product_cats_ids = array_map( 'absint', wc_get_product_term_ids( $prod_id_cat, 'product_cat' ) );
+
         foreach ( $project_mappings as $pm_key => $pm_array ) {
             // Strip slashes
             $pm_array['criteria'] = str_replace( '\\', '', $pm_array['criteria'] );
@@ -6240,23 +6747,18 @@ class WooSEA_Get_Products {
 
             // First check if there is a category mapping for this specific product
             if ( ( preg_match( '/' . $pm_array['criteria'] . '/', $original_cat ) ) ) {
-                if ( ! empty( $pm_array['map_to_category'] ) ) {
-                    $prod_id_cat = $product_data['id'];
-                    if ( $product_data['product_type'] == 'variation' ) {
-                        $prod_id_cat = $product_data['item_group_id'];
-                    }
-
-                    $product_cats_ids = wc_get_product_term_ids( $prod_id_cat, 'product_cat' );
-                    if ( in_array( $pm_array['categoryId'], $product_cats_ids ) ) {
-                        $category_pieces = explode( '-', $pm_array['map_to_category'] );
-                        $tmp_cat         = $category_pieces[0];
-                        $match           = 'true';
-                    }
+                if ( ! empty( $pm_array['map_to_category'] ) && in_array( absint( $pm_array['categoryId'] ?? 0 ), $product_cats_ids, true ) ) {
+                    $category_pieces = explode( '-', $pm_array['map_to_category'] );
+                    $tmp_cat         = $category_pieces[0];
+                    $match           = 'true';
                 }
             } elseif ( $pm_array['criteria'] == $original_cat ) {
-                $category_pieces = explode( '-', $pm_array['map_to_category'] );
-                $tmp_cat         = $category_pieces[0];
-                $match           = 'true';
+                // Guard the value: an empty row must not blank the product through $tmp_cat.
+                if ( ! empty( $pm_array['map_to_category'] ) ) {
+                    $category_pieces = explode( '-', $pm_array['map_to_category'] );
+                    $tmp_cat         = $category_pieces[0];
+                    $match           = 'true';
+                }
             } else {
                 // Do nothing
             }
@@ -6266,7 +6768,7 @@ class WooSEA_Get_Products {
             if ( array_key_exists( 'id', $product_data ) ) {
                 $product_data['categories'] = $tmp_cat;
             }
-        } else {
+        } elseif ( $table_has_value ) {
             // No mapping found so make google_product_category empty
             $product_data['categories'] = '';
         }

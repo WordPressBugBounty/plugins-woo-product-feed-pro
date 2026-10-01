@@ -245,6 +245,11 @@ watch(selectedAttribute, (newValue) => {
 </template>
 
 <style scoped>
+/*
+ * The field mapping builder ports this block verbatim - see
+ * src/apps/field-mapping-builder/App.scss, "Ported from ... AttributeSelect.vue".
+ * Change both together so the two builders keep presenting the same control.
+ */
 .adt-attribute-select-container {
   position: relative;
 }
@@ -298,10 +303,15 @@ watch(selectedAttribute, (newValue) => {
   min-height: auto;
 }
 
+/*
+ * No horizontal padding: `.vs__selected-options` already insets its children and
+ * `.vs__selected` adds none, so padding here sits the placeholder and any typed
+ * text 8px right of the value they stand in for.
+ */
 .adt-attribute-select-container :deep(.vs__search) {
   border: none;
   margin: 0;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0;
   font-size: 0.875rem;
   line-height: 1.25rem;
   height: auto;

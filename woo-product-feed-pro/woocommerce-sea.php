@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Product Feed PRO for WooCommerce
- * Version:     13.5.7
+ * Version:     13.5.8
  * Plugin URI:  https://www.adtribes.io/support/?utm_source=wpadmin&utm_medium=plugin&utm_campaign=woosea_product_feed_pro
  * Description: Configure and maintain your WooCommerce product feeds for Google Shopping, Catalog managers, Remarketing, Bing, Skroutz, Yandex, Comparison shopping websites and over a 100 channels more.
  * Author:      AdTribes.io
@@ -11,13 +11,13 @@
  * License:     GPL3
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 5.9
- * Tested up to: 7.0.2
+ * Tested up to: 7.1.2
  *
  * Text Domain: woo-product-feed-pro
  * Domain Path: /languages
  *
  * WC requires at least: 4.4
- * WC tested up to: 10.9.4
+ * WC tested up to: 11.1.2
  *
  * Product Feed PRO for WooCommerce is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants.
  */
-define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.5.7' );
+define( 'WOOCOMMERCESEA_PLUGIN_VERSION', '13.5.8' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME', 'woocommerce-product-feed-pro' );
 define( 'WOOCOMMERCESEA_PLUGIN_NAME_SHORT', 'woo-product-feed-pro' );
 
@@ -136,6 +136,14 @@ if ( ! defined( 'ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS' ) ) {
     define( 'ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS', 'adt_pfp_as_product_feed_update_stats' );
 }
 
+// Define the Action Scheduler hook for deleting phantom product feeds (issue #1189).
+if ( ! defined( 'ADT_PFP_AS_CLEANUP_PHANTOM_FEEDS' ) ) {
+    define( 'ADT_PFP_AS_CLEANUP_PHANTOM_FEEDS', 'adt_pfp_as_cleanup_phantom_feeds' );
+}
+if ( ! defined( 'ADT_PFP_AS_CLEANUP_PHANTOM_FEEDS_GROUP' ) ) {
+    define( 'ADT_PFP_AS_CLEANUP_PHANTOM_FEEDS_GROUP', 'adt_pfp_as_cleanup_phantom_feeds_group' );
+}
+
 // Define the Action Scheduler hook for fetching Google Product Taxonomy.
 if ( ! defined( 'ADT_PFP_AS_FETCH_GOOGLE_PRODUCT_TAXONOMY' ) ) {
     define( 'ADT_PFP_AS_FETCH_GOOGLE_PRODUCT_TAXONOMY', 'adt_pfp_as_fetch_google_product_taxonomy' );
@@ -183,7 +191,6 @@ $app->boot();
 require plugin_dir_path( __FILE__ ) . 'classes/class-get-products.php';
 require plugin_dir_path( __FILE__ ) . 'classes/class-admin-notifications.php';
 require plugin_dir_path( __FILE__ ) . 'classes/class-google-remarketing.php';
-require plugin_dir_path( __FILE__ ) . 'classes/class-caching.php';
 
 // Old bootstrap.
 require plugin_dir_path( __FILE__ ) . '/bootstrap-old.php';

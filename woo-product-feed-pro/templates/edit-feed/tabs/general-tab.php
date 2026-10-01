@@ -3,6 +3,7 @@
 use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Factories\Product_Feed;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_Parquet;
 use AdTribes\PFP\Classes\Product_Feed_Attributes;
 use AdTribes\PFP\Classes\Upsell;
 
@@ -203,9 +204,28 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                         <tr id="file">
                             <td><span><?php esc_html_e( 'File format', 'woo-product-feed-pro' ); ?>:</span></td>
                             <td>
-                                <select name="fileformat" id="fileformat" class="select-field">
+                                <?php
+                                $parquet_supported = Feed_Writer_Parquet::is_supported();
+                                ?>
+                                <select name="fileformat" id="fileformat" class="select-field"
+                                    <?php
+                                    // The notice below is only rendered on an unsupported host, so point at
+                                    // it only then - a dangling aria-describedby target is worse than none.
+                                    if ( ! $parquet_supported ) :
+                                        ?>
+                                        aria-describedby="parquet-unsupported-notice"
+                                    <?php endif; ?>
+                                >
                                     <?php
                                     $format_arr = array( 'xml', 'csv', 'txt', 'tsv', 'jsonl', 'jsonl.gz', 'csv.gz' );
+
+                                    // This is the superset of every format. woosea_channel.js narrows it
+                                    // to what the selected channel accepts, and only the OpenAI channel
+                                    // lists parquet. A host that cannot write parquet never sees it.
+                                    if ( $parquet_supported ) {
+                                        $format_arr[] = 'parquet';
+                                    }
+
                                     foreach ( $format_arr as $format ) :
                                         $selected = '';
                                         if ( $edit_feed ) {
@@ -217,6 +237,11 @@ do_action( 'adt_before_product_feed_manage_page', 0, $project_hash, $feed );
                                         <option value="<?php echo esc_attr( $format ); ?>" <?php echo $selected; ?>><?php echo esc_html( strtoupper( $format ) ); ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php if ( ! $parquet_supported ) : ?>
+                                    <p id="parquet-unsupported-notice" class="description" role="status" aria-live="polite" style="display:none;">
+                                        <?php echo esc_html( Feed_Writer_Parquet::get_unsupported_reason() ); ?>
+                                    </p>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <tr id="delimiter">

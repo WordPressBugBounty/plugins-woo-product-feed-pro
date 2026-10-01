@@ -62,10 +62,14 @@ abstract class Abstract_Update extends Abstract_Class {
     /**
      * Perform the migration for the current blog.
      *
-     * Must be idempotent (see class docblock).
+     * Must be idempotent (see class docblock). Return `false` to report the
+     * migration as failed so it is retried on the next run; any other
+     * return value (including none) counts as success.
      *
      * @since 13.5.6
      * @access public
+     *
+     * @return bool|void False when the migration did not complete.
      */
     abstract public function update();
 
@@ -80,7 +84,13 @@ abstract class Abstract_Update extends Abstract_Class {
             return;
         }
 
-        $this->update();
+        // Only flag the migration done when it actually succeeded. Flagging
+        // unconditionally means a failed schema change (a CREATE TABLE that
+        // dbDelta swallowed, say) is never retried and the feature that
+        // depends on it degrades silently and permanently.
+        if ( false === $this->update() ) {
+            return;
+        }
 
         update_option( static::MIGRATION_FLAG, 'yes', false );
     }

@@ -4,14 +4,20 @@ jQuery(document).ready(function ($) {
   jQuery('#shipping_zone').on('click', function () {
     var variations = $('#shipping_zone').is(':checked') ? 1 : 0;
     if (variations == '1') {
+      var security = $('form.adt-edit-feed-form#general #_wpnonce').val();
       jQuery
         .ajax({
           method: 'POST',
           url: ajaxurl,
-          data: { action: 'woosea_shipping_zones' },
+          data: { action: 'woosea_shipping_zones', security: security },
         })
         .done(function (data) {
-          data = JSON.parse(data);
+          // A refused request answers with { success: false } and no dropdown.
+          if (!data || !data.dropdown) {
+            console.error('Invalid response format:', data);
+            return;
+          }
+
           const selectShippingZoneHtml = [
             '<tr id="select_shipping_zone">',
             '  <td>',
@@ -52,14 +58,37 @@ jQuery(document).ready(function ($) {
       'Fashionchick.nl': ['csv', 'txt'],
       'Bol.com': ['csv', 'txt'],
       'Snapchat Product Catalog': ['csv'],
-      'OpenAI Product Feed': ['jsonl.gz', 'csv.gz', 'tsv.gz'],
+      // Parquet is listed first on purpose. A new feed starts on 'xml', which no
+      // OpenAI format matches, so the restore below is skipped and the select lands
+      // on the first entry - making this order the default format for a new OpenAI
+      // feed. Parquet is the format the OpenAI spec prefers, so keep it first.
+      'OpenAI Product Feed': ['parquet', 'jsonl.gz', 'csv.gz', 'tsv.gz'],
       'Amazon': ['tsv', 'txt', 'csv'],
       'Merkandi': ['xml'],
     };
     const selected_channel = $table.find('#channel_hash option:selected').text();
 
     // If the channel has a specific format, replace the default formats with the specific ones
-    const formats = channel_format[selected_channel] || ['xml', 'csv', 'txt', 'tsv', 'jsonl'];
+    let formats = channel_format[selected_channel] || ['xml', 'csv', 'txt', 'tsv', 'jsonl'];
+
+    // Parquet needs PHP extensions the host may not have. Drop the option rather than
+    // let a merchant pick a format that would write an unreadable file, and show the
+    // reason next to the dropdown so the absence is explained rather than silent.
+    // Default to unsupported when the localized params are missing: a failed
+    // wp_localize_script must not offer a format the host cannot write.
+    const parquet_supported =
+      typeof woosea_channel_params !== 'undefined' &&
+      woosea_channel_params.parquet_supported === '1';
+    const $parquet_notice = $('#parquet-unsupported-notice');
+
+    if (!parquet_supported && formats.includes('parquet')) {
+      formats = formats.filter(function (format) {
+        return format !== 'parquet';
+      });
+      $parquet_notice.show();
+    } else {
+      $parquet_notice.hide();
+    }
 
     // Get the currently selected format before replacing options
     var current_format = $fileformat.val();

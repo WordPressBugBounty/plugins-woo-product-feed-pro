@@ -20,6 +20,9 @@ use AdTribes\PFP\Updates\Version_13_3_5_Update;
 use AdTribes\PFP\Updates\Version_13_4_8_Update;
 use AdTribes\PFP\Updates\Version_13_5_5_Update;
 use AdTribes\PFP\Updates\Version_13_5_6_Update;
+use AdTribes\PFP\Updates\Version_13_6_0_Update;
+use AdTribes\PFP\Updates\Version_13_6_0_Idealo_Feed_Name_Update;
+use AdTribes\PFP\Updates\Version_13_6_0_Phantom_Feed_Cleanup_Update;
 
 /**
  * Activation class.
@@ -107,6 +110,35 @@ class Activation extends Abstract_Class {
          * (issue #985).
          */
         ( new Version_13_5_6_Update() )->run();
+
+        /***************************************************************************
+         * Version 13.6.0 Update
+         ***************************************************************************
+         *
+         * Creates the UCP idempotency-key table (the Idempotency-Key header
+         * replay store for the UCP checkout endpoints).
+         */
+        ( new Version_13_6_0_Update() )->run();
+
+        /***************************************************************************
+         * Version 13.6.0 Idealo Feed Name Update
+         ***************************************************************************
+         *
+         * Renames three misspelled output field names on existing Idealo feeds to
+         * idealo's spec names, so those feeds stop emitting columns idealo does
+         * not recognise, without a manual re-map (issue #1163).
+         */
+        ( new Version_13_6_0_Idealo_Feed_Name_Update() )->run();
+
+        /***************************************************************************
+         * Version 13.6.0 Phantom Feed Cleanup Update
+         ***************************************************************************
+         *
+         * Queues the removal of the empty `adt_product_feed` posts earlier versions
+         * accumulated - up to eleven thousand on one site - which no merchant can
+         * see or use and which slow the feed admin list (issue #1189).
+         */
+        ( new Version_13_6_0_Phantom_Feed_Cleanup_Update() )->run();
 
         // Update current installed plugin version.
         update_site_option( ADT_PFP_OPTION_INSTALLED_VERSION, Helper::get_plugin_version() );

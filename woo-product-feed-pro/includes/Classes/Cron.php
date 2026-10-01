@@ -8,6 +8,7 @@
 namespace AdTribes\PFP\Classes;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_Parquet;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Traits\Singleton_Trait;
@@ -79,6 +80,21 @@ class Cron extends Abstract_Class {
             case 'tsv.gz':
                 $line_count     = $this->count_non_empty_lines( $file, true );
                 $products_count = $line_count > 0 ? $line_count - 1 : 0; // -1 for the header.
+                break;
+            case 'parquet':
+                // Parquet keeps its row counts in the file footer, so this reads the
+                // footer only and never walks the rows.
+                $parquet_rows = Feed_Writer_Parquet::count_rows( $file );
+
+                // The history wants a count, so a negative sentinel needs a substitute.
+                // ROWS_UNKNOWN means the count could not be taken at all - an unloadable
+                // library, or the support filter flipping off - which says nothing about
+                // the file: reporting 0 there would record an empty history entry for a
+                // feed that is fine, so fall back to the run's own product count. A
+                // corrupt file really does hold no readable rows, so that stays 0.
+                $products_count = Feed_Writer_Parquet::ROWS_UNKNOWN === $parquet_rows
+                    ? (int) $feed->products_count
+                    : max( 0, $parquet_rows );
                 break;
         }
 
@@ -184,6 +200,42 @@ class Cron extends Abstract_Class {
      */
 
     /**
+     * Load an existing feed for an Action Scheduler callback.
+     *
+     * `Product_Feed_Helper::get_product_feed()` answers two different questions
+     * with one return value: it hands back a loaded feed for a real ID, `false`
+     * for an ID that no longer resolves, and - for the integer `0` or `null` - a
+     * brand new, unsaved feed object, because that is how the create paths ask
+     * for a blank one. A callback that only tests `if ( ! $feed )` accepts that
+     * blank object, and the first `save()` on it inserts a new `adt_product_feed`
+     * post carrying nothing but the factory defaults. Repeated on a schedule that
+     * is what fills a site with phantom feeds (issue #1189).
+     *
+     * A scheduled action always names an existing feed, so anything that does not
+     * resolve to a saved feed is discarded here. A legacy project hash still
+     * resolves, for a caller that schedules one.
+     *
+     * @since 13.6.0
+     * @access private
+     *
+     * @param mixed $feed_id The feed ID carried by the scheduled action.
+     * @return \AdTribes\PFP\Factories\Product_Feed|false The feed, or false when the ID names no feed.
+     */
+    private function get_existing_feed( $feed_id ) {
+        if ( is_numeric( $feed_id ) ) {
+            $feed_id = absint( $feed_id );
+        }
+
+        if ( empty( $feed_id ) ) {
+            return false;
+        }
+
+        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
+
+        return $feed && $feed->id > 0 ? $feed : false;
+    }
+
+    /**
      * Generate product feed callback.
      *
      * @since 13.3.9
@@ -192,7 +244,7 @@ class Cron extends Abstract_Class {
      * @param int $feed_id The feed ID.
      */
     public function as_generate_product_feed_callback( $feed_id ) {
-        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
+        $feed = $this->get_existing_feed( $feed_id );
         if ( ! $feed ) {
             return;
         }
@@ -230,7 +282,7 @@ class Cron extends Abstract_Class {
             $feed->save();
         }
 
-        Product_Feed_Helper::disable_cache();
+        Product_Feed_Helper::prepare_for_generation();
 
         $feed->generate( 'schedule' );
     }
@@ -247,7 +299,7 @@ class Cron extends Abstract_Class {
      * @param string $run_id     The generation run this batch was queued for.
      */
     public function as_generate_product_feed_batch_callback( $feed_id, $offset = 0, $batch_size = 0, $run_id = '' ) {
-        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
+        $feed = $this->get_existing_feed( $feed_id );
         if ( ! $feed ) {
             return;
         }
@@ -300,7 +352,7 @@ class Cron extends Abstract_Class {
      * @param int $feed_id The Feed ID.
      **/
     public function as_product_feed_update_stats( $feed_id ) {
-        $feed = Product_Feed_Helper::get_product_feed( $feed_id );
+        $feed = $this->get_existing_feed( $feed_id );
         if ( ! $feed ) {
             return;
         }
@@ -312,6 +364,27 @@ class Cron extends Abstract_Class {
 
         $feed->add_history_product( $products_count );
         $feed->save();
+
+        // The only count taken off the finished file, and so the only one that answers
+        // what the feed actually carries. The generation log reports products_count -
+        // the products the run started from, before a single filter or rule ran - so a
+        // merchant reading that log alone cannot tell how much of the catalogue reached
+        // the file. Recorded in the same log, right after the figure is known.
+        if ( 'yes' === get_option( 'adt_enable_logging', 'no' ) ) {
+            $file_info   = array(
+                'feed_id'          => $feed->id,
+                'feed_title'       => $feed->title,
+                'execution_date'   => current_time( 'Y-m-d H:i:s' ),
+                'products_in_feed' => $products_count,
+                'products_count'   => $feed->products_count,
+                'file_format'      => $file_format,
+                'action'           => 'Feed file counted',
+            );
+            $log_message = 'Product Feed File Counted: ' . print_r( $file_info, true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+
+            $logger = new \WC_Logger();
+            $logger->add( 'Product Feed Pro by AdTribes.io', $log_message, 'info' );
+        }
     }
 
 

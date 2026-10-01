@@ -241,7 +241,7 @@ class Abilities extends Abstract_Class {
                         ),
                         'file_format'      => array(
                             'type'        => 'string',
-                            'description' => __( 'File format: xml, csv, txt, tsv, jsonl, jsonl.gz, csv.gz.', 'woo-product-feed-pro' ),
+                            'description' => __( 'File format: xml, csv, txt, tsv, jsonl, jsonl.gz, csv.gz, parquet. parquet needs the bcmath and zlib PHP extensions and is accepted by the OpenAI Product Feed channel only.', 'woo-product-feed-pro' ),
                         ),
                         'refresh_interval' => array(
                             'type'        => 'string',
@@ -542,7 +542,7 @@ class Abilities extends Abstract_Class {
             'adtribes/get-feed-validation',
             array(
                 'label'               => __( 'Validate feed', 'woo-product-feed-pro' ),
-                'description'         => __( "Validates a feed's configuration against its channel's field spec and reports missing required field mappings and configuration issues.", 'woo-product-feed-pro' ),
+                'description'         => __( "Validates a feed's configuration against its channel's field spec and reports missing required field mappings and configuration issues. A conditionally required field is omitted once the field it depends on carries a value, and a field required by only one mapped value is included once that value is set as a static value.", 'woo-product-feed-pro' ),
                 'category'            => self::CATEGORY,
                 'permission_callback' => array( $this, 'can_read' ),
                 'execute_callback'    => array( $this, 'get_feed_validation' ),
@@ -584,7 +584,7 @@ class Abilities extends Abstract_Class {
                         ),
                         'file_format'      => array(
                             'type'        => 'string',
-                            'description' => __( 'File format: xml, csv, txt, tsv, jsonl, jsonl.gz, csv.gz.', 'woo-product-feed-pro' ),
+                            'description' => __( 'File format: xml, csv, txt, tsv, jsonl, jsonl.gz, csv.gz, parquet. parquet needs the bcmath and zlib PHP extensions and is accepted by the OpenAI Product Feed channel only.', 'woo-product-feed-pro' ),
                         ),
                         'refresh_interval' => array(
                             'type'        => 'string',
@@ -1286,7 +1286,7 @@ class Abilities extends Abstract_Class {
             );
         }
 
-        Product_Feed_Helper::disable_cache();
+        Product_Feed_Helper::prepare_for_generation();
 
         try {
             $feed->generate( 'manual' );
@@ -1547,6 +1547,15 @@ class Abilities extends Abstract_Class {
     /**
      * Execute: validate a feed against its channel's field spec.
      *
+     * `required_fields` lists only the fields required for THIS feed, so the list
+     * can change between two calls without the channel spec changing. It moves in
+     * both directions:
+     *
+     * - `required_unless` drops a field out. `g:mpn` stops being required once
+     *   `g:gtin` carries a value.
+     * - `required_when` brings a field in. `g:availability_date` becomes required
+     *   once `g:availability` is mapped to the static value `preorder`.
+     *
      * @since 13.5.6
      * @access public
      *
@@ -1573,25 +1582,47 @@ class Abilities extends Abstract_Class {
             return $spec;
         }
 
-        // Collect the channel's required fields (feed_name + label).
+        /*
+         * Collect the channel's candidate required fields (feed_name + label).
+         *
+         * A field carrying `required_when` is a candidate even while its `format`
+         * is not `required`: the mapping decides. Whether each candidate really
+         * applies to this feed is settled below, once the mapping is indexed.
+         */
         $required_fields = array();
         foreach ( $spec as $group ) {
             if ( ! is_array( $group ) ) {
                 continue;
             }
             foreach ( $group as $label => $field ) {
-                if ( is_array( $field ) && isset( $field['format'], $field['feed_name'] ) && 'required' === $field['format'] ) {
-                    $required_fields[] = array(
-                        'feed_name' => (string) $field['feed_name'],
-                        'label'     => is_string( $label ) ? $label : (string) $field['feed_name'],
-                    );
+                if ( ! is_array( $field ) || ! isset( $field['feed_name'] ) ) {
+                    continue;
                 }
+
+                $is_required   = isset( $field['format'] ) && 'required' === $field['format'];
+                $required_when = isset( $field['required_when'] ) && is_array( $field['required_when'] )
+                    ? $field['required_when']
+                    : array();
+
+                if ( ! $is_required && empty( $required_when ) ) {
+                    continue;
+                }
+
+                $required_fields[] = array(
+                    'feed_name'       => (string) $field['feed_name'],
+                    'label'           => is_string( $label ) ? $label : (string) $field['feed_name'],
+                    'is_required'     => $is_required,
+                    'required_unless' => isset( $field['required_unless'] ) ? (string) $field['required_unless'] : '',
+                    'required_when'   => $required_when,
+                );
             }
         }
 
         // Index the feed's mapped fields by channel field name, noting whether each has a source.
-        $mapped        = (array) $feed->attributes;
-        $mapped_fields = array();
+        $mapped         = (array) $feed->attributes;
+        $mapped_fields  = array();
+        $mapped_values  = array();
+        $mapped_statics = array();
         foreach ( $mapped as $entry ) {
             if ( ! is_array( $entry ) || empty( $entry['attribute'] ) ) {
                 continue;
@@ -1600,7 +1631,44 @@ class Abilities extends Abstract_Class {
                 || ( isset( $entry['value'] ) && '' !== (string) $entry['value'] )
                 || ( isset( $entry['static_value'] ) && 'true' === $entry['static_value'] );
 
+            /*
+             * `$has_source` answers "did the user choose a source", which is what the
+             * warning below reports. A `required_unless` gate needs the stricter
+             * question — "does the row carry a value" — so an empty static value or an
+             * unpicked page/post source does not relax the field it gates. This mirrors
+             * `hasResolvedValue()` in `src/apps/field-mapping-builder/stores/fieldMappingStore.ts`;
+             * keep the two in step. Note the legacy row shape carries no sub-attributes,
+             * so a gate tag must be a plain top-level attribute.
+             */
+            $is_url_source = isset( $entry['mapfrom'] )
+                && in_array( (string) $entry['mapfrom'], array( 'page_url', 'post_url' ), true );
+            $has_value     = $is_url_source
+                ? ( isset( $entry['value'] ) && '' !== (string) $entry['value'] )
+                : ( ! empty( $entry['mapfrom'] ) );
+
+            /*
+             * A `required_when` gate asks a third question — "is this row a static
+             * value, and which one" — because only a static value is knowable in
+             * the editor. The legacy row shape keeps the literal text in `mapfrom`
+             * and flags it with `static_value`, so read both. See
+             * `Feed_Attributes_Migrator::transform_old_attributes_to_new()`.
+             */
+            $is_static = isset( $entry['static_value'] ) && 'true' === $entry['static_value'];
+
             $mapped_fields[ (string) $entry['attribute'] ] = $has_source;
+            $mapped_values[ (string) $entry['attribute'] ] = $has_value;
+
+            /*
+             * First row wins, so a tag mapped twice arms the gate from the same
+             * row the builder reads — `byFeedName` in the store keeps the first
+             * occurrence too. The two rows above are last-wins and predate this;
+             * they are left alone rather than changed under this fix.
+             */
+            if ( ! isset( $mapped_statics[ (string) $entry['attribute'] ] ) ) {
+                $mapped_statics[ (string) $entry['attribute'] ] = $is_static && isset( $entry['mapfrom'] )
+                    ? strtolower( trim( (string) $entry['mapfrom'] ) )
+                    : '';
+            }
         }
 
         $errors   = array();
@@ -1613,7 +1681,44 @@ class Abilities extends Abstract_Class {
             $errors[] = __( 'The feed has no field mappings configured.', 'woo-product-feed-pro' );
         }
 
+        $applicable_required_fields = array();
+
         foreach ( $required_fields as $field ) {
+            /*
+             * A conditionally required field names the output tag that relaxes it
+             * (`g:mpn` names `g:gtin`). Once that tag carries a value, the field is
+             * no longer required and drops out of the report.
+             */
+            if ( '' !== $field['required_unless'] && ! empty( $mapped_values[ $field['required_unless'] ] ) ) {
+                continue;
+            }
+
+            /*
+             * The mirror rule: a field that is required only in one state names the
+             * tag to watch and the static value that arms it (`g:availability_date`
+             * names `g:availability` set to `preorder`). While the gate is unarmed
+             * the field is not required, so a store that never sends `preorder`
+             * gains nothing to fix.
+             *
+             * The gate can only ADD. A field the channel already declares
+             * `required` keeps that, so a spec carrying both keys never has its
+             * unconditional requirement quietly relaxed — which is what the Vue
+             * store does too.
+             */
+            if ( ! empty( $field['required_when'] ) && empty( $field['is_required'] ) ) {
+                $gate_tag    = isset( $field['required_when']['feed_name'] ) ? (string) $field['required_when']['feed_name'] : '';
+                $gate_static = isset( $field['required_when']['static'] ) ? strtolower( (string) $field['required_when']['static'] ) : '';
+
+                if ( '' === $gate_tag || '' === $gate_static ) {
+                    continue;
+                }
+                if ( ! isset( $mapped_statics[ $gate_tag ] ) || $gate_static !== $mapped_statics[ $gate_tag ] ) {
+                    continue;
+                }
+            }
+
+            $applicable_required_fields[] = $field;
+
             if ( ! array_key_exists( $field['feed_name'], $mapped_fields ) ) {
                 $errors[] = sprintf(
                     /* translators: 1: field label, 2: channel field name. */
@@ -1637,7 +1742,7 @@ class Abilities extends Abstract_Class {
             'valid'           => empty( $errors ),
             'errors'          => $errors,
             'warnings'        => $warnings,
-            'required_fields' => wp_list_pluck( $required_fields, 'feed_name' ),
+            'required_fields' => wp_list_pluck( $applicable_required_fields, 'feed_name' ),
             'mapped_fields'   => array_keys( $mapped_fields ),
         );
     }
@@ -2148,13 +2253,16 @@ class Abilities extends Abstract_Class {
     /**
      * Execute: products excluded from a feed.
      *
-     * Returns the derived per-feed excluded count (published total minus the count
+     * Returns the derived per-feed excluded count (feed-eligible total minus the count
      * actually written to the feed file) and the products flagged with the manual
      * per-product exclude toggle. The plugin does not record which filter/rule
      * excluded which product, so per-rule attribution is unavailable; the manual
      * exclude flag also applies globally rather than per feed.
      *
      * @since 13.5.6
+     * @since 13.5.8 Reports the catalogue's variations with an unpublished parent. They
+     *               are left out of the eligible total, so excluded_count cannot show
+     *               them, and this ability answers the question they belong to.
      * @access public
      *
      * @param mixed $input The ability input.
@@ -2172,7 +2280,7 @@ class Abilities extends Abstract_Class {
         // Derived per-feed excluded count: published total (pre-filter) minus the
         // number of products actually written to the generated file.
         $products_count   = (int) $feed->products_count;
-        $products_in_feed = $this->latest_history_count( (array) $feed->history_products );
+        $products_in_feed = $feed->get_latest_products_in_feed()['count'];
         $has_run          = '' !== (string) $feed->last_updated && null !== $products_in_feed;
         $excluded_count   = ( $has_run && $products_count >= $products_in_feed ) ? $products_count - $products_in_feed : null;
 
@@ -2203,12 +2311,16 @@ class Abilities extends Abstract_Class {
         }
 
         return array(
-            'feed_id'                 => (int) $feed->id,
-            'excluded_count'          => $excluded_count,
-            'excluded_count_note'     => __( 'Derived as the published product total minus the count actually written to the feed file; null until the feed has generated at least once.', 'woo-product-feed-pro' ),
-            'manually_excluded'       => $manually_excluded,
-            'manually_excluded_count' => count( $manually_excluded ),
-            'attribution_note'        => __( 'Products flagged with the manual per-product "exclude from feed" toggle. That flag applies to all feeds, not only this one. Rule/filter-based exclusions are not individually tracked, so per-rule attribution is unavailable.', 'woo-product-feed-pro' ),
+            'feed_id'                                      => (int) $feed->id,
+            'excluded_count'                               => $excluded_count,
+            'excluded_count_note'                          => __( 'Derived as the feed-eligible product total minus the count actually written to the feed file; null until the feed has generated at least once. Published variations whose parent product is not published are left out of the eligible total, so they are reported separately below rather than counted here.', 'woo-product-feed-pro' ),
+            'catalogue_variations_with_unpublished_parent' => $feed->include_product_variations
+                ? Product_Feed_Helper::get_total_variations_with_unpublished_parent()
+                : 0,
+            'catalogue_variations_with_unpublished_parent_note' => __( 'Published variations whose parent product is set to draft, pending or private. No feed can carry them, because the row has no published product page behind it. Counted across the whole catalogue, not only this feed, and 0 when the feed does not include variations.', 'woo-product-feed-pro' ),
+            'manually_excluded'                            => $manually_excluded,
+            'manually_excluded_count'                      => count( $manually_excluded ),
+            'attribution_note'                             => __( 'Products flagged with the manual per-product "exclude from feed" toggle. That flag applies to all feeds, not only this one. Rule/filter-based exclusions are not individually tracked, so per-rule attribution is unavailable.', 'woo-product-feed-pro' ),
         );
     }
 
@@ -2216,6 +2328,8 @@ class Abilities extends Abstract_Class {
      * Execute: per-feed statistics.
      *
      * @since 13.5.6
+     * @since 13.5.8 Reports the catalogue's variations with an unpublished parent, which
+     *               products_count no longer carries.
      * @access public
      *
      * @param mixed $input The ability input.
@@ -2231,25 +2345,31 @@ class Abilities extends Abstract_Class {
         $file_exists = '' !== $file_path && file_exists( $file_path );
 
         $products_count   = (int) $feed->products_count;
-        $products_in_feed = $this->latest_history_count( (array) $feed->history_products );
+        $products_in_feed = $feed->get_latest_products_in_feed()['count'];
         $has_run          = '' !== (string) $feed->last_updated && null !== $products_in_feed;
         $excluded_count   = ( $has_run && $products_count >= $products_in_feed ) ? $products_count - $products_in_feed : null;
 
         $channel = $feed->channel;
 
         return array(
-            'feed_id'          => (int) $feed->id,
-            'title'            => (string) $feed->title,
-            'channel'          => is_array( $channel ) && isset( $channel['name'] ) ? (string) $channel['name'] : '',
-            'status'           => (string) $feed->status,
-            'has_error'        => 'error' === (string) $feed->status,
-            'products_count'   => $products_count,
-            'products_in_feed' => $has_run ? (int) $products_in_feed : null,
-            'excluded_count'   => $excluded_count,
-            'file_url'         => (string) $feed->get_file_url(),
-            'file_size'        => $file_exists ? (int) filesize( $file_path ) : 0,
-            'file_exists'      => (bool) $file_exists,
-            'last_updated'     => (string) $feed->last_updated,
+            'feed_id'                                      => (int) $feed->id,
+            'title'                                        => (string) $feed->title,
+            'channel'                                      => is_array( $channel ) && isset( $channel['name'] ) ? (string) $channel['name'] : '',
+            'status'                                       => (string) $feed->status,
+            'has_error'                                    => 'error' === (string) $feed->status,
+            'products_count'                               => $products_count,
+            'products_in_feed'                             => $has_run ? (int) $products_in_feed : null,
+            'excluded_count'                               => $excluded_count,
+            // Catalogue-wide, not this feed's own: the published variations no feed can
+            // reach, because their parent product is not published. They are left out of
+            // products_count, so excluded_count cannot report them.
+            'catalogue_variations_with_unpublished_parent' => $feed->include_product_variations
+                ? Product_Feed_Helper::get_total_variations_with_unpublished_parent()
+                : 0,
+            'file_url'                                     => (string) $feed->get_file_url(),
+            'file_size'                                    => $file_exists ? (int) filesize( $file_path ) : 0,
+            'file_exists'                                  => (bool) $file_exists,
+            'last_updated'                                 => (string) $feed->last_updated,
         );
     }
 
@@ -2621,32 +2741,6 @@ class Abilities extends Abstract_Class {
         }
 
         return $props;
-    }
-
-    /**
-     * Get the most recent product count from a feed's history_products.
-     *
-     * Newer versions store each entry as array( 'Y-m-d' => count ); older versions
-     * store a bare count. Returns null when there is no history.
-     *
-     * @since 13.5.6
-     * @access private
-     *
-     * @param array $history_products The feed's history_products array.
-     * @return int|null The latest product count, or null when there is no history.
-     */
-    private function latest_history_count( $history_products ) {
-        if ( empty( $history_products ) ) {
-            return null;
-        }
-
-        $latest = end( $history_products );
-        if ( is_array( $latest ) ) {
-            $value = reset( $latest );
-            return null === $value ? null : (int) $value;
-        }
-
-        return (int) $latest;
     }
 
     /**

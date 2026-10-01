@@ -17,6 +17,8 @@ use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
 use AdTribes\PFP\Classes\Admin_Pages\Manage_Feeds_Page;
 use AdTribes\PFP\Classes\Rules;
 use AdTribes\PFP\Classes\Filters;
+use AdTribes\PFP\Classes\Feed_Attributes_Migrator;
+use AdTribes\PFP\Classes\Repeatable_Attributes;
 use AdTribes\PFP\Classes\Upsell;
 use AdTribes\PFP\Factories\Admin_Notice;
 
@@ -95,11 +97,72 @@ class Edit_Feed_Page extends Admin_Page {
                     'pfp-google-taxonomy-js',
                     'pfp_google_taxonomy',
                     array(
-                        'file_name' => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME,
-                        'file_path' => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_FILE_PATH,
-                        'file_url'  => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_FILE_URL,
+                        'file_name'   => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_FILE_NAME,
+                        'file_path'   => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_FILE_PATH,
+                        'file_url'    => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_FILE_URL,
+                        // The script reads the file URL first and falls back to
+                        // this endpoint, because some hosts block direct
+                        // requests to .txt files below /uploads/.
+                        'ajax_url'    => admin_url( 'admin-ajax.php' ),
+                        'ajax_action' => $google_taxonomy_fetcher::GOOGLE_PRODUCT_TAXONOMY_AJAX_ACTION,
+                        'nonce'       => wp_create_nonce( 'adt_nonce' ),
+                        'error'       => __( 'The Google product categories could not be loaded. Reload the page to try again.', 'woo-product-feed-pro' ),
                     )
                 );
+                break;
+            case 'field_mapping':
+                $channel_hash = '';
+                if ( $feed_id > 0 ) {
+                    $feed_object  = Product_Feed_Helper::get_product_feed( $feed_id );
+                    $channel_hash = $feed_object ? (string) $feed_object->channel_hash : '';
+                } else {
+                    $temp_feed_data = get_option( ADT_OPTION_TEMP_PRODUCT_FEED, array() );
+                    $channel_hash   = is_array( $temp_feed_data ) && isset( $temp_feed_data['channel_hash'] ) ? (string) $temp_feed_data['channel_hash'] : '';
+                }
+
+                $channel_name = '';
+                if ( '' !== $channel_hash ) {
+                    $channel      = Product_Feed_Helper::get_channel_from_legacy_channel_hash( $channel_hash );
+                    $channel_name = is_array( $channel ) && isset( $channel['name'] ) ? (string) $channel['name'] : '';
+                }
+
+                /*
+                 * The page/post pickers deliberately ship NO list. The legacy tab
+                 * rendered every published page and post into every row, and an
+                 * earlier version of this app inlined both lists once per page load.
+                 * Measured on a store with 10,000 posts that was 399 KB of inline
+                 * JSON and ~290 ms of server time on every load, for pickers most
+                 * users never open. The app searches `wp/v2/pages` and `wp/v2/posts`
+                 * on demand instead.
+                 */
+
+                /**
+                 * Filter the currency used to resolve `{{CURRENCY}}` placeholders
+                 * when the field mapping pre-populates the required channel rows.
+                 *
+                 * @since 13.4.4
+                 *
+                 * @param string $currency The store currency code.
+                 */
+                $store_currency = apply_filters( 'adt_product_feed_currency', get_woocommerce_currency() );
+
+                $l10n = array(
+                    'restUrl'       => get_rest_url(),
+                    'wpNonce'       => wp_create_nonce( 'wp_rest' ),
+                    'isEliteActive' => Helper::has_paid_plugin_active(),
+                    'storeCurrency' => $store_currency,
+                    'channelName'   => $channel_name,
+                );
+
+                $vite_app = new Vite_App(
+                    'adt-field-mapping-builder-script',
+                    'src/apps/field-mapping-builder/index.ts',
+                    array( 'jquery', 'wp-i18n' ),
+                    $l10n,
+                    'adtObj',
+                    array()
+                );
+                $vite_app->enqueue();
                 break;
             case 'filters':
             case 'rules':
@@ -211,6 +274,41 @@ class Edit_Feed_Page extends Admin_Page {
     }
 
     /**
+     * Get the tab that follows the given tab in the new feed wizard.
+     *
+     * Single source of truth for the wizard order. `process_form_submission()`
+     * redirects along it after a new feed save, and the Field Mapping template
+     * names the same tab in its footer hint, so the hint cannot promise a step
+     * the Save button does not go to.
+     *
+     * @since 13.5.8
+     * @param array|Product_Feed|null $feed       Product_Feed object or array of temporary feed data.
+     * @param string                  $active_tab The current tab key.
+     * @return string The next tab key, or an empty string when the current tab is the last one.
+     */
+    public function get_next_tab( $feed, $active_tab ) {
+        $tabs = array_keys( $this->get_tabs( $feed ) );
+
+        // Find the current tab's position and determine the next tab.
+        $current_tab_position = array_search( $active_tab, $tabs, true );
+        $next_tab             = ( false !== $current_tab_position && isset( $tabs[ $current_tab_position + 1 ] ) )
+            ? $tabs[ $current_tab_position + 1 ]
+            : ''; // Empty indicates we're at the last tab.
+
+        // Check if channel has taxonomy (only for field_mapping tab).
+        if ( 'field_mapping' === $active_tab && is_array( $feed ) && isset( $feed['channel_hash'] ) ) {
+            $channel = Product_Feed_Helper::get_channel_from_legacy_channel_hash( $feed['channel_hash'] );
+            if ( isset( $channel['taxonomy'] ) && 'none' === $channel['taxonomy'] ) {
+                // Skip to filters_rules if no taxonomy by finding its position.
+                $filters_position = array_search( 'filters_rules', $tabs, true );
+                $next_tab         = false !== $filters_position ? 'filters_rules' : $next_tab;
+            }
+        }
+
+        return $next_tab;
+    }
+
+    /**
      * Get the tab URL.
      *
      * @since 13.4.4
@@ -276,6 +374,7 @@ class Edit_Feed_Page extends Admin_Page {
      * Update project configuration.
      *
      * @since 13.3.6
+     * @since 13.5.8 Added the feed_attributes and feed_mappings decode/clean passes and the channel-switch reset.
      * @access private
      *
      * @param array $form_data The form data.
@@ -284,6 +383,23 @@ class Edit_Feed_Page extends Admin_Page {
      * @return array
      */
     public function update_temp_product_feed( $form_data, $clear = false ) {
+        /*
+         * Hold the field mapping JSON back from the sanitizer walk below.
+         * `Sanitization::sanitize_text_field()` runs there with no options, so it
+         * deletes every `%xx` sequence and strips HTML - inside the JSON string,
+         * before anything decodes it. The payload stays valid JSON, so a prefix or
+         * suffix like `?utm_source=a%20b` would save silently corrupted.
+         * `clean_feed_attributes_data()` sanitizes it properly further down, with
+         * `allow_html` and `preserve_percent_encoded`.
+         */
+        $raw_feed_attributes = isset( $form_data['feed_attributes'] ) ? $form_data['feed_attributes'] : null;
+        unset( $form_data['feed_attributes'] );
+
+        // Hold the category mapping JSON back from the same sanitizer walk, for the
+        // same reason. It is decoded and sanitized further down.
+        $raw_feed_mappings = isset( $form_data['feed_mappings'] ) && is_string( $form_data['feed_mappings'] ) ? $form_data['feed_mappings'] : '';
+        unset( $form_data['feed_mappings'] );
+
         // Sanitize the form data.
         $form_data = Helper::array_walk_recursive_with_callback( $form_data, array( Sanitization::class, 'sanitize_text_field' ) );
 
@@ -308,7 +424,34 @@ class Edit_Feed_Page extends Admin_Page {
             }
         }
 
-        $project_temp     = get_option( ADT_OPTION_TEMP_PRODUCT_FEED, array() );
+        $project_temp = get_option( ADT_OPTION_TEMP_PRODUCT_FEED, array() );
+
+        // Clean the field mapping data if the Vue tab submitted it. A payload that
+        // does not decode is dropped, so the stored temp value survives.
+        if ( null !== $raw_feed_attributes ) {
+            $decoded_attributes = $this->decode_json_data( $raw_feed_attributes, true );
+
+            if ( null !== $decoded_attributes ) {
+                // The channel decides which attributes may repeat. The submitted value
+                // wins, because a channel switch is submitted in the same request.
+                $channel_hash = isset( $form_data['channel_hash'] ) ? (string) $form_data['channel_hash'] : '';
+                if ( '' === $channel_hash && isset( $project_temp['channel_hash'] ) ) {
+                    $channel_hash = (string) $project_temp['channel_hash'];
+                }
+
+                $form_data['feed_attributes'] = $this->clean_feed_attributes_data( $decoded_attributes, $channel_hash );
+            }
+        }
+
+        // Clean the category mapping data if the tab submitted it. An absent field
+        // leaves the legacy `mappings` arrays to reach the temp feed, and a payload
+        // that does not decode is dropped, so the stored temp value survives.
+        $decoded_mappings = $this->decode_feed_mappings( $raw_feed_mappings );
+
+        if ( null !== $decoded_mappings ) {
+            $form_data['mappings'] = $decoded_mappings;
+        }
+
         $new_project_hash = empty( $form_data['project_hash'] ) ? Product_Feed_Helper::generate_legacy_project_hash() : '';
 
         // If the project hash is empty, then we need to generate a new one.
@@ -317,7 +460,8 @@ class Edit_Feed_Page extends Admin_Page {
         }
 
         if ( isset( $project_temp['channel_hash'] ) && isset( $form_data['channel_hash'] ) && $project_temp['channel_hash'] !== $form_data['channel_hash'] ) {
-            $form_data['attributes'] = array();
+            $form_data['attributes']      = array();
+            $form_data['feed_attributes'] = array();
         }
 
         // Merge the form data with the project temp values.
@@ -338,28 +482,90 @@ class Edit_Feed_Page extends Admin_Page {
     /**
      * Decode JSON data and sanitize it.
      *
+     * In the default mode an unusable payload returns an empty array, which cannot
+     * be told apart from a payload that really is empty. Pass `$strict` to get
+     * `null` for an unusable payload instead. The field mapping needs that: an empty
+     * mapping makes the feed output nothing, so a payload that fails to decode must
+     * leave the saved mapping alone rather than replace it.
+     *
      * @since 13.4.4
+     * @since 13.5.8 Added the `$strict` mode.
      * @param string|array $json_data The JSON data to decode.
-     * @return array The decoded data.
+     * @param bool         $strict    Optional. Return null instead of an empty array when the payload is unusable.
+     * @return array|null The decoded data. Null only in strict mode.
      */
-    private function decode_json_data( $json_data ) {
+    private function decode_json_data( $json_data, $strict = false ) {
+        $fallback = $strict ? null : array();
+
         // Handle JSON string input.
         if ( is_string( $json_data ) ) {
             $json_data = wp_unslash( $json_data );
 
             if ( empty( $json_data ) ) {
-                return array();
+                return $fallback;
             }
 
             $decoded_data = json_decode( $json_data, true );
             if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded_data ) ) {
                 return $decoded_data;
             } else {
-                return array();
+                return $fallback;
             }
         }
 
-        return array();
+        return $fallback;
+    }
+
+    /**
+     * Decode the category mapping tab's `feed_mappings` JSON payload.
+     *
+     * The payload is a list of `{ id, data }` rows, not an object keyed by term ID,
+     * because the row order decides the outcome of a save. A product that sits in two
+     * mapped categories matches twice in `Get_Products::woocommerce_sea_mappings()`,
+     * which keeps the last match, so the stored order picks the winner - a mapped
+     * child category overrides its mapped parent only because the child row comes
+     * later. `JSON.stringify` emits integer-like object keys in ascending numeric
+     * order, so an object payload would silently reorder a saved mapping and change
+     * what the feed reports for those products. A list keeps the page order.
+     *
+     * @since 13.5.8
+     * @param mixed $raw The raw `feed_mappings` POST value.
+     * @return array|null The sanitized mappings, keyed by term ID, in submitted order.
+     *                    Null when the field is absent or the payload is unusable.
+     */
+    private function decode_feed_mappings( $raw ) {
+        /*
+         * An empty field counts as absent. The markup ships the field with an empty
+         * value and the script fills it on submit, so a browser that never runs the
+         * script posts it empty next to the legacy arrays.
+         */
+        if ( ! is_string( $raw ) || '' === trim( $raw ) ) {
+            return null;
+        }
+
+        $rows = $this->decode_json_data( $raw, true );
+
+        if ( null === $rows ) {
+            return null;
+        }
+
+        $mappings = array();
+
+        foreach ( $rows as $row ) {
+            if ( ! is_array( $row ) || ! isset( $row['id'], $row['data'] ) || ! is_array( $row['data'] ) ) {
+                continue;
+            }
+
+            $term_id = absint( $row['id'] );
+
+            if ( 0 === $term_id ) {
+                continue;
+            }
+
+            $mappings[ $term_id ] = Sanitization::sanitize_array( $row['data'] );
+        }
+
+        return $mappings;
     }
 
     /**
@@ -805,6 +1011,143 @@ class Edit_Feed_Page extends Admin_Page {
     }
 
     /**
+     * Clean feed attributes data to remove invalid keys and sanitize all input.
+     *
+     * Mirrors clean_filters_data(): sanitize the whole structure first, then keep
+     * only the keys the `feed_attributes` schema defines. Unknown keys are dropped,
+     * and a row with an unknown `source` is discarded rather than repaired.
+     *
+     * A row with an empty `feed_name` is dropped, because it produces no output. The
+     * migrator keeps such a row so its reverse transform reproduces the legacy array
+     * exactly, so a blank legacy row does disappear on the first new-format save.
+     *
+     * An UNTAGGED sub-attribute row is kept only on an attribute the channel declares
+     * repeatable (#1133). On every other attribute it is stripped, as it was before
+     * repeats existed: `Sub_Attribute_Resolver` reads such a group as a nested parent
+     * that resolves to nothing, and would overwrite the attribute's own mapped value
+     * with an empty group, dropping it from the feed. Without a channel hash nothing
+     * is declared repeatable, so the guard falls back to the stricter behaviour.
+     *
+     * @since 13.5.8
+     * @param array  $feed_attributes_data The feed attributes data to clean.
+     * @param string $channel_hash         Optional. The feed's channel hash. It decides which
+     *                                     attributes may carry an untagged (repeat) sub-attribute row.
+     * @return array The cleaned feed attributes data.
+     */
+    private function clean_feed_attributes_data( $feed_attributes_data, $channel_hash = '' ) {
+        if ( ! is_array( $feed_attributes_data ) ) {
+            return array();
+        }
+
+        // preserve_percent_encoded keeps URL-encoded prefixes and suffixes intact.
+        $feed_attributes_data = Sanitization::sanitize_array(
+            $feed_attributes_data,
+            array(
+                'allow_html'               => true,
+                'preserve_percent_encoded' => true,
+            )
+        );
+
+        // The schema owns the enums, so the validator and the producer cannot drift.
+        $valid_sources     = Feed_Attributes_Migrator::SOURCES;
+        $valid_sub_sources = Feed_Attributes_Migrator::SUB_SOURCES;
+
+        // The channel declares which attributes repeat, so it also decides which ones
+        // may carry an untagged sub-attribute row.
+        $repeat_limits = Repeatable_Attributes::get_limits( (string) $channel_hash );
+
+        $cleaned_data = array();
+
+        foreach ( $feed_attributes_data as $key => $attribute ) {
+            // Only accept list rows. A string key means a malformed payload.
+            if ( ! is_numeric( $key ) || ! is_array( $attribute ) ) {
+                continue;
+            }
+
+            $source = isset( $attribute['source'] ) ? (string) $attribute['source'] : '';
+            if ( ! in_array( $source, $valid_sources, true ) ) {
+                continue;
+            }
+
+            $cleaned_attribute = array(
+                'feed_name'    => isset( $attribute['feed_name'] ) ? (string) $attribute['feed_name'] : '',
+                'source'       => $source,
+                'source_value' => isset( $attribute['source_value'] ) ? (string) $attribute['source_value'] : '',
+                'prefix'       => isset( $attribute['prefix'] ) ? (string) $attribute['prefix'] : '',
+                'suffix'       => isset( $attribute['suffix'] ) ? (string) $attribute['suffix'] : '',
+                'is_custom'    => ! empty( $attribute['is_custom'] ) && 'false' !== $attribute['is_custom'],
+            );
+
+            // A row with no output tag produces nothing, so drop it.
+            if ( '' === $cleaned_attribute['feed_name'] ) {
+                continue;
+            }
+
+            if ( isset( $attribute['zones_auto'] ) ) {
+                $cleaned_attribute['zones_auto'] = ! empty( $attribute['zones_auto'] ) && 'false' !== $attribute['zones_auto'];
+            }
+
+            if ( isset( $attribute['sub_attributes'] ) && is_array( $attribute['sub_attributes'] ) ) {
+                $cleaned_groups = array();
+                $is_repeatable  = isset( $repeat_limits[ $cleaned_attribute['feed_name'] ] );
+
+                foreach ( $attribute['sub_attributes'] as $group ) {
+                    if ( ! is_array( $group ) ) {
+                        continue;
+                    }
+
+                    $cleaned_group = array();
+
+                    foreach ( $group as $sub_attribute ) {
+                        if ( ! is_array( $sub_attribute ) ) {
+                            continue;
+                        }
+
+                        $tag        = isset( $sub_attribute['tag'] ) ? (string) $sub_attribute['tag'] : '';
+                        $sub_source = isset( $sub_attribute['source'] ) ? (string) $sub_attribute['source'] : '';
+
+                        /*
+                         * An EMPTY tag is meaningful on a REPEATABLE attribute: it marks
+                         * a scalar repeat (#1133), whose value belongs to the parent
+                         * element itself rather than to a named child.
+                         * `Repeatable_Attributes` reads an untagged row as a repeat, and
+                         * `Feed_Writer_XML::write_nested()` skips one that reaches a
+                         * genuinely nested group, so neither path can emit a bare tag.
+                         *
+                         * On any other attribute an untagged row is a half-configured
+                         * nested child and is stripped, as it was before repeats existed.
+                         * Keeping it would leave a group that `Sub_Attribute_Resolver`
+                         * resolves to nothing and then writes over the attribute's own
+                         * mapped value, deleting that value from the feed.
+                         */
+                        if ( ( '' === $tag && ! $is_repeatable ) || ! in_array( $sub_source, $valid_sub_sources, true ) ) {
+                            continue;
+                        }
+
+                        $cleaned_group[] = array(
+                            'tag'          => $tag,
+                            'source'       => $sub_source,
+                            'source_value' => isset( $sub_attribute['source_value'] ) ? (string) $sub_attribute['source_value'] : '',
+                            'prefix'       => isset( $sub_attribute['prefix'] ) ? (string) $sub_attribute['prefix'] : '',
+                            'suffix'       => isset( $sub_attribute['suffix'] ) ? (string) $sub_attribute['suffix'] : '',
+                        );
+                    }
+
+                    if ( ! empty( $cleaned_group ) ) {
+                        $cleaned_groups[] = $cleaned_group;
+                    }
+                }
+
+                $cleaned_attribute['sub_attributes'] = $cleaned_groups;
+            }
+
+            $cleaned_data[] = $cleaned_attribute;
+        }
+
+        return $cleaned_data;
+    }
+
+    /**
      * Change default footer text, asking to review our plugin.
      *
      * @param string $default_text Default footer text.
@@ -888,24 +1231,8 @@ class Edit_Feed_Page extends Admin_Page {
             }
         } else {
             // New feed - process temp data.
-            $feed = $this->update_temp_product_feed( $_POST ?? array() ); // phpcs:ignore WordPress.Security.NonceVerification
-            $tabs = array_keys( $this->get_tabs( $feed ) );
-
-            // Find the current tab's position and determine the next tab.
-            $current_tab_position = array_search( $active_tab, $tabs, true );
-            $next_tab             = ( false !== $current_tab_position && isset( $tabs[ $current_tab_position + 1 ] ) )
-                ? $tabs[ $current_tab_position + 1 ]
-                : ''; // Empty indicates we're at the last tab.
-
-            // Check if channel has taxonomy (only for field_mapping tab).
-            if ( 'field_mapping' === $active_tab && isset( $feed['channel_hash'] ) ) {
-                $channel = Product_Feed_Helper::get_channel_from_legacy_channel_hash( $feed['channel_hash'] );
-                if ( isset( $channel['taxonomy'] ) && 'none' === $channel['taxonomy'] ) {
-                    // Skip to filters_rules if no taxonomy by finding its position.
-                    $filters_position = array_search( 'filters_rules', $tabs, true );
-                    $next_tab         = false !== $filters_position ? 'filters_rules' : $next_tab;
-                }
-            }
+            $feed     = $this->update_temp_product_feed( $_POST ?? array() ); // phpcs:ignore WordPress.Security.NonceVerification
+            $next_tab = $this->get_next_tab( $feed, $active_tab );
 
             if ( '' !== $next_tab ) {
                 wp_safe_redirect(
@@ -1047,27 +1374,71 @@ class Edit_Feed_Page extends Admin_Page {
     /**
      * Process field mapping tab form submission.
      *
+     * The Vue tab submits one hidden `feed_attributes` JSON field, the same way the
+     * filters and rules tabs do. The legacy `attributes[i][...]` POST arrays stay
+     * supported as a fallback, so an admin page that was cached before the upgrade
+     * still saves.
+     *
+     * The fallback keeps an **unmigrated** feed on the legacy path: it writes the
+     * legacy key and stamps no version. On a feed that is already migrated it
+     * converts the legacy rows instead, because the `attributes` accessor no longer
+     * serves that key, and because the `adt_attributes` meta of a migrated feed is
+     * frozen. Writing the legacy key there would accept the save, report success,
+     * and change nothing the feed generates.
+     *
      * @since 13.4.4
+     * @since 13.5.8 Added the hidden `feed_attributes` JSON path and the version stamp.
      * @param object $feed The feed object.
      * @return void
      */
     private function process_field_mapping_tab_form( $feed ) {
         // phpcs:disable WordPress.Security.NonceVerification
 
-        // Process field mapping data.
-        $attributes = isset( $_POST['attributes'] ) ? Sanitization::sanitize_array( $_POST['attributes'] ) : array(); // phpcs:ignore
+        $has_new_field      = isset( $_POST['feed_attributes'] ); // phpcs:ignore
+        $decoded_attributes = $has_new_field ? $this->decode_json_data( $_POST['feed_attributes'], true ) : null; // phpcs:ignore
 
-        // Clean up attributes: remove static_value flag if it's not actually a static value.
-        foreach ( $attributes as $key => $attribute ) {
-            // If static_value flag is not 'true', remove it from the attribute.
-            if ( isset( $attribute['static_value'] ) && 'true' !== $attribute['static_value'] ) {
-                unset( $attributes[ $key ]['static_value'] );
-            }
+        /*
+         * The new tab submitted a payload that does not decode. Do not fall through
+         * to the legacy branch: that branch would read an absent `attributes` POST as
+         * "no rows" and replace a working mapping with nothing. Leave the feed alone.
+         */
+        if ( $has_new_field && null === $decoded_attributes ) {
+            return;
         }
 
-        $props_to_update = array(
-            'attributes' => $attributes,
-        );
+        $is_new_format = null !== $decoded_attributes;
+
+        if ( $is_new_format ) {
+            $props_to_update = array(
+                'feed_attributes' => $this->clean_feed_attributes_data( $decoded_attributes, (string) $feed->channel_hash ),
+            );
+        } else {
+            // Process field mapping data.
+            $attributes = isset( $_POST['attributes'] ) ? Sanitization::sanitize_array( $_POST['attributes'] ) : array(); // phpcs:ignore
+
+            // Clean up attributes: remove static_value flag if it's not actually a static value.
+            foreach ( $attributes as $key => $attribute ) {
+                // If static_value flag is not 'true', remove it from the attribute.
+                if ( isset( $attribute['static_value'] ) && 'true' !== $attribute['static_value'] ) {
+                    unset( $attributes[ $key ]['static_value'] );
+                }
+            }
+
+            $data_version = is_array( $feed->data_version ) ? $feed->data_version : array();
+
+            if ( empty( $data_version['feed_attributes'] ) ) {
+                $props_to_update = array(
+                    'attributes' => $attributes,
+                );
+            } else {
+                $props_to_update = array(
+                    'feed_attributes' => Feed_Attributes_Migrator::transform_old_attributes_to_new(
+                        $attributes,
+                        (string) $feed->channel_hash
+                    ),
+                );
+            }
+        }
 
         /**
          * Filter the product feed properties to update for the field mapping tab.
@@ -1080,6 +1451,11 @@ class Edit_Feed_Page extends Admin_Page {
 
         // Update feed properties.
         $feed->set_props( $props_to_update );
+
+        if ( $is_new_format ) {
+            $feed->set_data_version( 'feed_attributes', Feed_Attributes_Migrator::VERSION );
+        }
+
         $feed->save();
 
         /**
@@ -1096,15 +1472,45 @@ class Edit_Feed_Page extends Admin_Page {
     /**
      * Process category mapping tab form submission.
      *
+     * The tab submits one hidden `feed_mappings` JSON field, the same way the field
+     * mapping, filters and rules tabs do. `decode_feed_mappings()` reads it. The
+     * legacy `mappings[<term_id>][...]` POST arrays stay supported as a fallback, so
+     * an admin page that was cached before the upgrade still saves.
+     *
+     * The JSON field exists because the legacy arrays cost four POST fields per
+     * product category. A store with 250 categories submits 1000 fields, which is
+     * PHP's default `max_input_vars`. Past that limit PHP drops the remaining fields
+     * before the plugin sees them, so the mappings below the cutoff saved and the
+     * rest silently reverted to empty. One JSON field costs one POST field whatever
+     * the category count.
+     *
      * @since 13.4.4
+     * @since 13.5.8 Added the hidden `feed_mappings` JSON path.
      * @param object $feed The feed object.
      * @return void
      */
     private function process_category_mapping_tab_form( $feed ) {
         // phpcs:disable WordPress.Security.NonceVerification
 
+        $raw_mappings     = isset( $_POST['feed_mappings'] ) ? $_POST['feed_mappings'] : ''; // phpcs:ignore
+        $has_json_field   = is_string( $raw_mappings ) && '' !== trim( $raw_mappings );
+        $decoded_mappings = $this->decode_feed_mappings( $raw_mappings );
+
+        /*
+         * The tab submitted a payload that does not decode. Do not fall through to
+         * the legacy branch: that branch would read the absent `mappings` POST as
+         * "no rows" and replace a working mapping with nothing. Leave the feed alone.
+         */
+        if ( $has_json_field && null === $decoded_mappings ) {
+            return;
+        }
+
         // Process category mapping data.
-        $mappings = isset( $_POST['mappings'] ) ? Sanitization::sanitize_array( $_POST['mappings'] ) : array(); // phpcs:ignore
+        if ( null !== $decoded_mappings ) {
+            $mappings = $decoded_mappings;
+        } else {
+            $mappings = isset( $_POST['mappings'] ) ? Sanitization::sanitize_array( $_POST['mappings'] ) : array(); // phpcs:ignore
+        }
 
         $props_to_update = array(
             'mappings' => $mappings,
@@ -1369,6 +1775,7 @@ class Edit_Feed_Page extends Admin_Page {
                     'create_preview'                    => isset( $feed_data['preview_feed'] ) && 'on' === $feed_data['preview_feed'] ? 'yes' : 'no',
                     'refresh_only_when_product_changed' => isset( $feed_data['products_changed'] ) && 'on' === $feed_data['products_changed'] ? 'yes' : 'no',
                     'attributes'                        => $feed_data['attributes'] ?? array(),
+                    'feed_attributes'                   => $feed_data['feed_attributes'] ?? array(),
                     'mappings'                          => $feed_data['mappings'] ?? array(),
                     'filters'                           => $feed_data['rules'] ?? array(),
                     'feed_filters'                      => $feed_data['feed_filters'] ?? array(),
@@ -1397,6 +1804,18 @@ class Edit_Feed_Page extends Admin_Page {
         if ( ! get_option( 'adt_use_legacy_filters_and_rules', 'no' ) || 'no' === get_option( 'adt_use_legacy_filters_and_rules', 'no' ) ) {
             $product_feed->set_data_version( 'feed_filters', '13.4.6' );
             $product_feed->set_data_version( 'feed_rules', '13.4.6' );
+        }
+
+        /**
+         * Stamp the field mapping data version only when the new format carries data.
+         *
+         * The stamp puts the feed on the `feed_attributes` path for good. A new feed
+         * that came through the legacy field mapping tab has no `feed_attributes`
+         * value, and stamping it would make the compat accessor serve an empty
+         * mapping instead of the legacy rows the user just configured.
+         */
+        if ( ! empty( $feed_data['feed_attributes'] ) && is_array( $feed_data['feed_attributes'] ) ) {
+            $product_feed->set_data_version( 'feed_attributes', Feed_Attributes_Migrator::VERSION );
         }
 
         /**
@@ -1473,9 +1892,32 @@ class Edit_Feed_Page extends Admin_Page {
             $errors[] = __( 'Channel field is required.', 'woo-product-feed-pro' );
         }
 
-        // Check if there are any attributes set in the field mapping tab.
-        if ( empty( $temp_feed_data['attributes'] ) || ! is_array( $temp_feed_data['attributes'] ) ) {
-            $errors[] = __( 'Field mapping is empty or you haven\'t saved the field mapping. Go to the Field Mapping tab and save the field mapping.', 'woo-product-feed-pro' );
+        /*
+         * Check if there are any attributes set in the field mapping tab.
+         *
+         * The tab is the Vue builder, which stores its rows under `feed_attributes`.
+         * A draft saved through the legacy tab still holds `attributes` instead, so
+         * accept either key: a check on `attributes` alone rejects every feed that
+         * came through the current tab.
+         */
+        $has_new_attributes    = ! empty( $temp_feed_data['feed_attributes'] ) && is_array( $temp_feed_data['feed_attributes'] );
+        $has_legacy_attributes = ! empty( $temp_feed_data['attributes'] ) && is_array( $temp_feed_data['attributes'] );
+
+        if ( ! $has_new_attributes && ! $has_legacy_attributes ) {
+            // The message names the tab the user has to go to, so it links there.
+            // The browser prints the errors of this response as markup, so the
+            // anchor is composed here with placeholders and the text stays free
+            // of markup for the translators.
+            $errors[] = sprintf(
+                /* translators: %1$s: opening anchor tag of the link to the Field Mapping tab, %2$s: closing anchor tag. */
+                __( 'Field mapping is empty or you haven\'t saved the field mapping. Go to the %1$sField Mapping tab%2$s and save the field mapping.', 'woo-product-feed-pro' ),
+                // This check only runs while a user creates a feed, so there is no
+                // feed id to keep. If it is ever used for a saved feed, give the id
+                // to the link: get_tab_url() reads it from $_GET, which an
+                // admin-ajax POST does not carry.
+                '<a href="' . self::get_tab_url( 'field_mapping' ) . '">',
+                '</a>'
+            );
         }
 
         // If we have errors, send them back.

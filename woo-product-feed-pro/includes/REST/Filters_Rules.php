@@ -366,6 +366,8 @@ class Filters_Rules extends Abstract_REST {
      * Migrate filters from old format to new format.
      *
      * @since 13.4.6
+     * @since 13.5.8 Checks the result, so a feed marked as migrated but holding an
+     *               unreadable structure is logged and reported to the merchant.
      * @access private
      *
      * @param Product_Feed $feed The feed object.
@@ -375,11 +377,14 @@ class Filters_Rules extends Abstract_REST {
         $migrated     = false;
         $data_version = $feed->data_version;
         if ( ! empty( $data_version['feed_filters'] ) && version_compare( $data_version['feed_filters'], '13.4.6', '>=' ) ) {
+            $this->filters->check_filters_structure( $feed );
             return false;
         }
 
         $data_version['feed_filters'] = '13.4.6';
         $feed->data_version           = $data_version;
+
+        $issues = array();
 
         // Check if old format exists and has data.
         $old_filters = $feed->filters ?? array();
@@ -390,12 +395,22 @@ class Filters_Rules extends Abstract_REST {
             // Migrate the data.
             $migrated_filters = $this->transform_old_filters_to_new( $old_filters );
 
+            // The feed is about to be marked as migrated. If no legacy rule survived
+            // the transform, say so, or the merchant sees a feed on the current
+            // schema with no filter and no explanation. See #1140.
+            if ( empty( $migrated_filters['include'] ) && empty( $migrated_filters['exclude'] ) ) {
+                $issues[] = 'The filters saved by an earlier version could not be migrated and are no longer applied.';
+            }
+
             // Update the feed object for current request.
             $feed->feed_filters = $migrated_filters;
             $migrated           = true;
         }
 
         $feed->save();
+
+        $this->filters->check_filters_structure( $feed, $issues );
+
         return $migrated;
     }
 

@@ -23,6 +23,30 @@ class Filters extends Abstract_Filters_Rules {
     use Filters_Rules_Trait;
 
     /**
+     * Option that records feeds whose saved filters could not be read.
+     *
+     * Keyed by feed ID, each entry holds the feed title, which the admin notice
+     * names, and the list of problems found, which tells a later run that these
+     * problems are already logged.
+     *
+     * @since 13.5.8
+     * @var string
+     */
+    const INVALID_FILTERS_OPTION = 'adt_pfp_invalid_feed_filters';
+
+    /**
+     * Structure check results, keyed by feed ID, for this request.
+     *
+     * Feed generation calls the filter engine once per product. The structure of
+     * a feed's saved filters does not change between those calls, so it is
+     * checked, logged and flagged one time only.
+     *
+     * @since 13.5.8
+     * @var array
+     */
+    private $filters_structure_cache = array();
+
+    /**
      * Filter data - main entry point
      *
      * @since 13.4.6
@@ -93,6 +117,8 @@ class Filters extends Abstract_Filters_Rules {
      * Validate filters structure before processing
      *
      * @since 13.4.6
+     * @since 13.5.8 Runs the structure check, which repairs the shapes it can and
+     *               reports the ones it cannot. See #1140.
      * @access private
      *
      * @param array  $data The data to filter.
@@ -107,14 +133,13 @@ class Filters extends Abstract_Filters_Rules {
         }
 
         try {
-            // Decode JSON if it's a string.
-            if ( is_string( $filters ) ) {
-                $filters = json_decode( $filters, true );
-            }
+            $filters = $this->check_filters_structure( $feed );
 
-            // Validate structure - check for include/exclude keys.
-            if ( ! is_array( $filters ) || ( ! isset( $filters['include'] ) && ! isset( $filters['exclude'] ) ) ) {
-                return $data; // Invalid structure, pass through.
+            // The saved payload cannot be read at all. The merchant is told about
+            // it by the log entry and the admin notice raised in the check above,
+            // so let the products through rather than empty a live feed.
+            if ( is_wp_error( $filters ) ) {
+                return $data;
             }
 
             return $this->process_filters( $data, $filters, $feed );
@@ -128,6 +153,270 @@ class Filters extends Abstract_Filters_Rules {
 
             return $data;
         }
+    }
+
+    /**
+     * Normalise and structurally check a feed's saved filters.
+     *
+     * Feeds written by older versions, by an import, or by a partial save can hold
+     * a shape the parser does not expect. Before #1140 the parser read such a shape
+     * as "no filter" and let every product through without a word. This method
+     * repairs what it can, records what it cannot, and reports the problems once
+     * per feed through the WooCommerce log and the admin notice.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @param object $feed         The feed object.
+     * @param array  $extra_issues Problems found by the caller, added to the report.
+     * @return array|\WP_Error The usable filters, or a WP_Error if the payload cannot be read.
+     */
+    public function check_filters_structure( $feed, $extra_issues = array() ) {
+        $raw     = $feed->feed_filters ?? array();
+        $feed_id = (int) ( $feed->id ?? 0 );
+
+        if ( empty( $extra_issues )
+            && isset( $this->filters_structure_cache[ $feed_id ] )
+            && $this->filters_structure_cache[ $feed_id ]['raw'] === $raw ) {
+            return $this->filters_structure_cache[ $feed_id ]['result'];
+        }
+
+        $issues = $extra_issues;
+
+        // A feed with no filters saved is a normal state, not an unreadable
+        // payload. validate_filters() stops before this point on an empty value;
+        // migrate_filters() does not, so the same rule is applied here.
+        if ( empty( $raw ) ) {
+            $result = array(
+                'include' => array(),
+                'exclude' => array(),
+            );
+        } else {
+            $result = $this->normalize_filters( $raw, $issues );
+
+            if ( is_wp_error( $result ) ) {
+                $issues[] = $result->get_error_message();
+            }
+        }
+
+        if ( empty( $issues ) ) {
+            self::unflag_invalid_filters( $feed_id );
+        } else {
+            $this->report_filters_issues( $feed, $issues );
+        }
+
+        $this->filters_structure_cache[ $feed_id ] = array(
+            'raw'    => $raw,
+            'result' => $result,
+        );
+
+        return $result;
+    }
+
+    /**
+     * Normalise a saved filters payload into the shape the parser expects.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @param mixed $filters The saved filters payload.
+     * @param array $issues  Collects a message for every entry repaired or dropped.
+     * @return array|\WP_Error The normalised filters, or a WP_Error if the payload cannot be read.
+     */
+    private function normalize_filters( $filters, &$issues ) {
+        if ( is_string( $filters ) ) {
+            $decoded = json_decode( $filters, true );
+
+            if ( ! is_array( $decoded ) ) {
+                return new \WP_Error(
+                    'adt_pfp_filters_invalid_json',
+                    'The saved filters could not be read: the stored value is not valid JSON.'
+                );
+            }
+
+            $filters = $decoded;
+        }
+
+        if ( ! is_array( $filters ) ) {
+            return new \WP_Error(
+                'adt_pfp_filters_invalid_structure',
+                'The saved filters could not be read: the stored value is not a list of filter groups.'
+            );
+        }
+
+        if ( ! isset( $filters['include'] ) && ! isset( $filters['exclude'] ) ) {
+            return new \WP_Error(
+                'adt_pfp_filters_unknown_structure',
+                'The saved filters could not be read: the stored value has no include or exclude section.'
+            );
+        }
+
+        $normalized = array();
+
+        foreach ( array( 'include', 'exclude' ) as $section ) {
+            $normalized[ $section ] = $this->normalize_filter_groups( $filters[ $section ] ?? array(), $section, $issues );
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Normalise one section (include or exclude) of a saved filters payload.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @param mixed  $groups  The section's groups.
+     * @param string $section The section name, 'include' or 'exclude'.
+     * @param array  $issues  Collects a message for every entry repaired or dropped.
+     * @return array The normalised groups.
+     */
+    private function normalize_filter_groups( $groups, $section, &$issues ) {
+        if ( ! is_array( $groups ) ) {
+            if ( ! empty( $groups ) ) {
+                $issues[] = sprintf( 'The %s filters are not a list of groups and were ignored.', $section );
+            }
+
+            return array();
+        }
+
+        $normalized = array();
+
+        foreach ( $groups as $group ) {
+            if ( ! is_array( $group ) ) {
+                continue;
+            }
+
+            $type = $group['type'] ?? '';
+
+            // A missing type is what makes a group invisible to the parser. Read it
+            // from the shape instead: a 'fields' list is a group, an 'and'/'or'
+            // value is a logic operator between groups.
+            if ( '' === $type ) {
+                if ( isset( $group['fields'] ) ) {
+                    $type = 'group';
+                } elseif ( isset( $group['value'] ) && in_array( $group['value'], array( 'and', 'or' ), true ) ) {
+                    $type = 'group_logic';
+                } else {
+                    $issues[] = sprintf( 'An entry in the %s filters could not be read and was ignored.', $section );
+                    continue;
+                }
+
+                $group['type'] = $type;
+                $issues[]      = sprintf( 'A group in the %1$s filters had no type and was repaired as "%2$s".', $section, $type );
+            }
+
+            if ( 'group_logic' === $type ) {
+                $normalized[] = $group;
+                continue;
+            }
+
+            if ( 'group' !== $type ) {
+                continue;
+            }
+
+            // A group without a usable field states no condition. Drop it: treating
+            // it as an automatic pass is what let every product through.
+            if ( ! $this->group_has_field( $group ) ) {
+                $issues[] = sprintf( 'A group in the %s filters has no filter field and was ignored.', $section );
+                continue;
+            }
+
+            $normalized[] = $group;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Check that a group holds at least one usable filter field.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @param array $group The group to check.
+     * @return bool
+     */
+    private function group_has_field( $group ) {
+        $fields = $group['fields'] ?? array();
+
+        if ( ! is_array( $fields ) ) {
+            return false;
+        }
+
+        foreach ( $fields as $field ) {
+            if ( is_array( $field )
+                && isset( $field['type'], $field['data'] )
+                && 'field' === $field['type']
+                && is_array( $field['data'] ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Record a feed whose saved filters could not be read, and log the problems.
+     *
+     * The memo in check_filters_structure() covers one request, but feed
+     * generation runs one request for each batch. Comparing against what is
+     * already recorded keeps a long run from writing the same warning hundreds
+     * of times.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @param object $feed   The feed object.
+     * @param array  $issues The problems found.
+     */
+    private function report_filters_issues( $feed, $issues ) {
+        $feed_id = (int) ( $feed->id ?? 0 );
+        $issues  = array_values( array_unique( $issues ) );
+
+        $invalid = get_option( self::INVALID_FILTERS_OPTION, array() );
+        if ( ! is_array( $invalid ) ) {
+            $invalid = array();
+        }
+
+        if ( isset( $invalid[ $feed_id ]['issues'] ) && $invalid[ $feed_id ]['issues'] === $issues ) {
+            return; // These problems are already recorded and logged.
+        }
+
+        $invalid[ $feed_id ] = array(
+            'title'  => $feed->title ?? '',
+            'issues' => $issues,
+        );
+
+        update_option( self::INVALID_FILTERS_OPTION, $invalid, false );
+
+        if ( function_exists( 'wc_get_logger' ) ) {
+            wc_get_logger()->warning(
+                'Feed filters could not be read as saved: ' . implode( ' ', $issues ),
+                array(
+                    'source'  => 'woo-product-feed-pro',
+                    'feed_id' => $feed_id,
+                )
+            );
+        }
+    }
+
+    /**
+     * Remove a feed from the unreadable-filters record.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @param int $feed_id Feed ID.
+     */
+    private static function unflag_invalid_filters( $feed_id ) {
+        $invalid = get_option( self::INVALID_FILTERS_OPTION, array() );
+        if ( ! is_array( $invalid ) || ! isset( $invalid[ $feed_id ] ) ) {
+            return;
+        }
+
+        unset( $invalid[ $feed_id ] );
+        update_option( self::INVALID_FILTERS_OPTION, $invalid, false );
     }
 
     /**
@@ -162,6 +451,10 @@ class Filters extends Abstract_Filters_Rules {
          * Filter the product feed data after filtering.
          *
          * @since 13.4.5
+         * @since 13.5.8 $filters is now the normalised structure the engine used,
+         *               not the raw saved value: both sections are always present,
+         *               a group saved without a type carries the repaired one, and
+         *               a group that states no condition is absent.
          *
          * @param array  $data The product feed data.
          * @param array  $filters The filters.
@@ -188,7 +481,7 @@ class Filters extends Abstract_Filters_Rules {
 
         // OR logic between groups - any group passing means include.
         foreach ( $groups as $group ) {
-            if ( 'group' === $group['type'] && $this->process_group( $data, $group, $feed ) ) {
+            if ( 'group' === ( $group['type'] ?? '' ) && $this->process_group( $data, $group, $feed ) ) {
                 return true;
             }
         }
@@ -216,12 +509,14 @@ class Filters extends Abstract_Filters_Rules {
         $current_logic = 'and'; // Default logic between groups.
 
         foreach ( $groups as $group ) {
-            if ( 'group' === $group['type'] ) {
+            $group_type = $group['type'] ?? '';
+
+            if ( 'group' === $group_type ) {
                 $group_results[] = array(
                     'result' => $this->process_group( $data, $group, $feed ),
                     'logic'  => $current_logic,
                 );
-            } elseif ( 'group_logic' === $group['type'] ) {
+            } elseif ( 'group_logic' === $group_type ) {
                 $logic_value = $group['value'] ?? '';
                 if ( in_array( $logic_value, array( 'and', 'or' ), true ) ) {
                     $current_logic = $logic_value;

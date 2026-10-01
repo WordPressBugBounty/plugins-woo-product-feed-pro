@@ -7,6 +7,7 @@
 
 namespace AdTribes\PFP\Classes\CLI;
 
+use AdTribes\PFP\Classes\Phantom_Feed_Cleanup;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use WP_CLI\Utils;
@@ -20,6 +21,15 @@ use WP_CLI\Utils;
  * @since 13.5.4
  */
 class Feed_Command extends \WP_CLI_Command {
+
+    /**
+     * Number of phantom feed IDs `cleanup-phantoms --dry-run` lists.
+     *
+     * @since 13.6.0
+     *
+     * @var int
+     */
+    const DRY_RUN_SAMPLE = 20;
 
     /**
      * List product feeds.
@@ -201,7 +211,8 @@ class Feed_Command extends \WP_CLI_Command {
      * : Two-letter country code (e.g. AU, US).
      *
      * [--file-format=<format>]
-     * : File format: xml, csv, txt, tsv, jsonl, jsonl.gz, csv.gz.
+     * : File format: xml, csv, txt, tsv, jsonl, jsonl.gz, csv.gz, parquet.
+     *   parquet is accepted only on a host that can write it. It needs the bcmath and zlib PHP extensions.
      *
      * [--refresh-interval=<interval>]
      * : Refresh interval: empty, hourly, twicedaily, daily.
@@ -543,7 +554,7 @@ class Feed_Command extends \WP_CLI_Command {
                 continue;
             }
 
-            Product_Feed_Helper::disable_cache();
+            Product_Feed_Helper::prepare_for_generation();
 
             try {
                 $feed->generate( 'manual' );
@@ -690,6 +701,83 @@ class Feed_Command extends \WP_CLI_Command {
         do_action( ADT_PFP_AS_PRODUCT_FEED_UPDATE_STATS, $feed->id );
 
         \WP_CLI::success( sprintf( 'Stats updated for feed %d.', $feed->id ) );
+    }
+
+    /**
+     * Delete the phantom product feeds on this site.
+     *
+     * A phantom is an `adt_product_feed` post that holds nothing but the factory
+     * defaults: no channel, no file name, and no completed run. Earlier versions
+     * created them from scheduled callbacks, at two to twenty-five a day on an
+     * affected site (issue #1189). A real feed is never matched, because every
+     * create path assigns a channel and a file name before it saves, and nothing
+     * created in the last hour is matched at all.
+     *
+     * ## OPTIONS
+     *
+     * [--dry-run]
+     * : Report how many phantom feeds would be deleted, and delete nothing.
+     *
+     * [--batch-size=<n>]
+     * : Number of feeds to delete per batch. Default: 100.
+     *
+     * [--yes]
+     * : Skip the confirmation prompt.
+     *
+     * ## EXAMPLES
+     *
+     *     wp adt-feed cleanup-phantoms --dry-run
+     *     wp adt-feed cleanup-phantoms --yes
+     *
+     * @subcommand cleanup-phantoms
+     * @when after_wp_load
+     *
+     * @param array $args Positional args.
+     * @param array $assoc_args Associative args.
+     */
+    public function cleanup_phantoms( $args, $assoc_args ) {
+        $total = Phantom_Feed_Cleanup::count();
+
+        if ( $total < 1 ) {
+            \WP_CLI::success( 'No phantom feeds found.' );
+            return;
+        }
+
+        if ( Utils\get_flag_value( $assoc_args, 'dry-run', false ) ) {
+            // An affected site can hold thousands, so list a sample rather than
+            // scrolling the whole set past the operator.
+            $sample = Phantom_Feed_Cleanup::find_ids( self::DRY_RUN_SAMPLE );
+
+            \WP_CLI::log( sprintf( '%d phantom feed(s) would be deleted.', $total ) );
+            \WP_CLI::log( sprintf( 'First %d ID(s): %s', count( $sample ), implode( ', ', $sample ) ) );
+            return;
+        }
+
+        Utils\get_flag_value( $assoc_args, 'yes', false ) || \WP_CLI::confirm(
+            sprintf( 'Permanently delete %d phantom feed(s)?', $total ),
+            $assoc_args
+        );
+
+        $batch_size = max( 1, absint( Utils\get_flag_value( $assoc_args, 'batch-size', Phantom_Feed_Cleanup::BATCH_SIZE ) ) );
+        $progress   = Utils\make_progress_bar( 'Deleting phantom feeds', $total );
+        $deleted    = 0;
+
+        // Stop when a batch removes nothing, so a post that refuses to delete
+        // cannot hold the loop open.
+        do {
+            $batch    = Phantom_Feed_Cleanup::delete_batch( $batch_size );
+            $deleted += $batch;
+            $progress->tick( $batch );
+        } while ( $batch > 0 );
+
+        $progress->finish();
+
+        \WP_CLI::success( sprintf( 'Deleted %d phantom feed(s).', $deleted ) );
+
+        $remaining = Phantom_Feed_Cleanup::count();
+        if ( $remaining > 0 ) {
+            \WP_CLI::warning( sprintf( '%d phantom feed(s) could not be deleted.', $remaining ) );
+        }
     }
 
     /**

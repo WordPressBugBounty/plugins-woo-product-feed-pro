@@ -69,7 +69,7 @@ class WooSEA_idealo {
                                 ),
                                 "merchantId" => array(
                                         "name" => "merchantId",
-                                        "feed_name" => "merchanId",
+                                        "feed_name" => "merchantId",
                                         "format" => "optional",
                                 ),
                                 "price" => array(
@@ -235,7 +235,7 @@ class WooSEA_idealo {
 				),
                    		"deliveryCost_trans_o_flex" => array(
                                         "name" => "deliveryCost_trans_o_flex",
-                                        "feed_name" => "deliveryCost_trand_o_flex",
+                                        "feed_name" => "deliveryCost_trans_o_flex",
 					"format" => "optional",
 				),
                    		"paymentCosts_credit_card" => array(
@@ -415,7 +415,7 @@ class WooSEA_idealo {
 				),
             			"alcoholicContent" => array(
                                         "name" => "alcoholicContent",
-                                        "feed_name" => "alcoholicConent",
+                                        "feed_name" => "alcoholicContent",
 					"format" => "optional",
 				),
             			"allergenInformation" => array(

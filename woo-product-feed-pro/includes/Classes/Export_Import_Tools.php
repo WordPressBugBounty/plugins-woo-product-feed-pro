@@ -284,6 +284,7 @@ class Export_Import_Tools extends Abstract_Class {
             'utm_content',
             'utm_total_product_orders_lookback',
             'attributes',
+            'feed_attributes',
             'mappings',
             'rules',
             'filters',

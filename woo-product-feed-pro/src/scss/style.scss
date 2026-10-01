@@ -522,3 +522,525 @@
       transform: rotate(360deg);
   }
 } 
+
+/**
+ * Feed Validator product-education page.
+ *
+ * Ported from the "Feed Validator Landing" Claude Design project, which is
+ * built on the shared AdTribes design-system tokens. Every token referenced
+ * here is already declared in `src/scss/style.scss`; the fallbacks keep the
+ * page sane if this stylesheet is ever loaded on its own.
+ */
+
+.adt-feed-validator {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+  font-family: var(--adt-font-sans, 'Lato', sans-serif);
+  color: var(--text-strong, #333);
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Sized by font-size so the Tailwind Iconify utility classes — which are
+     scoped under `.adt-tw-wrapper` and therefore outrank a single BEM class —
+     do not have to be fought over width/height. */
+  &__icon {
+    flex: none;
+    font-size: 16px;
+  }
+
+  &__section {
+    margin-top: 64px;
+  }
+
+  &__section-head {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  &__h2 {
+    font-size: 32px;
+    font-weight: 900;
+    margin: 0 0 10px;
+    padding: 0;
+    color: var(--adt-ink, #333);
+  }
+
+  &__lede {
+    font-size: 17px;
+    color: var(--adt-gray-600, #666);
+    margin: 0 auto;
+    max-width: 560px;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  /* ------------------------------------------------------------------
+     Hero
+     ------------------------------------------------------------------ */
+  &__hero {
+    text-align: center;
+    background: var(--adt-gradient-header, linear-gradient(180deg, #fff 0%, #efe6fb 100%));
+    border: 1px solid var(--border-subtle, #dcddeb);
+    border-radius: 24px;
+    padding: 48px 40px 44px;
+    box-shadow: var(--adt-shadow-card, 0 2px 12px rgba(20, 20, 43, 0.08));
+  }
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(230, 61, 120, 0.1);
+    color: var(--adt-primary-700, #ad2755);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    padding: 7px 15px;
+    border-radius: 9999px;
+    margin-bottom: 22px;
+  }
+
+  &__hero-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+
+  &__hero-mascot {
+    width: 132px;
+    height: auto;
+    flex: none;
+  }
+
+  &__hero-copy {
+    max-width: 620px;
+    text-align: left;
+  }
+
+  &__h1 {
+    font-size: 42px;
+    line-height: 1.12;
+    font-weight: 900;
+    margin: 0 0 16px;
+    padding: 0;
+    color: var(--adt-purple-700, #441670);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  &__hero-text {
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--adt-gray-600, #666);
+    margin: 0;
+  }
+
+  &__hero-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 34px;
+  }
+
+  &__note {
+    font-size: 14px;
+    color: var(--adt-gray-500, #6e7191);
+    font-weight: 600;
+  }
+
+  /* ------------------------------------------------------------------
+     Buttons
+     ------------------------------------------------------------------ */
+  &__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--color-primary, #e63d78);
+    color: #fff;
+    font-weight: 700;
+    font-size: 17px;
+    padding: 15px 32px;
+    border-radius: 9999px;
+    box-shadow: 0 4px 14px rgba(230, 61, 120, 0.28);
+    text-decoration: none;
+    transition:
+      background var(--adt-dur-fast, 150ms)
+        var(--adt-ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+      box-shadow var(--adt-dur-fast, 150ms)
+        var(--adt-ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+      transform var(--adt-dur-fast, 150ms)
+        var(--adt-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+
+    .adt-feed-validator__icon {
+      font-size: 20px;
+    }
+
+    &:hover,
+    &:focus {
+      background: var(--adt-primary-dark, #c42c61);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(230, 61, 120, 0.32);
+    }
+  }
+
+  /* Inverse CTA on the brand gradient. It keeps its white fill on hover — the
+     shared pink hover would land pink-on-pink against its primary-700 label. */
+  &__cta--inverse {
+    background: #fff;
+    color: var(--adt-primary-700, #ad2755);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    padding: 15px 30px;
+
+    &:hover,
+    &:focus {
+      background: #fff;
+      color: var(--adt-primary-700, #ad2755);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26);
+    }
+  }
+
+  &__cta-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 15px 22px;
+    border-radius: 9999px;
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    transition:
+      background 0.16s ease,
+      color 0.16s ease;
+
+    &:hover,
+    &:focus {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Product screenshot
+     ------------------------------------------------------------------ */
+  &__shot {
+    margin-top: 40px;
+    text-align: center;
+  }
+
+  &__shot-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ------------------------------------------------------------------
+     Cards
+     ------------------------------------------------------------------ */
+  &__card {
+    background: var(--surface-card, #fff);
+    border: 1px solid var(--border-subtle, #dcddeb);
+    border-radius: 16px;
+    box-shadow: var(--adt-shadow-card, 0 2px 12px rgba(20, 20, 43, 0.08));
+    transition:
+      transform var(--adt-dur-base, 200ms)
+        var(--adt-ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+      box-shadow var(--adt-dur-base, 200ms)
+        var(--adt-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--adt-shadow-lg, 0 12px 32px rgba(20, 20, 43, 0.12));
+    }
+  }
+
+  &__card-title {
+    font-weight: 700;
+    color: var(--adt-ink, #333);
+  }
+
+  &__card-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--adt-gray-600, #666);
+    margin: 0;
+  }
+
+  /* "How it works" — a tinted rounded square holding the step icon. */
+  &__step {
+    padding: 28px 26px;
+    text-align: left;
+
+    .adt-feed-validator__card-title {
+      font-size: 19px;
+      margin: 0 0 8px;
+      padding: 0;
+    }
+  }
+
+  &__step-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+
+    .adt-feed-validator__icon {
+      font-size: 26px;
+    }
+  }
+
+  &__step--monitor .adt-feed-validator__step-icon {
+    background: var(--adt-purple-50, #f4effb);
+    color: var(--adt-purple-700, #441670);
+    box-shadow: 0 6px 20px rgba(74, 58, 255, 0.08);
+  }
+
+  &__step--logs .adt-feed-validator__step-icon {
+    background: var(--adt-primary-50, #fdf2f6);
+    color: var(--adt-primary-600, #d42f69);
+    box-shadow: 0 6px 20px rgba(230, 61, 120, 0.1);
+  }
+
+  &__step--alerts .adt-feed-validator__step-icon {
+    background: #e7f7f0;
+    color: var(--adt-success, #00974f);
+    box-shadow: 0 6px 20px rgba(0, 151, 79, 0.1);
+  }
+
+  /* Feature highlights — accent rule along the top of each card. */
+  &__feature {
+    padding: 30px 28px;
+    border-top: 3px solid var(--color-primary, #e63d78);
+
+    .adt-feed-validator__card-title {
+      font-size: 20px;
+      margin: 16px 0 10px;
+      padding: 0;
+    }
+
+    .adt-feed-validator__icon {
+      font-size: 30px;
+      color: var(--color-primary, #e63d78);
+    }
+  }
+
+  &__feature--validate {
+    border-top-color: var(--adt-purple-700, #441670);
+
+    .adt-feed-validator__icon {
+      color: var(--adt-purple-700, #441670);
+    }
+  }
+
+  &__feature--compliant {
+    border-top-color: var(--adt-success, #00974f);
+
+    .adt-feed-validator__icon {
+      color: var(--adt-success, #00974f);
+    }
+  }
+
+  &__channels {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 22px;
+    margin-top: 30px;
+    color: var(--adt-gray-500, #6e7191);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &__channel {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    .adt-feed-validator__icon {
+      color: var(--adt-success, #00974f);
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Social proof
+     ------------------------------------------------------------------ */
+  &__proof {
+    text-align: center;
+  }
+
+  &__stars {
+    color: #f5a623;
+    font-size: 22px;
+    letter-spacing: 2px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+
+  &__proof-title {
+    font-size: 26px;
+    font-weight: 900;
+    margin: 0 0 6px;
+    padding: 0;
+    color: var(--adt-ink, #333);
+  }
+
+  &__proof-sub {
+    font-size: 16px;
+    color: var(--adt-gray-600, #666);
+    margin: 0 0 34px;
+  }
+
+  &__quote {
+    padding: 26px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
+  }
+
+  &__quote-stars {
+    color: #f5a623;
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+
+  &__quote-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--adt-gray-700, #4b5563);
+    margin: 0;
+    flex: 1;
+  }
+
+  &__quote-by {
+    font-size: 14px;
+    color: var(--adt-gray-500, #6e7191);
+
+    strong {
+      color: var(--adt-ink, #333);
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Closing CTA
+     ------------------------------------------------------------------ */
+  &__outro {
+    background: var(--adt-gradient-brand, linear-gradient(135deg, #441670 0%, #e63d78 100%));
+    border-radius: 24px;
+    padding: 52px 48px;
+    text-align: center;
+    box-shadow: 0 18px 44px rgba(74, 22, 112, 0.3);
+    overflow: hidden;
+  }
+
+  &__outro-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+
+  &__outro-mascot {
+    width: 128px;
+    height: auto;
+    flex: none;
+  }
+
+  &__outro-copy {
+    max-width: 560px;
+    text-align: left;
+  }
+
+  &__outro-title {
+    font-size: 32px;
+    font-weight: 900;
+    margin: 0 0 12px;
+    padding: 0;
+    color: #fff;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  &__outro-text {
+    font-size: 17px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 26px;
+  }
+
+  &__outro-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  &__outro-note {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 600;
+    margin: 18px 0 0;
+  }
+
+  /* ------------------------------------------------------------------
+     Narrow screens — the design is desktop-width, wp-admin is not.
+     ------------------------------------------------------------------ */
+  @media screen and (max-width: 960px) {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media screen and (max-width: 782px) {
+    padding: 16px 12px 32px;
+
+    &__hero {
+      padding: 32px 22px 30px;
+    }
+
+    &__hero-copy,
+    &__outro-copy {
+      text-align: center;
+    }
+
+    &__h1 {
+      font-size: 30px;
+    }
+
+    &__h2,
+    &__outro-title {
+      font-size: 26px;
+    }
+
+    &__section {
+      margin-top: 44px;
+    }
+
+    &__outro {
+      padding: 34px 22px;
+    }
+
+    &__outro-actions {
+      justify-content: center;
+    }
+  }
+}

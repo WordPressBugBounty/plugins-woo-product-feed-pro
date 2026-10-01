@@ -53,6 +53,7 @@ class Formatting {
                 'google_local_products',
                 'google_product_review',
                 'google_shopping_promotions',
+                'openai',
                 'pinterest',
                 'tiktok',
             )

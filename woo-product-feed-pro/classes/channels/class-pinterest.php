@@ -117,11 +117,6 @@ class WooSEA_pinterest { // phpcs:ignore
                     'feed_name' => 'g:installment',
                     'format'    => 'optional',
                 ),
-                'Loyalty points'            => array(
-                    'name'      => 'loyalty_points',
-                    'feed_name' => 'g:loyalty_points',
-                    'format'    => 'optional',
-                ),
             ),
             'Product category'                 => array(
                 'Google product category' => array(

@@ -35,6 +35,26 @@ import './style.scss';
     let refreshXHR: JQuery.jqXHR | null = null;
     let refreshIntervalId: number | null = null;
 
+    // Feeds whose batch failed in this page view. The server still reports them as
+    // processing, so the poll must leave their rows alone or it puts them straight
+    // back into the state the failure just reported.
+    const failedFeedIds = new Set<number>();
+
+    // Feeds whose batch chain stopped on a client timeout, mapped to the number of
+    // status checks left to watch them. A timeout is not proof of failure: PHP may
+    // still be running and may still finish the feed, so keep polling these and let
+    // the row recover once the server stops reporting them as processing. The count
+    // bounds the watch, so a feed the server never finishes does not poll for ever.
+    const timedOutFeedPolls = new Map<number, number>();
+    const TIMED_OUT_FEED_POLL_LIMIT = 60;
+
+    // Start the status poll for a feed unless a poll is already running.
+    function ensurePollingFor(feedId: number) {
+      if (!isRefreshRunning) {
+        startFeedStatusPolling([feedId]);
+      }
+    }
+
     // Handle status text click to toggle active/inactive state
     $('.adt-manage-feeds-status-toggle').on('click', function () {
       // @ts-ignore
@@ -331,6 +351,10 @@ import './style.scss';
     function generateProductFeedBatch(feedId: number, offset: number, batchSize: number) {
       console.log(`Generating batch for feed ${feedId}, offset: ${offset}, batch size: ${batchSize}`);
 
+      // A new batch means the feed is running again, so the poll may follow it once more.
+      failedFeedIds.delete(feedId);
+      timedOutFeedPolls.delete(feedId);
+
       // Make sure the row shows processing status before continuing
       const $row = $(`.adt-manage-feeds-table-row[data-feed-id="${feedId}"]`);
       if ($row.length) {
@@ -348,6 +372,7 @@ import './style.scss';
       $.ajax({
         url: w.ajaxurl,
         type: 'POST',
+        timeout: w.adtObj.feedBatchTimeout ?? 120000,
         data: {
           action: 'adt_pfp_generate_product_feed',
           nonce: w.adtObj.adtNonce,
@@ -359,23 +384,87 @@ import './style.scss';
           // If the feed is still processing, continue with the next batch
           if (response.success && response.data.status === 'processing') {
             // Make sure we're tracking the processing status without restarting polling
-            if (!isRefreshRunning) {
-              console.log('Starting feed status polling for batch processing');
-              startFeedStatusPolling([feedId]);
-            } else {
-              console.log('Feed status polling already active, continuing with batch processing');
-            }
+            console.log('Ensuring feed status polling for batch processing');
+            ensurePollingFor(feedId);
 
             // Continue processing the next batch
             generateProductFeedBatch(response.data.feed_id, response.data.offset, response.data.batch_size);
           } else if (response.success) {
             console.log(`Feed ${feedId} batch processing completed`);
+          } else if (response && typeof response === 'object' && response.success === false) {
+            // The batch was refused (invalid nonce, missing feed, ...). Report it
+            // instead of leaving the row on "Processing".
+            failFeedBatch(
+              feedId,
+              (typeof response.data === 'string' ? response.data : response.data?.message) ||
+                __('An unknown error occurred.', 'woo-product-feed-pro')
+            );
+          } else {
+            // Not a JSON envelope. admin-ajax answers a bare "0" when the handler
+            // returns without printing, which is what a superseded run does: a
+            // scheduled run took the feed over and is still generating it. The
+            // browser chain stops here, but the feed has not failed, so leave the
+            // row alone and let polling follow the real server status.
+            console.warn(`Feed ${feedId} batch returned no JSON envelope; handing over to polling.`);
+            ensurePollingFor(feedId);
           }
         },
         error: function (xhr: any, status: any, error: any) {
           console.error(`Error generating feed batch: ${error}`);
+
+          // Something aborted the request (a page navigation, for one). There is
+          // no failure to report.
+          if (status === 'abort') {
+            return;
+          }
+
+          const reported = failFeedBatch(
+            feedId,
+            status === 'timeout'
+              ? __(
+                  'The feed batch took too long to respond and was stopped. Check the WooCommerce logs, then try again.',
+                  'woo-product-feed-pro'
+                )
+              : __('A network error occurred while generating the feed.', 'woo-product-feed-pro')
+          );
+
+          // The browser gave up on the request, but PHP may still be generating the
+          // feed. Keep polling so the row leaves the error state by itself when the
+          // server reports the feed is done.
+          if (reported && status === 'timeout') {
+            timedOutFeedPolls.set(feedId, TIMED_OUT_FEED_POLL_LIMIT);
+            ensurePollingFor(feedId);
+          }
         },
       });
+    }
+
+    // Take a feed out of the processing state after a failed batch, and tell the user why.
+    // Polling stops by itself once no row is left in the processing state, so other
+    // feeds of a bulk refresh keep updating.
+    // Returns true when the row was actually put into the error state.
+    function failFeedBatch(feedId: number, message: string): boolean {
+      const $row = $(`.adt-manage-feeds-table-row[data-feed-id="${feedId}"]`);
+
+      // The row already left the processing state, so the user cancelled the feed
+      // while the batch was in flight. Keep the state they asked for.
+      if ($row.length && !$row.hasClass('processing')) {
+        return false;
+      }
+
+      failedFeedIds.add(feedId);
+
+      if ($row.length) {
+        $row.removeClass('processing');
+        $row.find('.adt-manage-feeds-table-row-status-text').text(__('Error', 'woo-product-feed-pro'));
+        $row.find('.adt-manage-feeds-table-row-status-dot').attr('data-status', 'error');
+        $row.find('.adt-manage-feeds-action-refresh').removeClass('hidden');
+        $row.find('.adt-manage-feeds-action-cancel').addClass('hidden');
+      }
+
+      alert(__('Error: ', 'woo-product-feed-pro') + message);
+
+      return true;
     }
 
     // Function to start polling for feed status updates
@@ -418,6 +507,13 @@ import './style.scss';
         const $row = $(this);
         const feedId = $row.data('feed-id');
 
+        // A timed-out feed shows an error, so none of the indicators below match it.
+        // Poll it anyway while the watch lasts, so the row can still correct itself.
+        if (feedId && timedOutFeedPolls.has(Number(feedId))) {
+          processingFeedIds.push(feedId);
+          return;
+        }
+
         // Check multiple indicators that a feed is in processing state:
         // 1. The row has the 'processing' class
         // 2. The status dot has 'processing' data-status
@@ -429,7 +525,7 @@ import './style.scss';
         const textIndicatesProcessing = $statusText.text().toLowerCase().includes('processing');
 
         // Use only reliable indicators of processing status
-        if ((hasProcessingClass || hasProcessingStatus || textIndicatesProcessing) && feedId) {
+        if ((hasProcessingClass || hasProcessingStatus || textIndicatesProcessing) && feedId && !failedFeedIds.has(Number(feedId))) {
           processingFeedIds.push(feedId);
 
           // Ensure the row has consistent visual state
@@ -507,6 +603,34 @@ import './style.scss';
             let allComplete = true;
 
             response.data.forEach((feed: any) => {
+              // The batch for this feed already failed, so its row reports the error.
+              // The server still says "processing", so skip it or the row flips back.
+              if (failedFeedIds.has(Number(feed.feed_id))) {
+                const pollsLeft = timedOutFeedPolls.get(Number(feed.feed_id));
+
+                // A real failure (a refused batch, a network error). The row keeps
+                // the error until the user starts a new batch.
+                if (undefined === pollsLeft) {
+                  return;
+                }
+
+                // A timed-out feed that the server is still generating. Keep the
+                // error showing and watch it until the budget runs out.
+                if (feed.status === 'processing') {
+                  if (pollsLeft <= 1) {
+                    timedOutFeedPolls.delete(Number(feed.feed_id));
+                  } else {
+                    timedOutFeedPolls.set(Number(feed.feed_id), pollsLeft - 1);
+                  }
+                  return;
+                }
+
+                // The server finished the feed after all, so the error was wrong.
+                // Clear it and let the row show the real status below.
+                failedFeedIds.delete(Number(feed.feed_id));
+                timedOutFeedPolls.delete(Number(feed.feed_id));
+              }
+
               // Find the row for this feed
               const $row = $(`.adt-manage-feeds-table-row[data-feed-id="${feed.feed_id}"]`);
               if ($row.length) {

@@ -117,7 +117,7 @@ class Google_Product_Review extends Abstract_Class {
 
         foreach ( array( 'include', 'exclude' ) as $type ) {
             foreach ( $filters[ $type ] ?? array() as $group ) {
-                if ( 'group' !== $group['type'] ) {
+                if ( 'group' !== ( $group['type'] ?? '' ) ) {
                     continue;
                 }
 
@@ -126,7 +126,7 @@ class Google_Product_Review extends Abstract_Class {
 
                 // Check what type of fields this group contains.
                 foreach ( $group['fields'] ?? array() as $field ) {
-                    if ( 'field' === $field['type'] && isset( $field['data']['attribute'] ) ) {
+                    if ( 'field' === ( $field['type'] ?? '' ) && isset( $field['data']['attribute'] ) ) {
                         if ( in_array( $field['data']['attribute'], $this->review_attributes, true ) ) {
                             $has_review_fields = true;
                         } else {
@@ -160,7 +160,7 @@ class Google_Product_Review extends Abstract_Class {
                         );
 
                         foreach ( $group['fields'] ?? array() as $field ) {
-                            if ( 'field' === $field['type'] && isset( $field['data']['attribute'] ) ) {
+                            if ( 'field' === ( $field['type'] ?? '' ) && isset( $field['data']['attribute'] ) ) {
                                 if ( in_array( $field['data']['attribute'], $this->review_attributes, true ) ) {
                                     $review_group['fields'][] = $field;
                                 } else {

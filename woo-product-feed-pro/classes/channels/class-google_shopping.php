@@ -5,6 +5,27 @@
 class WooSEA_google_shopping { // phpcs:ignore
 
     /**
+     * The destination values Google documents for included_destination and excluded_destination.
+     *
+     * Both attributes accept the same list, and both are repeatable, so the list
+     * doubles as the `repeatable` limit: a destination is either in or out, so
+     * naming one more than once is meaningless.
+     *
+     * @link https://support.google.com/merchants/answer/7501026
+     *
+     * @var array
+     */
+    const DESTINATIONS = array(
+        'Shopping_ads',
+        'Display_ads',
+        'Local_inventory_ads',
+        'Free_listings',
+        'Free_local_listings',
+        'Cloud_retail',
+        'Local_cloud_retail',
+    );
+
+    /**
      * Google attributes
      *
      * @var array
@@ -54,9 +75,12 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'woo_suggest' => 'image',
                 ),
                 'Additional image URL'   => array(
-                    'name'      => 'additional_image_link',
-                    'feed_name' => 'g:additional_image_link',
-                    'format'    => 'optional',
+                    'name'       => 'additional_image_link',
+                    'feed_name'  => 'g:additional_image_link',
+                    'format'     => 'optional',
+                    // "Submit up to 10 additional product images by including this
+                    // attribute multiple times." https://support.google.com/merchants/answer/7052112
+                    'repeatable' => 10,
                 ),
                 'Canonical product URL'  => array(
                     'name'      => 'canonical_link',
@@ -82,10 +106,33 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'format'      => 'required',
                     'woo_suggest' => 'availability',
                 ),
+
+                /*
+                 * Google asks for an availability date only in one availability
+                 * state: https://support.google.com/merchants/answer/7052112 —
+                 * "Required if product availability is set to preorder".
+                 *
+                 * `required_when` names the gate: the output tag to watch, the
+                 * static value that arms the rule, and the notice to show while
+                 * it is armed. The gate is a STATIC value on purpose. When
+                 * availability comes from a product field, the value is only
+                 * known per product at generation time, so a mapped field can
+                 * neither arm nor disarm a rule the editor has to resolve now.
+                 *
+                 * `format` stays `optional`, so the rule is additive: a consumer
+                 * that does not read `required_when` keeps today's behaviour,
+                 * and no store that never sends `preorder` gains a required
+                 * field.
+                 */
                 'Availability date'         => array(
-                    'name'      => 'availability_date',
-                    'feed_name' => 'g:availability_date',
-                    'format'    => 'optional',
+                    'name'          => 'availability_date',
+                    'feed_name'     => 'g:availability_date',
+                    'format'        => 'optional',
+                    'required_when' => array(
+                        'feed_name' => 'g:availability',
+                        'static'    => 'preorder',
+                        'notice'    => __( 'Google requires an availability date for preorder items. WooCommerce has no preorder stock status, so this date usually comes from a static value or a custom field.', 'woo-product-feed-pro' ),
+                    ),
                 ),
                 'Expiration date'           => array(
                     'name'      => 'expiration_date',
@@ -137,9 +184,9 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'feed_name' => 'g:subscription_cost',
                     'format'    => 'optional',
                 ),
-                'Loyalty points'            => array(
-                    'name'      => 'loyalty_points',
-                    'feed_name' => 'g:loyalty_points',
+                'Loyalty program'           => array(
+                    'name'      => 'loyalty_program',
+                    'feed_name' => 'g:loyalty_program',
                     'format'    => 'optional',
                 ),
                 'Auto pricing min price'    => array(
@@ -168,15 +215,29 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'feed_name' => 'g:brand',
                     'format'    => 'required',
                 ),
+
+                /*
+                 * Google's product identifier rules are conditional, not absolute:
+                 * https://support.google.com/merchants/answer/6324461
+                 *
+                 * `g:gtin` is strongly recommended, never unconditionally required —
+                 * plenty of products (custom-made goods, own-brand items) have no
+                 * manufacturer-assigned GTIN at all.
+                 *
+                 * `g:mpn` is required only while no GTIN is supplied. `required_unless`
+                 * names the output tag that relaxes it: map `g:gtin` and MPN drops to
+                 * recommended.
+                 */
                 'Gtin'              => array(
                     'name'      => 'gtin',
                     'feed_name' => 'g:gtin',
-                    'format'    => 'required',
+                    'format'    => 'recommended',
                 ),
                 'MPN'               => array(
-                    'name'      => 'mpn',
-                    'feed_name' => 'g:mpn',
-                    'format'    => 'required',
+                    'name'            => 'mpn',
+                    'feed_name'       => 'g:mpn',
+                    'format'          => 'required',
+                    'required_unless' => 'g:gtin',
                 ),
                 'Identifier exists' => array(
                     'name'        => 'identifier_exists',
@@ -187,15 +248,17 @@ class WooSEA_google_shopping { // phpcs:ignore
             ),
             'Detailed product description' => array(
                 'Condition'                       => array(
-                    'name'        => 'condition',
-                    'feed_name'   => 'g:condition',
-                    'format'      => 'required',
-                    'woo_suggest' => 'condition',
+                    'name'           => 'condition',
+                    'feed_name'      => 'g:condition',
+                    'format'         => 'required',
+                    'woo_suggest'    => 'condition',
+                    'allowed_values' => array( 'new', 'refurbished', 'used' ),
                 ),
                 'Adult'                           => array(
-                    'name'      => 'adult',
-                    'feed_name' => 'g:adult',
-                    'format'    => 'optional',
+                    'name'           => 'adult',
+                    'feed_name'      => 'g:adult',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'yes', 'no' ),
                 ),
                 'Multipack'                       => array(
                     'name'      => 'multipack',
@@ -203,29 +266,34 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'format'    => 'optional',
                 ),
                 'Is bundle'                       => array(
-                    'name'      => 'is_bundle',
-                    'feed_name' => 'g:is_bundle',
-                    'format'    => 'optional',
+                    'name'           => 'is_bundle',
+                    'feed_name'      => 'g:is_bundle',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'yes', 'no' ),
                 ),
                 'Energy efficiency class'         => array(
-                    'name'      => 'energy_efficiency_class',
-                    'feed_name' => 'g:energy_efficiency_class',
-                    'format'    => 'optional',
+                    'name'           => 'energy_efficiency_class',
+                    'feed_name'      => 'g:energy_efficiency_class',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'A+++', 'A++', 'A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G' ),
                 ),
                 'Minimum energy efficiency class' => array(
-                    'name'      => 'min_energy_efficiency_class',
-                    'feed_name' => 'g:min_energy_efficiency_class',
-                    'format'    => 'optional',
+                    'name'           => 'min_energy_efficiency_class',
+                    'feed_name'      => 'g:min_energy_efficiency_class',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'A+++', 'A++', 'A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G' ),
                 ),
                 'Maximum energy efficiency class' => array(
-                    'name'      => 'max_energy_efficiency_class',
-                    'feed_name' => 'g:max_energy_efficiency_class',
-                    'format'    => 'optional',
+                    'name'           => 'max_energy_efficiency_class',
+                    'feed_name'      => 'g:max_energy_efficiency_class',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'A+++', 'A++', 'A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G' ),
                 ),
                 'Age group'                       => array(
-                    'name'      => 'age_group',
-                    'feed_name' => 'g:age_group',
-                    'format'    => 'optional',
+                    'name'           => 'age_group',
+                    'feed_name'      => 'g:age_group',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'newborn', 'infant', 'toddler', 'kids', 'adult' ),
                 ),
                 'Color'                           => array(
                     'name'      => 'color',
@@ -233,9 +301,10 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'format'    => 'optional',
                 ),
                 'Gender'                          => array(
-                    'name'      => 'gender',
-                    'feed_name' => 'g:gender',
-                    'format'    => 'optional',
+                    'name'           => 'gender',
+                    'feed_name'      => 'g:gender',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'male', 'female', 'unisex' ),
                 ),
                 'Material'                        => array(
                     'name'      => 'material',
@@ -253,14 +322,16 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'format'    => 'optional',
                 ),
                 'Size type'                       => array(
-                    'name'      => 'size_type',
-                    'feed_name' => 'g:size_type',
-                    'format'    => 'optional',
+                    'name'           => 'size_type',
+                    'feed_name'      => 'g:size_type',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'regular', 'petite', 'plus', 'tall', 'big', 'maternity' ),
                 ),
                 'Size system'                     => array(
-                    'name'      => 'size_system',
-                    'feed_name' => 'g:size_system',
-                    'format'    => 'optional',
+                    'name'           => 'size_system',
+                    'feed_name'      => 'g:size_system',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'US', 'UK', 'EU', 'DE', 'FR', 'JP', 'CN', 'IT', 'BR', 'MEX', 'AU' ),
                 ),
                 'Item group ID'                   => array(
                     'name'        => 'item_group_id',
@@ -270,112 +341,90 @@ class WooSEA_google_shopping { // phpcs:ignore
                 ),
             ),
             'Shopping campaigns'           => array(
-                'Ads redirect (new)'      => array(
+                'Ads redirect (new)'   => array(
                     'name'      => 'ads_redirect',
                     'feed_name' => 'g:ads_redirect',
                     'format'    => 'optional',
                 ),
-                'Excluded destination'    => array(
-                    'name'      => 'excluded_destination',
-                    'feed_name' => 'g:excluded_destination',
-                    'format'    => 'optional',
+                'Excluded destination' => array(
+                    'name'       => 'excluded_destination',
+                    'feed_name'  => 'g:excluded_destination',
+                    'format'     => 'optional',
+                    'repeatable' => 7,
+                    'choices'    => self::DESTINATIONS,
                 ),
-                'Custom label 0'          => array(
+                'Custom label 0'       => array(
                     'name'      => 'custom_label_0',
                     'feed_name' => 'g:custom_label_0',
                     'format'    => 'optional',
                 ),
-                'Custom label 1'          => array(
+                'Custom label 1'       => array(
                     'name'      => 'custom_label_1',
                     'feed_name' => 'g:custom_label_1',
                     'format'    => 'optional',
                 ),
-                'Custom label 2'          => array(
+                'Custom label 2'       => array(
                     'name'      => 'custom_label_2',
                     'feed_name' => 'g:custom_label_2',
                     'format'    => 'optional',
                 ),
-                'Custom label 3'          => array(
+                'Custom label 3'       => array(
                     'name'      => 'custom_label_3',
                     'feed_name' => 'g:custom_label_3',
                     'format'    => 'optional',
                 ),
-                'Custom label 4'          => array(
+                'Custom label 4'       => array(
                     'name'      => 'custom_label_4',
                     'feed_name' => 'g:custom_label_4',
                     'format'    => 'optional',
                 ),
-                'Promotion ID'            => array(
+                'Promotion ID'         => array(
                     'name'      => 'promotion_id',
                     'feed_name' => 'g:promotion_id',
                     'format'    => 'optional',
                 ),
-                'Included destination 1'  => array(
-                    'name'      => 'included_destination_1',
-                    'feed_name' => 'g:included_destination',
-                    'format'    => 'optional',
+                'Included destination' => array(
+                    'name'       => 'included_destination',
+                    'feed_name'  => 'g:included_destination',
+                    'format'     => 'optional',
+                    'repeatable' => 7,
+                    'choices'    => self::DESTINATIONS,
                 ),
-                'Included destination 2'  => array(
-                    'name'      => 'included_destination_2',
-                    'feed_name' => 'g:included_destination',
-                    'format'    => 'optional',
-                ),
-                'Included destination 3'  => array(
-                    'name'      => 'included_destination_3',
-                    'feed_name' => 'g:included_destination',
-                    'format'    => 'optional',
-                ),
-                'Included destination 4'  => array(
-                    'name'      => 'included_destination_4',
-                    'feed_name' => 'g:included_destination',
-                    'format'    => 'optional',
-                ),
-                'Included destination 5'  => array(
-                    'name'      => 'included_destination_5',
-                    'feed_name' => 'g:included_destination',
-                    'format'    => 'optional',
-                ),
-                'Ads grouping'            => array(
+                'Ads grouping'         => array(
                     'name'      => 'ads_grouping',
                     'feed_name' => 'g:ads_grouping',
                     'format'    => 'optional',
                 ),
-                'Ads labels'              => array(
+                'Ads labels'           => array(
                     'name'      => 'ads_labels',
                     'feed_name' => 'g:ads_labels',
                     'format'    => 'optional',
                 ),
-                'Feed label'              => array(
+                'Feed label'           => array(
                     'name'      => 'feed_label',
                     'feed_name' => 'g:feed_label',
                     'format'    => 'optional',
                 ),
-                'Product country'         => array(
-                    'name'      => 'product_country',
-                    'feed_name' => 'g:product_country',
-                    'format'    => 'optional',
-                ),
-                'Adwords grouping (BING)' => array(
-                    'name'      => 'adwords_grouping',
-                    'feed_name' => 'g:adwords_grouping',
-                    'format'    => 'optional',
-                ),
-                'Adwords labels (BING)'   => array(
-                    'name'      => 'adwords_labels',
-                    'feed_name' => 'g:adwords_labels',
-                    'format'    => 'optional',
-                ),
-                'Adwords redirect (BING)' => array(
-                    'name'      => 'adwords_redirect',
-                    'feed_name' => 'g:adwords_redirect',
-                    'format'    => 'optional',
-                ),
             ),
             'Shipping'                     => array(
+
+                /*
+                 * `g:shipping` is recommended, not optional.
+                 *
+                 * Most countries enforce shipping information for Shopping ads, and
+                 * missing shipping is a common cause of item disapproval, so leaving
+                 * the field silent in the mapping UI helps nobody.
+                 *
+                 * It stops short of `required` on purpose. The rule is
+                 * country-dependent, and shipping can also be set at Merchant Center
+                 * account level instead of in the feed, so a red Required badge would
+                 * be wrong for a store that legitimately needs neither - and it would
+                 * raise the unmapped-required count on every Google feed.
+                 */
                 'Shipping'                => array(
                     'name'      => 'shipping',
                     'feed_name' => 'g:shipping',
-                    'format'    => 'optional',
+                    'format'    => 'recommended',
                 ),
                 'Shipping label'          => array(
                     'name'      => 'shipping_label',
@@ -632,14 +681,16 @@ class WooSEA_google_shopping { // phpcs:ignore
                     'format'    => 'optional',
                 ),
                 'Size system'                          => array(
-                    'name'      => 'size_system',
-                    'feed_name' => 'g:size_system',
-                    'format'    => 'optional',
+                    'name'           => 'size_system',
+                    'feed_name'      => 'g:size_system',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'US', 'UK', 'EU', 'DE', 'FR', 'JP', 'CN', 'IT', 'BR', 'MEX', 'AU' ),
                 ),
                 'Size type'                            => array(
-                    'name'      => 'size_type',
-                    'feed_name' => 'g:size_type',
-                    'format'    => 'optional',
+                    'name'           => 'size_type',
+                    'feed_name'      => 'g:size_type',
+                    'format'         => 'optional',
+                    'allowed_values' => array( 'regular', 'petite', 'plus', 'tall', 'big', 'maternity' ),
                 ),
                 'Capacity'                             => array(
                     'name'      => 'capacity',

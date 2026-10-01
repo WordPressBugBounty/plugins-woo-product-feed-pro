@@ -126,11 +126,6 @@ class WooSEA_tiktok { // phpcs:ignore
                         'feed_name' => 'g:subscription_cost',
                         'format'    => 'optional',
                     ),
-                    'Loyalty points'            => array(
-                        'name'      => 'loyalty_points',
-                        'feed_name' => 'g:loyalty_points',
-                        'format'    => 'optional',
-                    ),
                 ),
                 'Product category'             => array(
                     'Google product category' => array(

@@ -59,7 +59,7 @@ class Product_Feed_Admin extends Abstract_Class {
             $feed->unregister_action();
         } else {
             // Remove cache.
-            Product_Feed_Helper::disable_cache();
+            Product_Feed_Helper::prepare_for_generation();
 
             $feed->register_action();
 
@@ -251,7 +251,7 @@ class Product_Feed_Admin extends Abstract_Class {
         }
 
         // Remove cache.
-        Product_Feed_Helper::disable_cache();
+        Product_Feed_Helper::prepare_for_generation();
 
         /**
          * Run the product feed batch processing.
@@ -432,7 +432,7 @@ class Product_Feed_Admin extends Abstract_Class {
                 case 'refresh':
                     try {
                         // Remove cache.
-                        Product_Feed_Helper::disable_cache();
+                        Product_Feed_Helper::prepare_for_generation();
 
                         // Generate the feed.
                         $feed->generate( 'manual' );
@@ -739,6 +739,104 @@ class Product_Feed_Admin extends Abstract_Class {
     }
 
     /**
+     * Render a warning for feeds whose saved filters could not be read as saved.
+     *
+     * Shown only on the plugin's own admin pages. The notice clears itself: the
+     * next time the feed's filters are read and understood, the feed is removed
+     * from the list.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @return void
+     */
+    public function render_invalid_filters_notice() {
+        if ( ! Helper::is_plugin_page() || ! Helper::is_current_user_allowed() ) {
+            return;
+        }
+
+        $invalid = get_option( Filters::INVALID_FILTERS_OPTION, array() );
+        if ( empty( $invalid ) || ! is_array( $invalid ) ) {
+            return;
+        }
+
+        $titles = array();
+        foreach ( $invalid as $invalid_feed ) {
+            if ( ! empty( $invalid_feed['title'] ) ) {
+                $titles[] = $invalid_feed['title'];
+            }
+        }
+
+        if ( empty( $titles ) ) {
+            return;
+        }
+
+        ?>
+        <div class="notice notice-warning adt-pfp-invalid-filters-notice">
+            <p>
+                <strong><?php esc_html_e( 'Product Feed Pro: some filters are not being applied.', 'woo-product-feed-pro' ); ?></strong>
+            </p>
+            <p>
+                <?php
+                printf(
+                    /* translators: %s: comma-separated list of feed names. */
+                    esc_html__( 'The saved filters of the following feed(s) are not in the format the plugin expects, so part or all of the filtering is skipped: %s. Products that you filtered out can appear in these feeds.', 'woo-product-feed-pro' ),
+                    '<strong>' . esc_html( implode( ', ', $titles ) ) . '</strong>'
+                );
+                ?>
+            </p>
+            <p>
+                <?php esc_html_e( 'To repair a feed, open its Filters tab, delete the filter rules, add them again, then save and refresh the feed. See the WooCommerce logs (source: woo-product-feed-pro) for the details.', 'woo-product-feed-pro' ); ?>
+            </p>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render a warning when the server is missing the PHP extensions XML feeds need.
+     *
+     * Without this the only symptom is a feed stuck on `error` with zero products
+     * processed: the writer fatals on `new XMLWriter()`, the exception is caught, and
+     * nothing names the cause. Shown on the plugin's own pages, before a run is even
+     * attempted, so the missing extension is visible while the feed is being set up.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @return void
+     */
+    public function render_missing_php_extensions_notice() {
+        if ( ! Helper::is_plugin_page() || ! Helper::is_current_user_allowed() ) {
+            return;
+        }
+
+        $missing = Product_Feed_Helper::get_missing_xml_php_extensions();
+        if ( empty( $missing ) ) {
+            return;
+        }
+
+        ?>
+        <div class="notice notice-error adt-pfp-missing-php-extensions-notice">
+            <p>
+                <strong><?php esc_html_e( 'Product Feed Pro: a required PHP extension is missing.', 'woo-product-feed-pro' ); ?></strong>
+            </p>
+            <p>
+                <?php
+                printf(
+                    /* translators: %s: comma-separated list of PHP extension names. */
+                    esc_html__( 'This server does not have the following PHP extension(s) installed: %s. XML feeds - including Google Shopping, Facebook and every other XML or RSS channel - cannot be generated without them, and will fail with no products processed.', 'woo-product-feed-pro' ),
+                    '<strong>' . esc_html( implode( ', ', $missing ) ) . '</strong>'
+                );
+                ?>
+            </p>
+            <p>
+                <?php esc_html_e( 'Ask your host to enable the extension(s), then refresh the feed. Feeds in a non-XML format (CSV, TXT, TSV) are not affected.', 'woo-product-feed-pro' ); ?>
+            </p>
+        </div>
+        <?php
+    }
+
+    /**
      * Run the class
      *
      * @codeCoverageIgnore
@@ -759,5 +857,11 @@ class Product_Feed_Admin extends Abstract_Class {
 
         // Admin notice for feeds parked after repeated crashed generation runs.
         add_action( 'admin_notices', array( $this, 'render_adaptive_parked_feeds_notice' ) );
+
+        // Admin notice for feeds whose saved filters could not be read as saved.
+        add_action( 'admin_notices', array( $this, 'render_invalid_filters_notice' ) );
+
+        // Admin notice when the server cannot write XML feeds at all.
+        add_action( 'admin_notices', array( $this, 'render_missing_php_extensions_notice' ) );
     }
 }

@@ -115,8 +115,10 @@ class Helper {
             '_page_adt-edit-feed',
             '_page_woosea_manage_settings',
             '_page_adt_license_settings_page',
+            '_page_pfp-feed-validator',
             '_page_pfp-help-page',
             '_page_pfp-about-page',
+            '_page_pfp-ucp-page',
             '_page_upgrade-to-elite',
         );
 
@@ -668,5 +670,31 @@ class Helper {
      */
     public static function get_select2_script_handle() {
         return self::get_wc_script_handle( 'select2' );
+    }
+
+    /**
+     * Unserialize a stored value without ever instantiating a class.
+     *
+     * Product attribute meta is attacker-controllable (a shop manager can write raw
+     * serialized bytes through XML-RPC), so every raw-meta read must refuse objects.
+     * `maybe_unserialize()` cannot do this because it takes no `allowed_classes`.
+     * The `is_serialized()` gate keeps the `C:` (Serializable) form away from
+     * `unserialize()` and suppresses the warning a plain string would raise.
+     *
+     * Returns false when the value is not serialized or cannot be parsed, which
+     * matches what a bare `unserialize()` returned before.
+     *
+     * @since 13.5.9
+     * @access public
+     *
+     * @param string $maybe_serialized The stored value to unserialize.
+     * @return mixed The unserialized value with objects refused, or false.
+     */
+    public static function safely_unserialize( $maybe_serialized ) {
+        if ( ! is_serialized( $maybe_serialized ) ) {
+            return false;
+        }
+
+        return unserialize( $maybe_serialized, array( 'allowed_classes' => false ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- allowed_classes => false is the point, maybe_unserialize() does not take it.
     }
 }

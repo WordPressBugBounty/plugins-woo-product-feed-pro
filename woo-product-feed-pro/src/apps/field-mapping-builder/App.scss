@@ -1,0 +1,1332 @@
+/***************************************************************************
+ * Field Mapping Builder styles
+ ***************************************************************************
+ *
+ * Adapted from the approved Field Mapping design. Three-column shell:
+ * group navigator, mapping table, output preview.
+ *
+ */
+
+.adt-field-mapping-builder {
+  --fm-border: #dcdcde;
+  --fm-border-soft: #f0f0f1;
+  --fm-text: #1d2327;
+  --fm-text-dim: #50575e;
+  --fm-text-faint: #8c8f94;
+  --fm-pink: #e5258b;
+  --fm-pink-soft: #fdeaf5;
+  --fm-warn: #d63638;
+  --fm-warn-bg: #fcf0f1;
+  --fm-ok: #0a7c3e;
+  --fm-violet: #7c3aed;
+  --fm-violet-bg: #f3ecff;
+  --fm-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ===== Shell ===== */
+  .adt-fm-shell {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .adt-fm-shell--with-preview {
+    grid-template-columns: 220px minmax(0, 1fr) 320px;
+  }
+
+  .adt-fm-main {
+    background: #fff;
+    border: 1px solid var(--fm-border);
+    border-radius: 6px;
+    min-width: 0;
+
+    /*
+     * NOT `overflow: hidden`. It was here to clip the table to the rounded
+     * corners, but it also clipped every open dropdown at the container's edge -
+     * a select near the bottom of the table lost its whole menu. The corners are
+     * clipped on the first and last rows instead, which costs nothing.
+     */
+    overflow: visible;
+  }
+
+  /* Corner clipping, now that the container cannot do it. */
+  .adt-fm-main > .adt-fm-toolbar:first-child {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+  }
+
+  .adt-fm-main > .adt-fm-table-wrap > .adt-fm-add-zone:last-child {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+  }
+
+  /* ===== Left navigator ===== */
+  /*
+   * The side column sticks as a unit: the navigator scrolls inside it when the
+   * group list is long, and the save panel below stays put. That keeps Save
+   * reachable without a full-width bar across the page.
+   */
+  .adt-fm-side {
+    position: sticky;
+    top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: calc(100vh - 100px);
+    min-width: 0;
+  }
+
+  .adt-fm-nav {
+    background: #fff;
+    border: 1px solid var(--fm-border);
+    border-radius: 6px;
+    padding: 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /*
+   * Rendered by the app inside the form, so it sits in the left column under the
+   * navigator on wide screens and is pinned to the bottom on narrow ones, where
+   * the navigator is hidden altogether.
+   */
+  .adt-fm-save-bar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid var(--fm-border);
+    border-radius: 6px;
+
+    #savebutton {
+      width: 100%;
+      justify-content: center;
+    }
+
+    #savebutton:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .adt-fm-save-status { min-width: 0; }
+
+  .adt-fm-save-status-text {
+    display: block;
+    font-size: 11.5px;
+    line-height: 1.4;
+
+    &.is-muted { color: var(--fm-text-dim); }
+    &.is-warn { color: #8a6100; }
+    &.is-error { color: var(--fm-warn); font-weight: 600; }
+  }
+
+  // Which step Save & Continue advances to, shown only while creating a feed.
+  .adt-fm-next-step {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--fm-text-dim);
+  }
+
+  .adt-fm-nav-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f6f7f7;
+    border: 1px solid var(--fm-border);
+    border-radius: 4px;
+    padding: 0 8px;
+    height: 30px;
+
+    // The input drops its own outline so the box reads as one control, so the
+    // wrapper carries the focus ring instead — the same treatment the
+    // vue-select toggles get.
+    &:focus-within {
+      border-color: #2271b1;
+      box-shadow: 0 0 0 1px #2271b1;
+    }
+  }
+
+  .adt-fm-nav-search-input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+    font-size: 13px;
+    color: var(--fm-text);
+    min-height: auto;
+    padding: 0;
+  }
+
+  .adt-fm-progress {
+    margin-top: 14px;
+    padding: 12px;
+    background: linear-gradient(180deg, #fff 0, #fafbfc 100%);
+    border: 1px solid var(--fm-border-soft);
+    border-radius: 6px;
+  }
+
+  .adt-fm-progress-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .adt-fm-progress-label { color: var(--fm-text-dim); font-weight: 500; }
+  .adt-fm-progress-value { font-weight: 600; color: var(--fm-text); }
+
+  .adt-fm-progress-bar {
+    height: 6px;
+    background: #eef0f2;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .adt-fm-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0a7c3e, #10a052);
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  .adt-fm-progress-stats {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--fm-text-dim);
+
+    b { color: var(--fm-text); font-weight: 600; }
+  }
+
+  .adt-fm-stat-warn b { color: var(--fm-warn); }
+
+  .adt-fm-nav-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fm-text-faint);
+    margin: 14px 4px 6px;
+  }
+
+  .adt-fm-nav-groups { display: flex; flex-direction: column; gap: 1px; }
+
+  .adt-fm-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 0;
+    padding: 6px 8px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--fm-text);
+    text-align: left;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover { background: #f6f7f7; }
+
+    &.active {
+      background: var(--fm-pink-soft);
+      color: var(--fm-pink);
+      font-weight: 600;
+
+      .adt-fm-nav-count { color: var(--fm-pink); }
+    }
+  }
+
+  .adt-fm-nav-group-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .adt-fm-nav-count {
+    font-size: 11px;
+    color: var(--fm-text-faint);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+
+  .adt-fm-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--fm-text-dim);
+    padding: 0 4px;
+    margin: 0;
+    list-style: none;
+
+    li { display: flex; align-items: center; gap: 7px; margin: 0; }
+  }
+
+  /* ===== Status dots ===== */
+  .adt-fm-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+    align-self: center;
+  }
+
+  .adt-fm-dot-ok { background: var(--fm-ok); }
+  .adt-fm-dot-warn { background: var(--fm-warn); box-shadow: 0 0 0 3px var(--fm-warn-bg); }
+  .adt-fm-dot-gray { background: #c3c4c7; }
+  .adt-fm-dot-violet { background: var(--fm-violet); }
+  .adt-fm-dot-pink { background: var(--fm-pink); }
+
+  /* ===== Toolbar ===== */
+  /**
+   * Sticky, because its controls are needed while reading the table, not only
+   * at the top of it: reaching Preview from the bottom of a 133-row catalog
+   * meant scrolling all the way back up.
+   *
+   * `top: 40px` is this app's existing offset for the WordPress admin bar, the
+   * same one the side column and the preview pane already use. The z-index sits
+   * below the popovers (20) so an affix editor still opens over it.
+   */
+  .adt-fm-toolbar {
+    position: sticky;
+    top: 40px;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--fm-border-soft);
+    background: #fafbfc;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .adt-fm-toolbar-left,
+  .adt-fm-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .adt-fm-toolbar-right { margin-left: auto; }
+
+  .adt-fm-toolbar-label {
+    font-size: 11px;
+    color: var(--fm-text-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .adt-fm-channel-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid var(--fm-border);
+    border-radius: 14px;
+    padding: 3px 10px 3px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fm-text);
+    height: 24px;
+    white-space: nowrap;
+  }
+
+  .adt-fm-channel-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--fm-pink);
+  }
+
+  .adt-fm-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    line-height: 1;
+    color: var(--fm-text-dim);
+    cursor: pointer;
+    user-select: none;
+
+    input[type='checkbox'] {
+      margin: 0;
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      flex: 0 0 auto;
+      vertical-align: middle;
+    }
+
+    /*
+     * Match the checkbox's box exactly. The label text was rendering inside a
+     * 20px line box next to a 16px checkbox, so although the two boxes shared a
+     * centre the glyphs still sat visibly high.
+     */
+    /*
+     * Admin CSS puts `padding: 8px 5px 0 0` on an unclassed span inside a label,
+     * which pushed the text down beside the checkbox even though the two boxes
+     * shared a centre. Reset the box and match the checkbox's height exactly.
+     */
+    span {
+      display: block;
+      height: 16px;
+      padding: 0;
+      margin: 0;
+      line-height: 16px;
+    }
+  }
+
+  .adt-fm-seg {
+    display: inline-flex;
+    border: 1px solid var(--fm-border);
+    border-radius: 4px;
+    overflow: hidden;
+
+    button {
+      background: #fff;
+      border: 0;
+      padding: 0 10px;
+      height: 28px;
+      cursor: pointer;
+      color: var(--fm-text-dim);
+      display: inline-flex;
+      align-items: center;
+
+      + button { border-left: 1px solid var(--fm-border); }
+
+      &.active { background: #f0f0f1; color: var(--fm-text); }
+    }
+  }
+
+  /* ===== Bulk bar ===== */
+  .adt-fm-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    background: var(--fm-pink-soft);
+    border-bottom: 1px solid #f4d1e6;
+    font-size: 13px;
+    color: var(--fm-pink);
+  }
+
+  .adt-fm-bulk-actions { display: flex; align-items: center; gap: 4px; flex: 1; }
+
+  /* ===== Table ===== */
+  .adt-fm-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+
+    th {
+      padding: 8px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--fm-text-faint);
+      border-bottom: 1px solid var(--fm-border-soft);
+      background: #fafbfc;
+      text-align: left;
+      // Every header is short enough to wrap inside its column. This is the net
+      // for a translation that is not: it clips rather than painting over the
+      // neighbouring header, which is what the single word "Transform" did.
+      overflow: hidden;
+    }
+
+    td { padding: 7px 8px; vertical-align: middle; }
+  }
+
+  .adt-fm-cell-check {
+    width: 30px;
+
+    input[type='checkbox'] {
+      margin: 0;
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      display: block;
+    }
+  }
+  .adt-fm-cell-attr { width: 42%; }
+  // Holds a pill, not two fields: the editor is a popover, so the column only
+  // has to fit "Affix" or a short affix value. The 3% it gave up went to Source.
+  .adt-fm-cell-transform { width: 15%; }
+  .adt-fm-cell-source { width: 43%; }
+  .adt-fm-cell-actions { width: 32px; text-align: right; }
+
+  .adt-fm-group-head td {
+    padding: 8px 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: var(--fm-text-dim);
+    background: #fafbfc;
+    border-top: 1px solid var(--fm-border-soft);
+  }
+
+  .adt-fm-group-label { margin: 0 8px 0 6px; }
+  .adt-fm-group-count { color: var(--fm-text-faint); font-weight: 500; }
+
+  .adt-fm-more-row td {
+    padding: 4px 8px 8px;
+    background: #fcfcfd;
+    border-bottom: 1px solid var(--fm-border-soft);
+  }
+
+  .adt-fm-more-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 0;
+    padding: 3px 6px;
+    margin-left: 6px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--fm-text-dim);
+    cursor: pointer;
+
+    &:hover { background: #f0f0f1; color: var(--fm-text); }
+  }
+
+  .adt-fm-row {
+    border-bottom: 1px solid var(--fm-border-soft);
+    position: relative;
+
+    &:hover { background: #fafbfc; }
+
+    &--compact td { padding: 3px 8px; }
+
+    /* Inert rows are part of the specification but not part of the feed. */
+    &--inert {
+      .adt-fm-attr-label { font-weight: 500; color: var(--fm-text-dim); }
+    }
+
+    /* Required, unmapped: the one state that needs attention. */
+    &--warn td:first-child { box-shadow: inset 3px 0 0 var(--fm-warn); }
+  }
+
+  .adt-fm-attr-main {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+
+    /* The dot, the requirement pill and the toggle keep their size; only the
+       label gives way, and it gets whatever room is left. */
+    > .adt-fm-dot,
+    > .adt-fm-pill,
+    > .adt-fm-row-toggle { flex: 0 0 auto; }
+  }
+
+  .adt-fm-attr-label {
+    /* Shrink-to-fit so the requirement pill sits against the text rather than
+       being pushed to the far edge of the column. */
+    flex: 0 1 auto;
+    min-width: 0;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--fm-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .adt-fm-attr-key {
+    font-family: var(--fm-mono);
+    font-size: 11px;
+    color: var(--fm-text-faint);
+    margin-top: 1px;
+    margin-left: 14px;
+    line-height: 1.2;
+  }
+
+  .adt-fm-row--compact .adt-fm-attr-key { display: none; }
+
+  .adt-fm-pill {
+    flex: 0 1 auto;
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    height: 18px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-radius: 9px;
+    padding: 0 7px;
+    white-space: nowrap;
+  }
+
+  .adt-fm-pill-required { background: var(--fm-warn-bg); color: var(--fm-warn); }
+  .adt-fm-pill-recommended { background: #eef4ff; color: #1e5eff; }
+
+  .adt-fm-error { font-size: 11px; color: var(--fm-warn); margin: 4px 0 0; }
+
+  /* Why a conditional requirement just turned this row Required. */
+  .adt-fm-requirement-notice {
+    display: flex;
+    gap: 5px;
+    align-items: flex-start;
+    max-width: 100%;
+    margin: 5px 0 0 14px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    background: #eef4ff;
+    color: #1e5eff;
+    font-size: 11px;
+    line-height: 1.45;
+    white-space: normal;
+  }
+
+  /* Transform chip */
+  /* ===== Restored: shared row chrome and the inline preview =====
+     These were collateral damage of the affix rewrite, not part of it. */
+  .adt-fm-icon-btn {
+    background: transparent;
+    border: 0;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--fm-text-faint);
+    display: inline-flex;
+    align-items: center;
+
+    &:hover { color: var(--fm-text); }
+  }
+
+  .adt-fm-source-secondary { margin-top: 0; }
+
+  // The channel's accepted values, shown under a field source. Guidance, not a
+  // failure, so it stays quiet rather than borrowing the error styling.
+  .adt-fm-allowed-values-hint {
+    margin: 4px 0 0;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--fm-text-faint);
+  }
+
+  // The preview does not cover this feed's channel. Informational, not a
+  // failure, so it does not borrow the error styling above it.
+  .adt-fm-preview-unsupported {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 8px 0;
+    padding: 10px 12px;
+    border: 1px solid var(--fm-border-soft);
+    border-radius: 6px;
+    background: #fafbfc;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--fm-text-dim);
+
+    > span:first-child { flex: none; margin-top: 1px; }
+  }
+
+  /* Inline output preview */
+  .adt-fm-preview-value {
+    display: block;
+    font-family: var(--fm-mono);
+    font-size: 11px;
+    padding: 3px 7px;
+    background: #0e1116;
+    color: #e6edf3;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+
+  .adt-fm-preview-nested {
+    font-size: 11.5px;
+    color: var(--fm-text-faint);
+    font-style: italic;
+  }
+
+  .adt-fm-preview-dim,
+  .adt-fm-preview-nested {
+    font-size: 11.5px;
+    color: var(--fm-text-faint);
+    font-style: italic;
+  }
+
+  /**
+   * The affix control: a pill that names what it holds, and a popover that edits
+   * it. One control for parent rows and sub-attribute rows both — they used to
+   * treat the same two fields differently, a full-width panel against two bare
+   * inputs on a nested row.
+   */
+  .adt-fm-affix { position: relative; }
+
+  .adt-fm-affix-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    min-width: 0;
+    height: 24px;
+    padding: 0 9px;
+    border: 1px dashed var(--fm-border);
+    border-radius: 12px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 11.5px;
+    color: var(--fm-text-dim);
+    cursor: pointer;
+
+    &:hover { border-color: #a7aaad; color: var(--fm-text); background: #fafbfc; }
+    &:focus-visible { outline: 2px solid var(--fm-pink); outline-offset: 1px; }
+
+    // A set affix shows its literal text, in the violet the app already uses
+    // for a static value.
+    &.is-set {
+      border-style: solid;
+      border-color: #d9c7ff;
+      background: var(--fm-violet-bg);
+      color: var(--fm-violet);
+      font-family: var(--fm-mono);
+      font-size: 11px;
+    }
+
+    &.is-open { border-color: var(--fm-pink); color: var(--fm-pink); background: var(--fm-pink-soft); }
+  }
+
+  .adt-fm-affix-pill-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /**
+   * Anchored to the pill. This can hang outside the table because
+   * `.adt-fm-main` does not clip its overflow — the same reason the source
+   * dropdowns are not cut off at the container edge.
+   */
+  .adt-fm-affix-pop {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 240px;
+    padding: 10px;
+    border: 1px solid var(--fm-border);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 10%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .adt-fm-affix-field {
+    display: block;
+
+    > span {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--fm-text-faint);
+    }
+
+    .adt-prefix-input,
+    .adt-suffix-input { max-width: none; width: 100%; height: 28px; font-size: 12px; }
+  }
+
+  .adt-fm-affix-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .adt-fm-affix-clear {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    color: #2271b1;
+
+    &:hover:not(:disabled) { color: #135e96; text-decoration: underline; }
+    &:disabled { color: var(--fm-text-faint); cursor: default; }
+  }
+
+  .adt-fm-affix-hint { font-size: 10px; color: var(--fm-text-faint); text-align: right; }
+
+  .adt-fm-nested-cta {
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px dashed var(--fm-border);
+    border-radius: 6px;
+
+    p { margin: 0 0 8px; font-size: 12px; color: var(--fm-text-dim); }
+  }
+
+  // Any mapped row can start a sub-attribute group; this is the entry point on
+  // a row the registry has no defaults for.
+  .adt-fm-nested-add { margin-top: 8px; }
+
+  /**
+   * Sub-attribute styling follows the filters/rules builder, which is the
+   * app this one is a sibling of: rows are white cards on a 12-column grid
+   * (`FilterItem.vue`), a group is a dashed container with its primary add
+   * button centred at the bottom (`FilterGroup.vue`), and "add group" is a
+   * quiet secondary control below the groups (`FilterSection.vue`).
+   *
+   * An earlier revision invented its own six-track grid with a header row and
+   * a container query. It aligned, but it looked nothing like the rest of the
+   * product, so it is gone.
+   */
+
+  /**
+   * Sub-attribute rows are real table rows, so the table aligns them to the
+   * parent's columns — there is no nesting arithmetic here, by design.
+   *
+   * The nesting cue is a tree connector in the checkbox gutter and NOTHING else:
+   * no tint, no accent bar, no bracket rule (design canvas, Option A). The rows
+   * keep the table's own background, hover and row rule, so a column still scans
+   * cleanly from the header to the bottom of the table.
+   */
+  .adt-sub-attribute-row {
+    border-bottom: 1px solid var(--fm-border-soft);
+
+    &:hover { background: #fafbfc; }
+
+    > td { padding-top: 5px; padding-bottom: 5px; }
+
+    .adt-fm-input,
+    .adt-prefix-input,
+    .adt-suffix-input { max-width: none; width: 100%; }
+
+    .adt-fm-source-control,
+    .adt-source-value-select-container { width: 100%; }
+  }
+
+  // The name sits in from the connector, so the nesting reads at a glance while
+  // the control itself stays in the parent's column.
+  .adt-sub-attribute-name { padding-left: 14px; }
+
+  /*
+   * Rows that span the table rather than holding a control per column: the
+   * value-override notice, a group's closing row, and the empty state. Their
+   * content lines up with the name column above it.
+   */
+  .adt-sub-attribute-row--notice > td:last-child,
+  .adt-sub-attribute-row--add > td:last-child,
+  .adt-sub-attribute-row--add-group > td:last-child { padding-left: 14px; }
+
+  .adt-sub-attribute-row--add > td:last-child { padding-bottom: 8px; }
+  .adt-sub-attribute-row--add-group > td:last-child { padding-bottom: 10px; }
+
+  // The connector sits at the inner edge of the gutter, next to the name it
+  // belongs to, in the same grey as an unmapped row's status dot.
+  .adt-sub-attribute-gutter {
+    text-align: right;
+    padding-right: 0;
+    color: #c3c4c7;
+    font-family: var(--fm-mono);
+    font-size: 13px;
+    line-height: 1;
+    user-select: none;
+  }
+
+  /**
+   * Group chrome appears only when a parent has more than one group — that is
+   * the only time the order is meaningful or a group needs naming.
+   */
+  .adt-sub-attribute-row--group-head {
+    > td:last-child { padding-left: 0; padding-top: 10px; }
+
+    .adt-sub-attribute-group-head-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .adt-sub-attribute-group-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--fm-text-faint);
+      border: 1px solid var(--fm-border-soft);
+      border-radius: 3px;
+      padding: 1px 6px;
+    }
+
+    .adt-sub-attribute-group-tools {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: auto;
+    }
+  }
+
+  // Quiet text actions on the group's closing row, not buttons in the flow.
+  .adt-sub-attribute-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    color: #2271b1;
+
+    &:hover { color: #135e96; text-decoration: underline; }
+    &:focus-visible { outline: 2px solid #2271b1; outline-offset: 2px; }
+  }
+
+  .adt-sub-attribute-action-sep { margin: 0 10px; color: var(--fm-text-faint); font-size: 12px; }
+
+  // A nested parent's own value is dropped in favour of its groups.
+  .adt-sub-attribute-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    font-size: 12px;
+    color: var(--fm-text-dim);
+
+    > span { flex: none; margin-top: 1px; }
+  }
+
+  .adt-sub-attribute-empty { font-size: 12px; color: var(--fm-text-faint); margin-right: 10px; }
+
+  .adt-sub-attribute-tag-label {
+    display: block;
+    font-family: var(--fm-mono);
+    font-size: 12px;
+    color: var(--fm-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .adt-sub-attribute-error { font-size: 11px; margin: 4px 0 0; }
+
+  .adt-sub-attribute-zone-lock {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--fm-text-dim);
+    white-space: nowrap;
+  }
+
+  .adt-fm-input {
+    height: 1.875rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0 8px;
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .adt-fm-input-error { border-color: var(--fm-warn); }
+  .adt-fm-input-name { max-width: 180px; }
+
+  .adt-fm-empty,
+  .adt-fm-add-hint {
+    font-size: 12px;
+    color: var(--fm-text-faint);
+  }
+
+  .adt-fm-empty { padding: 16px; text-align: center; }
+
+  .adt-fm-add-zone {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+    border-top: 1px solid var(--fm-border-soft);
+    background: #fafbfc;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Preview pane ===== */
+  .adt-fm-preview {
+    background: #fff;
+    border: 1px solid var(--fm-border);
+    border-radius: 6px;
+    position: sticky;
+    top: 40px;
+    max-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+
+    /*
+     * Not `hidden`: it clipped the product picker's own dropdown at the pane
+     * edge, exactly as the table container did. The XML block below scrolls on
+     * its own, so the pane does not need to.
+     */
+    overflow: visible;
+  }
+
+  .adt-fm-preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--fm-border-soft);
+  }
+
+  .adt-fm-preview-title { font-size: 13px; font-weight: 600; }
+  .adt-fm-preview-sub { font-size: 11px; color: var(--fm-text-faint); margin-top: 2px; }
+
+  .adt-fm-preview-product {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--fm-border-soft);
+  }
+
+  .adt-fm-preview-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    background-color: #f0f0f1;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    border: 1px solid var(--fm-border-soft);
+  }
+
+  .adt-fm-preview-product-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .adt-fm-preview-product-meta { font-size: 11px; color: var(--fm-text-faint); margin-top: 2px; }
+
+  .adt-fm-preview-change {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin-top: 4px;
+    font-family: inherit;
+    font-size: 11px;
+    color: var(--fm-pink);
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover { color: #c01e77; }
+  }
+
+  .adt-fm-preview-variation {
+    font-size: 11.5px;
+    color: var(--fm-violet);
+    font-weight: 600;
+    margin-top: 1px;
+  }
+
+  .adt-fm-preview-variations {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--fm-border-soft);
+  }
+
+  .adt-fm-preview-variations-note {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: var(--fm-text-faint);
+  }
+
+  .adt-fm-preview-picker {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--fm-border-soft);
+    background: #fafbfc;
+  }
+
+  .adt-fm-preview-picker-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--fm-text-faint);
+    margin-bottom: 4px;
+  }
+
+  /* Option body for the plain (ungrouped) selects: pages, posts, variations. */
+  .adt-fm-plain-option {
+    padding: 6px 10px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .adt-fm-selected-label {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  .adt-fm-product-option {
+    padding: 4px 10px;
+    line-height: 1.3;
+  }
+
+  .adt-fm-product-option-name { font-size: 12.5px; color: var(--fm-text); }
+  .adt-fm-product-option-meta { font-size: 11px; color: var(--fm-text-faint); font-family: var(--fm-mono); }
+
+  .vs__dropdown-option--highlight .adt-fm-product-option-name,
+  .vs__dropdown-option--highlight .adt-fm-product-option-meta { color: #fff; }
+
+  .adt-fm-preview-picker-empty { padding: 6px 10px; font-size: 12px; color: var(--fm-text-faint); }
+
+  .adt-fm-preview-status {
+    font-size: 11px;
+    color: var(--fm-text-faint);
+    padding: 0 14px;
+
+    &:not(:empty) { padding: 6px 14px; }
+  }
+
+  .adt-fm-preview-error {
+    font-size: 12px;
+    color: var(--fm-warn);
+    padding: 10px 14px;
+  }
+
+  .adt-fm-preview-xml {
+    flex: 1;
+    padding: 10px 14px;
+    background: #0e1116;
+    color: #c9d1d9;
+    font-family: var(--fm-mono);
+    font-size: 11.5px;
+    overflow: auto;
+    line-height: 1.6;
+    min-height: 120px;
+  }
+
+  .adt-fm-xml-line {
+    white-space: pre;
+
+    &[data-indent='1'] { padding-left: 12px; }
+  }
+
+  .adt-fm-preview-empty { color: #6e7681; font-style: italic; }
+
+  .adt-fm-preview-foot {
+    padding: 10px 14px;
+    border-top: 1px solid var(--fm-border-soft);
+    background: #fafbfc;
+    font-size: 11px;
+    color: var(--fm-text-faint);
+
+    p { margin: 0; }
+    p + p { margin-top: 6px; }
+  }
+
+  .adt-fm-preview-foot-note { color: var(--fm-text-dim); font-weight: 500; }
+
+  /* A disabled toolbar button must read as unavailable, not just inert. */
+  .adt-fm-toolbar .adt-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1400px) {
+    .adt-fm-shell--with-preview { grid-template-columns: 220px minmax(0, 1fr) 300px; }
+  }
+
+  @media (max-width: 1200px) {
+    .adt-fm-shell,
+    .adt-fm-shell--with-preview { grid-template-columns: 220px minmax(0, 1fr); }
+
+    .adt-fm-preview { display: none; }
+  }
+
+  @media (max-width: 960px) {
+    .adt-fm-shell,
+    .adt-fm-shell--with-preview { grid-template-columns: minmax(0, 1fr); }
+
+    .adt-fm-nav { display: none; }
+
+    /*
+     * The navigator is gone at this width, so the side column carries only the
+     * save panel. Move it below the table and pin it, otherwise Save would sit
+     * above the table and scroll away - the one place it must not be.
+     */
+    .adt-fm-side {
+      order: 2;
+      position: sticky;
+      top: auto;
+      bottom: 0;
+      z-index: 20;
+      max-height: none;
+    }
+
+    .adt-fm-save-bar {
+      flex-direction: row;
+      align-items: center;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+
+      .adt-fm-save-status { flex: 1 1 auto; }
+
+      #savebutton { width: auto; }
+
+      // The pinned bar has room for one line only, and the button already
+      // reads "Save & Continue".
+      .adt-fm-next-step { display: none; }
+    }
+  }
+
+  /* ===== Searchable selects (vue-select) ===== */
+  .adt-grouped-select-group-header {
+    font-weight: bold;
+    color: #1f2937;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-top: 1px solid #e9ecef;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .adt-grouped-select-option { padding: 0.25rem 1.5rem; }
+
+  .adt-grouped-select-option--elite-gated { opacity: 0.55; font-style: italic; }
+
+  /*
+   * Ported from filters-rules-builder/components/common/AttributeSelect.vue so
+   * both builders present the same control. Keep them in step: if that file
+   * changes, change this with it rather than inventing a variant here.
+
+   *
+   * The `border: none` on the search input and friends are not duplication of
+   * the library - vue-select targets `.vs__search` with a single class and
+   * WordPress admin's form rules out-specify it, so without them the input
+   * paints its own bordered box inside the control.
+   */
+  .adt-channel-attribute-select-container,
+  .adt-source-value-select-container {
+    position: relative;
+    min-width: 0;
+
+    .v-select { width: 100%; }
+
+    .adt-channel-attribute-select-error,
+    .adt-source-value-select-error {
+      .vs__dropdown-toggle { border-color: #dc3545; }
+    }
+
+    .vs__dropdown-toggle {
+      padding: 0;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      min-height: 1.875rem;
+      height: 1.875rem;
+      box-sizing: border-box;
+      background-color: #fff;
+      box-shadow: none;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .vs__dropdown-toggle:focus-within {
+      outline: 2px solid transparent;
+      box-shadow: 0 0 0 1px #2271b1;
+      border-color: #2271b1;
+    }
+
+    .vs__selected-options {
+      padding: 0.25rem 0.5rem;
+      flex-wrap: nowrap;
+      min-height: auto;
+      overflow: hidden;
+    }
+
+    /*
+     * No HORIZONTAL padding. `.vs__selected-options` already insets its children
+     * by 0.5rem, and the selected value adds nothing on top - so any padding here
+     * lands on the placeholder and the typed text only, putting them 8px further
+     * right than the value they replace. The inset has one owner: the wrapper.
+     */
+    .vs__search {
+      border: none;
+      margin: 0;
+      padding: 0.25rem 0;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      height: auto;
+      min-height: auto;
+      background: transparent;
+      border-radius: 0;
+    }
+
+    /* `margin: 0` is what stops the text nudging upward on focus. */
+    .vs__search:focus {
+      margin: 0;
+      box-shadow: none;
+      border: none;
+      outline: none;
+    }
+
+    /* An unset control reads as a placeholder, not as a value. */
+    .vs__search::placeholder { color: #9ca3af; }
+
+    .vs__actions { padding: 0.125rem 0.25rem; }
+
+    .vs__clear,
+    .vs__open-indicator {
+      fill: #6b7280;
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .vs__dropdown-menu {
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+
+    /*
+     * Zero, because every option renders through an `#option` template that
+     * supplies its own padding - a group header needs a full-bleed background.
+     */
+    .vs__dropdown-option {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      padding: 0;
+      white-space: normal;
+    }
+
+    .vs__dropdown-option--highlight { background-color: #3b82f6; color: #fff; }
+
+    .vs__selected {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background-color: transparent;
+      color: inherit;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+  }
+}

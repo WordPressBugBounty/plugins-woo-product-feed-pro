@@ -52,6 +52,12 @@ class OpenAI_Product_Feed extends Abstract_Class {
      * yields the literal strings "true" / "false". For JSONL output these must serialise
      * as real JSON booleans to match the spec's Boolean field type.
      *
+     * `is_eligible_ads` stays in the list next to `is_ads_eligible`. The channel now
+     * offers the spec name, but a feed saved before the rename stores the old name in
+     * its own attribute rows, and generation reads the stored name. OpenAI still accepts
+     * `is_eligible_ads` as a legacy alias, so such a feed keeps working; dropping it here
+     * would only make it emit the string "true" instead of the boolean true.
+     *
      * @since 13.5.6
      *
      * @var string[]
@@ -59,6 +65,7 @@ class OpenAI_Product_Feed extends Abstract_Class {
     protected $boolean_fields = array(
         'is_eligible_search',
         'is_eligible_checkout',
+        'is_ads_eligible',
         'is_eligible_ads',
     );
 
@@ -463,6 +470,60 @@ class OpenAI_Product_Feed extends Abstract_Class {
     }
 
     /**
+     * Declare the Parquet column types for an OpenAI feed.
+     *
+     * Parquet is typed, so the flat-string shape the delimited formats use would throw
+     * away what the OpenAI spec states about each field. The payload this writer receives
+     * has already passed through transform_jsonl_product(), so the eligibility flags are
+     * real booleans, target_countries is a list and shipping is a list of objects — the
+     * three fields whose spec type is not String.
+     *
+     * Prices keep their String type on purpose: the spec's price form carries the
+     * currency ("12.60 AUD"), so a numeric column could not hold it.
+     *
+     * @since 13.5.8
+     *
+     * @param array  $types Column name => type declaration.
+     * @param object $feed  The feed object.
+     * @return array
+     */
+    public function parquet_column_types( $types, $feed ) {
+        $feed_channel = $feed->get_channel();
+
+        if ( ! isset( $feed_channel['fields'] ) || 'openai' !== $feed_channel['fields'] ) {
+            return $types;
+        }
+
+        foreach ( $this->boolean_fields as $field ) {
+            $types[ $field ] = array( 'type' => 'boolean' );
+        }
+
+        // Spec type: List.
+        $types['target_countries'] = array(
+            'type' => 'list',
+            'item' => array( 'type' => 'string' ),
+        );
+
+        // The keys match the entries parse_shipping_for_jsonl() builds. 'region' is
+        // declared even though that method omits it when empty; the writer fills a
+        // declared key the row does not carry with a null.
+        $types['shipping'] = array(
+            'type' => 'list',
+            'item' => array(
+                'type'   => 'struct',
+                'fields' => array(
+                    'country' => array( 'type' => 'string' ),
+                    'region'  => array( 'type' => 'string' ),
+                    'service' => array( 'type' => 'string' ),
+                    'price'   => array( 'type' => 'string' ),
+                ),
+            ),
+        );
+
+        return $types;
+    }
+
+    /**
      * Run the class.
      *
      * @since 13.4.9
@@ -471,6 +532,7 @@ class OpenAI_Product_Feed extends Abstract_Class {
         add_filter( 'adt_product_feed_xml_attribute_handling', array( $this, 'handle_xml_attribute' ), 10, 7 );
         add_filter( 'adt_product_data_availability_format', array( $this, 'format_availability' ), 10, 3 );
         add_filter( 'adt_product_feed_jsonl_product', array( $this, 'transform_jsonl_product' ), 10, 3 );
+        add_filter( 'adt_product_feed_parquet_column_types', array( $this, 'parquet_column_types' ), 10, 2 );
         add_filter( 'adt_product_feed_platform_requires_pure_plain_text_fields', array( $this, 'register_pure_plain_text_platform' ), 10, 1 );
         add_filter( 'adt_product_feed_csv_row_data', array( $this, 'handle_csv_row_data' ), 10, 4 );
     }

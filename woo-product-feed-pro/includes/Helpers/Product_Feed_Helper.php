@@ -7,6 +7,7 @@
 
 namespace AdTribes\PFP\Helpers;
 
+use AdTribes\PFP\Integrations\Caching;
 use AdTribes\PFP\Factories\Product_Feed;
 use AdTribes\PFP\Factories\Product_Feed_Query;
 
@@ -16,6 +17,19 @@ use AdTribes\PFP\Factories\Product_Feed_Query;
  * @since 13.3.5
  */
 class Product_Feed_Helper {
+
+    /**
+     * PHP extensions the XML feed writer needs in order to run.
+     *
+     * `xmlwriter` became a hard runtime dependency when the feed formatter moved from DOM
+     * string output to XMLWriter. `dom` and `simplexml` are used by the same write path
+     * (SimpleXMLElement, dom_import_simplexml, DOMDocument), so a missing one of those
+     * fails identically. Non-XML formats (csv, txt, tsv, jsonl) do not need any of them.
+     *
+     * @since 13.5.8
+     * @var string[]
+     */
+    const XML_REQUIRED_PHP_EXTENSIONS = array( 'xmlwriter', 'dom', 'simplexml' );
 
     /**
      * Check if object is a Product_Feed.
@@ -103,17 +117,102 @@ class Product_Feed_Helper {
      * @return array|null
      */
     public static function get_channel_from_legacy_channel_hash( $channel_hash ) {
+        /*
+         * Memoized per request: the lookup re-`include`s a ~237-entry static file
+         * and scans it linearly, and a single field-mapping read resolves the same
+         * hash from three call sites (the REST payload, the migrator, and the
+         * sub-attribute registry). The source file is static, so the result cannot
+         * change within a request.
+         */
+        static $resolved = array();
+
+        $cache_key = (string) $channel_hash;
+
+        if ( array_key_exists( $cache_key, $resolved ) ) {
+            return $resolved[ $cache_key ];
+        }
+
         $legacy_channel_statics = include ADT_PFP_PLUGIN_DIR_PATH . 'includes/I18n/legacy_channel_statics.php';
+
+        $resolved[ $cache_key ] = null;
 
         // Search for the channel hash in the legacy channel statics.
         foreach ( $legacy_channel_statics as $country ) {
             foreach ( $country as $channel ) {
                 if ( $channel['channel_hash'] === $channel_hash ) {
-                    return $channel;
+                    $resolved[ $cache_key ] = $channel;
+                    break 2;
                 }
             }
         }
-        return null;
+
+        return $resolved[ $cache_key ];
+    }
+
+    /**
+     * Load a channel class and return its attribute catalog.
+     *
+     * Single owner of the dynamic `WooSEA_{fields}` class loading sequence and of
+     * the path-traversal guard that protects it. `Field_Mappings` (the REST
+     * payload) and `Feed_Attributes_Migrator` (the `is_custom` classifier) both
+     * read the same catalog, so keep the guard here rather than restating it at a
+     * call site — a future hardening must apply everywhere at once.
+     *
+     * SECURITY: `$channel_fields` reaches the filesystem path, so it is clamped to
+     * an alphanumeric/underscore allowlist before `file_exists()` and the include.
+     * Do not relax that check.
+     *
+     * The catalog is memoized per request, because building it twice in one
+     * request (once for the migration, once for the payload) is pure repeat work.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @param string $channel_fields The channel `fields` value.
+     * @return array The channel attribute catalog, or an empty array when the channel cannot be loaded.
+     */
+    public static function get_channel_attribute_catalog( $channel_fields ) {
+        static $catalogs = array();
+
+        $channel_fields = (string) $channel_fields;
+
+        if ( isset( $catalogs[ $channel_fields ] ) ) {
+            return $catalogs[ $channel_fields ];
+        }
+
+        $catalogs[ $channel_fields ] = array();
+
+        if ( '' === $channel_fields ) {
+            return $catalogs[ $channel_fields ];
+        }
+
+        $channel_class = 'WooSEA_' . $channel_fields;
+
+        if ( ! class_exists( $channel_class ) ) {
+            // Only allow alphanumeric characters and underscores, to prevent path traversal.
+            if ( ! preg_match( '/^[a-zA-Z0-9_]+$/', $channel_fields ) ) {
+                return $catalogs[ $channel_fields ];
+            }
+
+            $channel_file = ADT_PFP_CHANNEL_CLASS_ROOT_PATH . 'class-' . $channel_fields . '.php';
+            if ( ! file_exists( $channel_file ) ) {
+                return $catalogs[ $channel_fields ];
+            }
+
+            require_once $channel_file;
+
+            if ( ! class_exists( $channel_class ) ) {
+                return $catalogs[ $channel_fields ];
+            }
+        }
+
+        if ( ! method_exists( $channel_class, 'get_channel_attributes' ) ) {
+            return $catalogs[ $channel_fields ];
+        }
+
+        $catalogs[ $channel_fields ] = (array) $channel_class::get_channel_attributes();
+
+        return $catalogs[ $channel_fields ];
     }
 
     /**
@@ -185,7 +284,16 @@ class Product_Feed_Helper {
     /**
      * Count total published product including variations.
      *
+     * The variation half of this count must agree with what the feed query is able to
+     * return, because it seeds `products_count` - the figure the progress bar and the
+     * generation log report. The query only accepts a variation whose parent product is
+     * itself published (@see \AdTribes\PFP\Classes\Product_Data::only_include_published_parent_variations()),
+     * so a plain `wp_count_posts( 'product_variation' )` over-counts by every published
+     * variation left behind a draft, pending or private parent. That gap is invisible:
+     * the run then reports products it never had any way of writing.
+     *
      * @since 13.3.5
+     * @since 13.5.8 The variation half applies the query's parent-status constraint.
      * @access public
      *
      * @param bool $incl_variation Include variations.
@@ -197,8 +305,133 @@ class Product_Feed_Helper {
             return $count_product->publish;
         }
 
-        $count_product_variation = wp_count_posts( 'product_variation' );
-        return $count_product->publish + $count_product_variation->publish;
+        return $count_product->publish + self::get_total_feed_eligible_variations();
+    }
+
+    /**
+     * Count the published variations a feed query can actually return.
+     *
+     * Mirrors the parent-status constraint the feed query applies in
+     * \AdTribes\PFP\Classes\Product_Data::only_include_published_parent_variations(): a
+     * published variation counts only while its parent product is published too.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @return int
+     */
+    public static function get_total_feed_eligible_variations() {
+        $counts = self::get_published_variation_counts();
+        return $counts['eligible'];
+    }
+
+    /**
+     * Count the published variations no feed can reach.
+     *
+     * A variation stays published when its parent product is set to draft, pending or
+     * private - WooCommerce has no separate status control for one, and only cascades
+     * to the variations when the parent is trashed - so the catalogue can hold published
+     * variations that every feed drops. They are left out of products_count, so no count
+     * derived from it can report them either, which is why a merchant sees a feed shrink
+     * with no explanation. The generation log names the figure, and the get_feed_stats
+     * and get_excluded_products abilities carry it for a site that leaves logging off.
+     *
+     * The count covers the whole catalogue, not one feed. Feed filters and category
+     * restrictions are applied per-product downstream, so no caller can narrow it.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @return int
+     */
+    public static function get_total_variations_with_unpublished_parent() {
+        $counts = self::get_published_variation_counts();
+        return $counts['orphaned'];
+    }
+
+    /**
+     * Split the published variations by whether a feed query can reach them.
+     *
+     * One query answers both halves, so the rule "a variation counts only while its
+     * parent product is published" lives in exactly one place. Two hand-written joins
+     * would drift apart the next time that rule grows a clause, and products_count would
+     * disagree with the feed query again - the very gap this count exists to close.
+     *
+     * `COUNT( parents.ID )` counts only the rows the LEFT JOIN matched, which is the
+     * eligible half; the remaining rows are the orphans. The join is on the parent's
+     * primary key, so it adds at most one row per variation and the total stays a
+     * variation count.
+     *
+     * Read straight from the database rather than through `wp_count_posts()`, which
+     * answers from a cache WordPress clears only on a status transition: after a bulk
+     * delete of variations it would still describe the catalogue as it was.
+     *
+     * The result is held for as long as the posts cache stays unchanged. A bulk refresh
+     * generates several feeds in one request and every one of them sizes itself from
+     * this, so without the memo the same catalogue-wide join runs once or twice per feed.
+     * WordPress bumps `last_changed` whenever a post is added, updated or deleted, so the
+     * memo cannot outlive the catalogue it describes. A failed query is never memoized.
+     *
+     * @since 13.5.8
+     * @access private
+     *
+     * @return array {
+     *     @type int $total    Every published variation.
+     *     @type int $eligible The ones a feed query can return.
+     *     @type int $orphaned The ones left behind an unpublished parent.
+     * }
+     */
+    private static function get_published_variation_counts() {
+        global $wpdb;
+
+        static $cached_key = '';
+        static $cached     = null;
+
+        $last_changed = wp_cache_get_last_changed( 'posts' );
+        if ( null !== $cached && $last_changed === $cached_key ) {
+            return $cached;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $row = $wpdb->get_row(
+            "SELECT COUNT( variations.ID ) AS total, COUNT( parents.ID ) AS eligible
+            FROM {$wpdb->posts} AS variations
+            LEFT JOIN {$wpdb->posts} AS parents
+                ON variations.post_parent = parents.ID
+                AND parents.post_type = 'product'
+                AND parents.post_status = 'publish'
+            WHERE variations.post_type = 'product_variation'
+            AND variations.post_status = 'publish'",
+            ARRAY_A
+        );
+
+        // A failed query returns null, and taking the eligible half for a zero would end
+        // the run as soon as the products were written and drop every variation from the
+        // file - the same silent truncation this count exists to prevent. Fall back to
+        // the total instead: over-counting only costs a trailing batch that writes
+        // nothing. No orphan is reported, because none was measured.
+        if ( null === $row ) {
+            $count_product_variation = wp_count_posts( 'product_variation' );
+            $published               = (int) $count_product_variation->publish;
+
+            return array(
+                'total'    => $published,
+                'eligible' => $published,
+                'orphaned' => 0,
+            );
+        }
+
+        $total    = (int) $row['total'];
+        $eligible = (int) $row['eligible'];
+
+        $cached_key = $last_changed;
+        $cached     = array(
+            'total'    => $total,
+            'eligible' => $eligible,
+            'orphaned' => $total - $eligible,
+        );
+
+        return $cached;
     }
 
     /**
@@ -287,64 +520,38 @@ class Product_Feed_Helper {
      * Remove cache.
      *
      * The method is used to remove the cache for the feed processing.
-     * This is to ensure that the feed is not cached by the caching plugins.
-     * This is the legacy code base logic.
+     * Two things happen before every feed run: a garbage-collection pass, because feed
+     * generation is the memory-heavy path in this plugin, and the caching-plugin
+     * exclusions that keep the generated files out of page caches. The old name,
+     * disable_cache(), described only the second and hid the first from its callers.
      *
      * @since 13.3.5
      * @access public
      */
-    public static function disable_cache() {
+    public static function prepare_for_generation() {
         // Force garbage collection dump.
         gc_enable();
         gc_collect_cycles();
 
-        // Make sure feeds are not being cached.
-        $no_caching = new \WooSEA_Caching();
+        // Make sure feeds are not being cached. Each integration guards on its own
+        // caching plugin being present, so Caching::run() is safe to call unconditionally.
+        ( new Caching() )->run();
+    }
 
-        // LiteSpeed Caching.
-        if ( class_exists( 'LiteSpeed\Core' ) || defined( 'LSCWP_DIR' ) ) {
-            $no_caching->litespeed_cache();
-        }
+    /**
+     * Remove cache.
+     *
+     * Kept because the method was public from 13.3.5 and custom code may call it. Nothing
+     * in this plugin or its addons does any more.
+     *
+     * @since 13.3.5
+     * @deprecated 13.5.8 Use Product_Feed_Helper::prepare_for_generation() instead.
+     * @access public
+     */
+    public static function disable_cache() {
+        _deprecated_function( __METHOD__, '13.5.8', __CLASS__ . '::prepare_for_generation' );
 
-        // WP Fastest Caching.
-        if ( class_exists( 'WpFastestCache' ) ) {
-            $no_caching->wp_fastest_cache();
-        }
-
-        // WP Super Caching.
-        if ( function_exists( 'wpsc_init' ) ) {
-            $no_caching->wp_super_cache();
-        }
-
-        // Breeze Caching.
-        if ( class_exists( 'Breeze_Admin' ) ) {
-            $no_caching->breeze_cache();
-        }
-
-        // WP Optimize Caching.
-        if ( class_exists( 'WP_Optimize' ) ) {
-            $no_caching->wp_optimize_cache();
-        }
-
-        // Cache Enabler.
-        if ( class_exists( 'Cache_Enabler' ) ) {
-            $no_caching->cache_enabler_cache();
-        }
-
-        // Swift Performance Lite.
-        if ( class_exists( 'Swift_Performance_Lite' ) ) {
-            $no_caching->swift_performance_cache();
-        }
-
-        // Comet Cache.
-        if ( is_plugin_active( 'comet-cache/comet-cache.php' ) ) {
-            $no_caching->comet_cache();
-        }
-
-        // HyperCache.
-        if ( class_exists( 'HyperCache' ) ) {
-            $no_caching->hyper_cache();
-        }
+        self::prepare_for_generation();
     }
 
     /**
@@ -841,6 +1048,43 @@ class Product_Feed_Helper {
     }
 
     /**
+     * Get the XML feed writer's required PHP extensions that this server is missing.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @return array List of missing extension names. Empty when the server has them all.
+     */
+    public static function get_missing_xml_php_extensions() {
+        $missing = array();
+
+        foreach ( self::XML_REQUIRED_PHP_EXTENSIONS as $extension ) {
+            if ( ! extension_loaded( $extension ) ) {
+                $missing[] = $extension;
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
+     * Check whether a feed writes XML and so depends on the XML PHP extensions.
+     *
+     * Keyed on the `xml` base format because that is the only base format the writer
+     * emits XML for. A new XML-producing format added under a different slug must be
+     * listed here too, or it silently loses the missing-extension guard.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @param Product_Feed $feed The product feed object.
+     * @return bool
+     */
+    public static function feed_needs_xml_php_extensions( $feed ) {
+        return 'xml' === Product_Feed::get_base_file_format( (string) $feed->file_format );
+    }
+
+    /**
      * Load a temporary XML feed file during batch processing, capturing libxml parse detail.
      *
      * Wraps simplexml_load_file() with libxml internal-error capture so a parse failure can
@@ -973,5 +1217,35 @@ class Product_Feed_Helper {
         }
 
         return $postcode;
+    }
+
+    /**
+     * Strip a field-mapping prefix from a mapped attribute name.
+     *
+     * The feed generator rewrites two mapped attribute keys while it assembles a
+     * product: `custom_attributes_attribute_<name>` and `product_attributes_<name>`
+     * both become `<name>` (see Get_Products). Any consumer that has to predict the
+     * assembled key from the mapping alone - Feed_Writer_Parquet resolves its column
+     * list from the mapping before the first product exists - must apply the same
+     * rewrite. It lives here so the two sites cannot drift.
+     *
+     * @since 13.5.8
+     * @access public
+     *
+     * @param string $key A mapped attribute name, or an assembled product-array key.
+     * @return string The key with a known mapping prefix removed. Unchanged when it carries none.
+     */
+    public static function strip_mapped_attribute_prefix( $key ) {
+        $key = (string) $key;
+
+        foreach ( array( 'custom_attributes_attribute_', 'product_attributes_' ) as $prefix ) {
+            if ( false !== strpos( $key, $prefix ) ) {
+                $pieces = explode( $prefix, $key );
+
+                return $pieces[1];
+            }
+        }
+
+        return $key;
     }
 }

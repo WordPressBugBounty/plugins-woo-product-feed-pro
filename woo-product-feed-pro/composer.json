@@ -1,0 +1,40 @@
+{
+    "name": "adtribes/woo-product-feed-pro",
+    "description": "Product Feed PRO for WooCommerce.",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "require": {
+        "php": ">=7.4",
+        "codename/parquet": "^0.7.4"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "platform-check": false,
+        "sort-packages": true,
+        "_platform-comment": "ext-gmp is faked so Composer resolves codename/parquet, which hard-requires it. It is not needed at runtime: brick/math falls back to its bcmath calculator, and Feed_Writer_Parquet gates on bcmath + zlib only. Re-check this if codename/parquet is ever updated.",
+        "platform": {
+            "php": "7.4",
+            "ext-gmp": "8.0.0"
+        }
+    },
+    "scripts": {
+        "prune-vendor": [
+            "rm -rf vendor/packaged/thrift/src/Server",
+            "rm -f vendor/packaged/thrift/src/Transport/TCurlClient.php vendor/packaged/thrift/src/Transport/THttpClient.php vendor/packaged/thrift/src/Transport/TSocket.php vendor/packaged/thrift/src/Transport/TSSLSocket.php vendor/packaged/thrift/src/Transport/TSocketPool.php",
+            "rm -f vendor/codename/parquet/src/format/AesGcmV1.php vendor/codename/parquet/src/format/AesGcmCtrV1.php",
+            "rm -f vendor/codename/parquet/examples.php vendor/codename/parquet/benchmark.php vendor/codename/parquet/benchmark-wide-schema.php",
+            "@composer dump-autoload --optimize"
+        ],
+        "post-install-cmd": "@prune-vendor",
+        "post-update-cmd": "@prune-vendor"
+    },
+    "extra": {
+        "_prune-vendor-comment": [
+            "The plugin ships its vendor directory, so every file in it is resident on every merchant site.",
+            "prune-vendor deletes the parts of the dependency tree the Parquet writer never reaches, and Composer runs it after every install and update so a re-install is re-pruned.",
+            "Removed: thrift's Server directory and its socket/HTTP client transports (server sockets and URL-driven transports - SSRF-shaped sinks), the parquet package's AesGcm encryption structs (the plugin writes and reads unencrypted files only), and the package's standalone examples.php / benchmark*.php scripts (they execute at file scope with no ABSPATH guard).",
+            "The write and read path uses local stream wrappers over an fopen handle and needs none of it. Reading an ENCRYPTED Parquet file would now fail on a missing class - the plugin never writes one, and both the writer and count_rows() catch Throwable.",
+            "codename/parquet is pinned at ^0.7.4. Re-check this list, and the CVE record for the pinned version, whenever the dependency is updated."
+        ]
+    }
+}

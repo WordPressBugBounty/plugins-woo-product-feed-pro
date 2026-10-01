@@ -129,7 +129,15 @@ class App {
         // Run the plugin actions here when it's activated.
         ( new Activation( $sitewide ) )->run();
 
-        flush_rewrite_rules();
+        /**
+         * On the activation request the plugin file is included mid-request, after
+         * `init` has already fired, so rewrite rules the plugin registers on `init`
+         * (e.g. the /.well-known/ucp profile rule) are not registered yet. A hard
+         * flush_rewrite_rules() here would persist a rule set without them. Deleting
+         * the option instead defers regeneration to the next request, when every
+         * plugin has registered its rules.
+         */
+        delete_option( 'rewrite_rules' );
     }
 
     /**
@@ -320,6 +328,7 @@ App::instance()->register_objects(
         require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/integration-objects.php',
         require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/rest-objects.php',
         require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/feeds-objects.php',
+        require_once ADT_PFP_PLUGIN_DIR_PATH . 'bootstrap/ucp-objects.php',
     )
 );
 

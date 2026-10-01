@@ -1,0 +1,172 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "5e500c323f197a1eb904b0059674bdcc",
+    "packages": [
+        {
+            "name": "brick/math",
+            "version": "0.10.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/brick/math.git",
+                "reference": "459f2781e1a08d52ee56b0b1444086e038561e3f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/brick/math/zipball/459f2781e1a08d52ee56b0b1444086e038561e3f",
+                "reference": "459f2781e1a08d52ee56b0b1444086e038561e3f",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "php": "^7.4 || ^8.0"
+            },
+            "require-dev": {
+                "php-coveralls/php-coveralls": "^2.2",
+                "phpunit/phpunit": "^9.0",
+                "vimeo/psalm": "4.25.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Brick\\Math\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Arbitrary-precision arithmetic library",
+            "keywords": [
+                "Arbitrary-precision",
+                "BigInteger",
+                "BigRational",
+                "arithmetic",
+                "bigdecimal",
+                "bignum",
+                "brick",
+                "math"
+            ],
+            "support": {
+                "issues": "https://github.com/brick/math/issues",
+                "source": "https://github.com/brick/math/tree/0.10.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/BenMorel",
+                    "type": "github"
+                }
+            ],
+            "time": "2022-08-10T22:54:19+00:00"
+        },
+        {
+            "name": "codename/parquet",
+            "version": "v0.7.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/codename-hub/php-parquet.git",
+                "reference": "8026de3238dd95e3c2d4450a9522b66c5bea3064"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/codename-hub/php-parquet/zipball/8026de3238dd95e3c2d4450a9522b66c5bea3064",
+                "reference": "8026de3238dd95e3c2d4450a9522b66c5bea3064",
+                "shasum": ""
+            },
+            "require": {
+                "brick/math": "^0.17.0 || ^0.13.0 || ^0.11.0 || ^0.10.2 || ^0.9.3",
+                "ext-bcmath": "*",
+                "ext-gmp": "*",
+                "ext-zlib": "*",
+                "packaged/thrift": "^0.16.0",
+                "php": ">=7.3 <=8.5.99"
+            },
+            "require-dev": {
+                "phpunit/php-code-coverage": "^9.2",
+                "phpunit/phpunit": "^9.0"
+            },
+            "suggest": {
+                "ext-snappy": "Install/compile snappy extension to get support for snappy compression reading/writing"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "codename\\parquet\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kevin Dargel",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Thrift-based PHP implementation for using the Apache Parquet format",
+            "support": {
+                "issues": "https://github.com/codename-hub/php-parquet/issues",
+                "source": "https://github.com/codename-hub/php-parquet/tree/v0.7.4"
+            },
+            "time": "2026-07-16T19:26:17+00:00"
+        },
+        {
+            "name": "packaged/thrift",
+            "version": "0.16.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/packaged/thrift.git",
+                "reference": "f7fce15fc12ef73b195b6a2a49acda565b352dbe"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/packaged/thrift/zipball/f7fce15fc12ef73b195b6a2a49acda565b352dbe",
+                "reference": "f7fce15fc12ef73b195b6a2a49acda565b352dbe",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.5 || ^7.0 || ^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Thrift\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Apache Thrift",
+            "homepage": "http://thrift.apache.org/",
+            "keywords": [
+                "apache",
+                "thrift"
+            ],
+            "support": {
+                "issues": "https://github.com/packaged/thrift/issues",
+                "source": "https://github.com/packaged/thrift/tree/0.16.0"
+            },
+            "time": "2025-03-10T16:15:15+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {},
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=7.4"
+    },
+    "platform-dev": {},
+    "platform-overrides": {
+        "php": "7.4",
+        "ext-gmp": "8.0.0"
+    },
+    "plugin-api-version": "2.9.0"
+}

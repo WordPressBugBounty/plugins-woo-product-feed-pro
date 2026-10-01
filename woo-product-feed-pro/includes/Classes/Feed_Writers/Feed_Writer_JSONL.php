@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace AdTribes\PFP\Classes\Feed_Writers;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Classes\Repeatable_Attributes;
 use AdTribes\PFP\Traits\Singleton_Trait;
 
 /**
@@ -59,7 +60,7 @@ class Feed_Writer_JSONL extends Abstract_Class {
             }
 
             // Write products to file.
-            $this->write_products( $file_handle, $products );
+            $this->write_products( $file_handle, $products, $feed );
 
             // Close the file.
             fclose( $file_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
@@ -111,13 +112,24 @@ class Feed_Writer_JSONL extends Abstract_Class {
      *
      * @param resource $file_handle File handle resource.
      * @param array    $products Array of product data arrays.
+     * @param object   $feed Feed configuration object.
      * @return void
      */
-    private function write_products( $file_handle, array $products ): void {
+    private function write_products( $file_handle, array $products, object $feed ): void {
+        // Resolved once per batch, not per product: the lookup walks the channel's
+        // whole attribute catalog on a cache miss.
+        $repeat_limits = Repeatable_Attributes::get_limits( (string) $feed->channel_hash );
+
         foreach ( $products as $product ) {
             if ( empty( $product ) || ! is_array( $product ) ) {
                 continue;
             }
+
+            // A repeated tag arrives as `<tag>`, `<tag>_2`, `<tag>_3` — the keys the
+            // generation chain builds for a duplicated mapping row. JSON keys are
+            // unique, so they become one array under the base tag. This is the JSONL
+            // counterpart of the suffix stripping in `Feed_Writer_XML::write_product()`.
+            $product = Repeatable_Attributes::collapse_repeats_to_array( $product, $repeat_limits );
 
             // Convert product array to JSON line.
             $json_line = $this->product_to_json_line( $product );

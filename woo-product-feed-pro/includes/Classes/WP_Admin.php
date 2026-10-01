@@ -9,6 +9,7 @@
 namespace AdTribes\PFP\Classes;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Classes\Feed_Writers\Feed_Writer_Parquet;
 use AdTribes\PFP\Helpers\Helper;
 use AdTribes\PFP\Helpers\Product_Feed_Helper;
 use AdTribes\PFP\Updates\Version_13_3_5_Update;
@@ -62,18 +63,15 @@ class WP_Admin extends Abstract_Class {
             // JS for adding table rows to the rules page.
             wp_enqueue_script( 'woosea_filters_rules-js', ADT_PFP_JS_URL . 'woosea_filters_rules.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
 
-            // JS for field mapping.
-            $field_mapping_js = new Vite_App(
-                'adt-field-mapping-js',
-                'src/vanilla/field-mapping/index.ts',
-                array( 'jquery' ),
-                array(),
-                'adtObj',
-            );
-            $field_mapping_js->enqueue();
-
             // JS for getting channels.
             wp_enqueue_script( 'woosea_channel-js', ADT_PFP_JS_URL . 'woosea_channel.js', '', WOOCOMMERCESEA_PLUGIN_VERSION, true );
+            wp_localize_script(
+                'woosea_channel-js',
+                'woosea_channel_params',
+                array(
+                    'parquet_supported' => Feed_Writer_Parquet::is_supported() ? '1' : '0',
+                )
+            );
 
             // JS for manage projects page.
             wp_enqueue_script( 'woosea_manage-js', ADT_PFP_JS_URL . 'woosea_manage.js?yo=12', array( 'clipboard' ), WOOCOMMERCESEA_PLUGIN_VERSION, true );
@@ -370,7 +368,7 @@ class WP_Admin extends Abstract_Class {
 
         // CSRF protection is now mandatory - nonce must be present and valid.
         if ( ! isset( $_REQUEST['security'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'woosea_ajax_nonce' ) ) {
-            wp_send_json_error( __( 'Invalid security token', 'woo-product-feed-pro' ) );
+            wp_send_json_error( array( 'message' => __( 'Invalid security token', 'woo-product-feed-pro' ) ) );
         }
 
         $setting = sanitize_text_field( wp_unslash( $_REQUEST['setting'] ?? '' ) );

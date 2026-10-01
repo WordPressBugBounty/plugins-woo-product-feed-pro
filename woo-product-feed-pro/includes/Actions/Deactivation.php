@@ -8,6 +8,7 @@
 namespace AdTribes\PFP\Actions;
 
 use AdTribes\PFP\Abstracts\Abstract_Class;
+use AdTribes\PFP\Classes\Google_Product_Taxonomy_Fetcher;
 
 /**
  * Deactivation class.
@@ -89,6 +90,7 @@ class Deactivation extends Abstract_Class {
      */
     protected function cleanup_transients() {
         delete_transient( ADT_TRANSIENT_CUSTOM_ATTRIBUTES );
+        delete_transient( Google_Product_Taxonomy_Fetcher::GOOGLE_PRODUCT_TAXONOMY_TRANSIENT );
     }
 
     /**

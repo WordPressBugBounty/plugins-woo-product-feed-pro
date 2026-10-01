@@ -34,63 +34,70 @@ add_action( 'woocommerce_thankyou', 'woosea_inject_ajax' );
  * Get a list of categories for the drop-down.
  */
 function woosea_categories_dropdown() {
-    $rowCount = absint( esc_attr( sanitize_text_field( $_POST['rowCount'] ) ) );
-
-    if ( Helper::is_current_user_allowed() ) {
-        $feed_id = absint( esc_attr( sanitize_text_field( $_POST['feed_id'] ) ) );
-        $value = sanitize_text_field( $_POST['value'] ?? '' );
-
-        // Filters is called rules in the old version.
-        // Rules is called rules2 in the old version. It is what it is.
-        $type = sanitize_text_field( $_POST['type'] ?? '' );
-        $type = $type === 'filter' ? 'rules' : 'rules2';
-
-        /**
-         * Filter the arguments for the product categories dropdown.
-         *
-         * @since 13.3.4
-         *
-         * @param array $cat_args The arguments for the product categories dropdown.
-         * @return array The arguments for the product categories dropdown.
-         */
-        $cat_args = apply_filters( 'adt_pfp_get_categories_dropdown_args',
-            array(
-                'taxonomy'   => 'product_cat',
-                'hide_empty' => false,
-            ),
-            $feed_id
-        );
-
-        /**
-         * Filter the product categories for the product categories dropdown.
-         * 
-         * @since 13.3.4
-         * 
-         * @param array $product_categories The product categories for the product categories dropdown.
-         * @param array $cat_args           The arguments for the product categories dropdown.
-         * @param int   $feed_id            The feed ID.
-         * @return array The product categories for the product categories dropdown.
-         */
-        $product_categories = apply_filters( 'adt_pfp_get_categories_dropdown', get_terms( $cat_args ), $cat_args, $feed_id );
-        
-        $categories_dropdown = "<select name=\"" . esc_attr($type) . "[" . esc_attr($rowCount) . "][criteria]\">";
-        foreach ( $product_categories as $key => $category ) {
-            /**
-             * Before 13.4.4 the value was the category name. Now it is the category slug.
-             * For backwards compatibility we also need to check for the category name.
-             */
-            $selected = ($value === $category->slug || $value === $category->name) ? 'selected' : '';
-            $categories_dropdown .= "<option value=\"" . esc_attr($category->slug) . "\" $selected>" . esc_html($category->name) . " (" . esc_html( urldecode( $category->slug ) ) . ")</option>";
-        }
-        $categories_dropdown .= '</select>';
-
-        $data = array(
-            'rowCount' => $rowCount,
-            'dropdown' => $categories_dropdown,
-        );
-        echo json_encode( $data );
-        wp_die();
+    if ( ! Helper::is_current_user_allowed() ) {
+        wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
     }
+
+    // CSRF protection is mandatory - nonce must be present and valid.
+    if ( ! isset( $_REQUEST['security'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'woosea_ajax_nonce' ) ) {
+        wp_send_json_error( array( 'message' => __( 'Invalid security token', 'woo-product-feed-pro' ) ) );
+    }
+
+    $rowCount = absint( sanitize_text_field( wp_unslash( $_POST['rowCount'] ?? '' ) ) );
+
+    $feed_id = absint( sanitize_text_field( wp_unslash( $_POST['feed_id'] ?? '' ) ) );
+    $value = sanitize_text_field( $_POST['value'] ?? '' );
+
+    // Filters is called rules in the old version.
+    // Rules is called rules2 in the old version. It is what it is.
+    $type = sanitize_text_field( $_POST['type'] ?? '' );
+    $type = $type === 'filter' ? 'rules' : 'rules2';
+
+    /**
+     * Filter the arguments for the product categories dropdown.
+     *
+     * @since 13.3.4
+     *
+     * @param array $cat_args The arguments for the product categories dropdown.
+     * @return array The arguments for the product categories dropdown.
+     */
+    $cat_args = apply_filters( 'adt_pfp_get_categories_dropdown_args',
+        array(
+            'taxonomy'   => 'product_cat',
+            'hide_empty' => false,
+        ),
+        $feed_id
+    );
+
+    /**
+     * Filter the product categories for the product categories dropdown.
+     * 
+     * @since 13.3.4
+     * 
+     * @param array $product_categories The product categories for the product categories dropdown.
+     * @param array $cat_args           The arguments for the product categories dropdown.
+     * @param int   $feed_id            The feed ID.
+     * @return array The product categories for the product categories dropdown.
+     */
+    $product_categories = apply_filters( 'adt_pfp_get_categories_dropdown', get_terms( $cat_args ), $cat_args, $feed_id );
+    
+    $categories_dropdown = "<select name=\"" . esc_attr($type) . "[" . esc_attr($rowCount) . "][criteria]\">";
+    foreach ( $product_categories as $key => $category ) {
+        /**
+         * Before 13.4.4 the value was the category name. Now it is the category slug.
+         * For backwards compatibility we also need to check for the category name.
+         */
+        $selected = ($value === $category->slug || $value === $category->name) ? 'selected' : '';
+        $categories_dropdown .= "<option value=\"" . esc_attr($category->slug) . "\" $selected>" . esc_html($category->name) . " (" . esc_html( urldecode( $category->slug ) ) . ")</option>";
+    }
+    $categories_dropdown .= '</select>';
+
+    $data = array(
+        'rowCount' => $rowCount,
+        'dropdown' => $categories_dropdown,
+    );
+    echo json_encode( $data );
+    wp_die();
 }
 add_action( 'wp_ajax_woosea_categories_dropdown', 'woosea_categories_dropdown' );
 
@@ -148,21 +155,33 @@ function woosea_find_matching_product_variation( $product, $attributes ) {
  * Get the shipping zone countries and ID's.
  */
 function woosea_shipping_zones() {
+    if ( ! Helper::is_current_user_allowed() ) {
+        wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
+    }
+
+    // CSRF protection is mandatory - nonce must be present and valid.
+    if ( ! isset( $_REQUEST['security'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'woosea_ajax_nonce' ) ) {
+        wp_send_json_error( array( 'message' => __( 'Invalid security token', 'woo-product-feed-pro' ) ) );
+    }
+
     $shipping_options = '';
     $shipping_zones   = WC_Shipping_Zones::get_zones();
 
     $shipping_options = '<option value="all_zones">All zones</option>';
 
     foreach ( $shipping_zones as $zone ) {
-        $shipping_options .= "<option value=\"$zone[zone_id]\">$zone[zone_name]</option>";
+        $shipping_options .= sprintf(
+            '<option value="%1$s">%2$s</option>',
+            esc_attr( $zone['zone_id'] ),
+            esc_html( $zone['zone_name'] )
+        );
     }
 
     $data = array(
         'dropdown' => $shipping_options,
     );
 
-    echo json_encode( $data );
-    wp_die();
+    wp_send_json( $data );
 }
 add_action( 'wp_ajax_woosea_shipping_zones', 'woosea_shipping_zones' );
 
@@ -170,7 +189,16 @@ add_action( 'wp_ajax_woosea_shipping_zones', 'woosea_shipping_zones' );
  * Get the attribute mapping helptexts.
  */
 function woosea_fieldmapping_dialog_helptext() {
-    $field = sanitize_text_field( $_POST['field'] );
+    if ( ! Helper::is_current_user_allowed() ) {
+        wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'woo-product-feed-pro' ) ) );
+    }
+
+    // CSRF protection is mandatory - nonce must be present and valid.
+    if ( ! isset( $_REQUEST['security'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['security'] ) ), 'woosea_ajax_nonce' ) ) {
+        wp_send_json_error( array( 'message' => __( 'Invalid security token', 'woo-product-feed-pro' ) ) );
+    }
+
+    $field = sanitize_text_field( wp_unslash( $_POST['field'] ?? '' ) );
 
     switch ( $field ) {
         case 'g:id':
@@ -232,8 +260,7 @@ function woosea_fieldmapping_dialog_helptext() {
         'helptext' => $helptext,
     );
 
-    echo json_encode( $data );
-    wp_die();
+    wp_send_json( $data );
 }
 add_action( 'wp_ajax_woosea_fieldmapping_dialog_helptext', 'woosea_fieldmapping_dialog_helptext' );
 

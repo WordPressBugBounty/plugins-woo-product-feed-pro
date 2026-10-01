@@ -21,6 +21,22 @@ class Shipping_Data extends Abstract_Class {
     use Singleton_Trait;
 
     /**
+     * Shipping methods that exceeded the rate calculation time limit in this batch.
+     *
+     * Keyed by method identifier, so a method that stalls once is skipped for the
+     * rest of the batch instead of stalling again on every remaining product.
+     * Cleared when a batch starts, because this class is a per-process singleton
+     * and a queue runner processes several batches — and several feeds — in one
+     * request. Without the reset, one stall would strip the method from every
+     * later feed of that request with nothing in the log to explain it.
+     *
+     * @since 13.6.0
+     * @access private
+     * @var array
+     */
+    private $_stalled_shipping_methods = array();
+
+    /**
      * Only include published parent variations.
      *
      * This method is used to exclude parent variations that is not published from the product feed with the custom query.
@@ -148,13 +164,17 @@ class Shipping_Data extends Abstract_Class {
          * Filter the shipping data.
          *
          * @since 13.4.0
+         * @since 13.6.0 Added the `$package` parameter.
          *
          * @param array  $shipping The shipping data.
          * @param object $product  The product object.
          * @param object $feed     The feed object.
+         * @param array  $package  The package data built for this product, with an empty destination.
+         *                         Integrations that source rates from shipping methods living outside
+         *                         WooCommerce shipping zones can reuse it instead of rebuilding one.
          * @return array
          */
-        return apply_filters( 'adt_product_feed_shipping_data', $shipping_data, $product, $feed );
+        return apply_filters( 'adt_product_feed_shipping_data', $shipping_data, $product, $feed, $package );
     }
 
     /**
@@ -492,10 +512,184 @@ class Shipping_Data extends Abstract_Class {
     }
 
     /**
+     * Calculate the rates of a shipping method, with a time limit.
+     *
+     * Feed generation prices every shipping method once per product. A method
+     * that queries a carrier API for live rates (UPS, FedEx and equivalents)
+     * therefore makes one blocking network call per product, and PHP puts no
+     * useful bound on how long that call can block. One unresponsive carrier
+     * then stalls the whole feed run.
+     *
+     * This wrapper caps how long one call can wait on the carrier: the socket
+     * timeout covers stream transports (SoapClient, fsockopen), and for the
+     * WordPress HTTP API it both lowers the default timeout and clamps an
+     * explicit one, because `http_request_timeout` only supplies a default that
+     * any `wp_remote_*()` caller overrides by passing its own `timeout`. It then
+     * remembers a method whose call still ran over the time limit, and the feed
+     * skips that method for every remaining product of the batch, so the run
+     * completes.
+     *
+     * A carrier that reaches the network by some other route (a raw cURL handle
+     * of its own, for example) is bounded only by the skip: its first call of
+     * each batch can still run long.
+     *
+     * @since 13.6.0
+     * @access private
+     *
+     * @param object $method  The shipping method object.
+     * @param array  $package The package data.
+     * @return bool True when the method has usable rates, false when the feed must skip it.
+     */
+    private function _calculate_shipping_rates( $method, $package ) {
+        /**
+         * Filter the time limit, in seconds, for one shipping rate calculation.
+         *
+         * A shipping method that takes longer than this to rate a single product
+         * is skipped for the rest of the request. Return 0 to remove the limit
+         * and always calculate the rates.
+         *
+         * @since 13.6.0
+         *
+         * @param int    $time_limit The time limit in seconds. Default 10.
+         * @param object $method     The shipping method object.
+         * @param array  $package    The package data.
+         * @return int
+         */
+        $time_limit = (int) apply_filters( 'adt_product_feed_shipping_calculation_time_limit', 10, $method, $package );
+
+        // The method is reused for every destination of the zone, and WooCommerce
+        // clears its rates only in `get_rates_for_package()`. Drop the previous
+        // destination's rates so a call that fails or times out cannot republish
+        // them against this one.
+        $method->rates = array();
+
+        if ( $time_limit <= 0 ) {
+            $method->calculate_shipping( $package );
+            return true;
+        }
+
+        $method_key = $method->id . ':' . ( isset( $method->instance_id ) ? (int) $method->instance_id : 0 );
+
+        if ( isset( $this->_stalled_shipping_methods[ $method_key ] ) ) {
+            return false;
+        }
+
+        // Bound the wait on the carrier so a single call cannot block the batch.
+        $socket_timeout = ini_get( 'default_socket_timeout' );
+
+        // The socket timeout does not reach the WordPress HTTP API, which most
+        // carriers use, so cap that for the duration of the call as well.
+        $http_timeout = static function () use ( $time_limit ) {
+            return $time_limit;
+        };
+
+        // `http_request_timeout` only sets the default, so a carrier that passes
+        // its own `timeout` to `wp_remote_*()` ignores it. Clamp the argument too.
+        $http_args = static function ( $args ) use ( $time_limit ) {
+            if ( ! isset( $args['timeout'] ) || $args['timeout'] > $time_limit ) {
+                $args['timeout'] = $time_limit;
+            }
+            return $args;
+        };
+
+        $started = microtime( true );
+        $failed  = false;
+
+        // The timeout and the two filters are applied inside the `try` so that the
+        // `finally` below always restores them, whatever happens after this point.
+        try {
+            if ( false !== $socket_timeout ) {
+                ini_set( 'default_socket_timeout', (string) $time_limit ); // phpcs:ignore WordPress.PHP.IniSet.Risky -- Restored in the `finally` below. Without it an unresponsive carrier API blocks feed generation.
+            }
+
+            add_filter( 'http_request_timeout', $http_timeout, PHP_INT_MAX );
+            add_filter( 'http_request_args', $http_args, PHP_INT_MAX );
+
+            $method->calculate_shipping( $package );
+        } catch ( \Throwable $e ) {
+            $failed = true;
+            $this->_log_stalled_shipping_method( $method, 'Shipping method threw while calculating feed rates: ' . $e->getMessage(), 'error' );
+        } finally {
+            remove_filter( 'http_request_args', $http_args, PHP_INT_MAX );
+            remove_filter( 'http_request_timeout', $http_timeout, PHP_INT_MAX );
+
+            if ( false !== $socket_timeout ) {
+                ini_set( 'default_socket_timeout', (string) $socket_timeout ); // phpcs:ignore WordPress.PHP.IniSet.Risky -- Restores the value read above.
+            }
+        }
+
+        $elapsed = microtime( true ) - $started;
+
+        if ( $failed ) {
+            $this->_stalled_shipping_methods[ $method_key ] = true;
+            return false;
+        }
+
+        if ( $elapsed >= $time_limit ) {
+            $this->_stalled_shipping_methods[ $method_key ] = true;
+            $this->_log_stalled_shipping_method(
+                $method,
+                sprintf(
+                    'Shipping method took %1$.1Fs to rate one product, which is over the %2$ds limit. Skipping it for the remaining products of this batch.',
+                    $elapsed,
+                    $time_limit
+                )
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Forget the shipping methods skipped by the previous batch.
+     *
+     * @since 13.6.0
+     * @access public
+     *
+     * @return void
+     */
+    public function reset_stalled_shipping_methods() {
+        $this->_stalled_shipping_methods = array();
+    }
+
+    /**
+     * Log a shipping method that the feed skips.
+     *
+     * @since 13.6.0
+     * @access private
+     *
+     * @param object $method  The shipping method object.
+     * @param string $message The message to log.
+     * @param string $level   The log level. Accepts 'warning' or 'error'. Default 'warning'.
+     * @return void
+     */
+    private function _log_stalled_shipping_method( $method, $message, $level = 'warning' ) {
+        if ( ! function_exists( 'wc_get_logger' ) ) {
+            return;
+        }
+
+        wc_get_logger()->log(
+            $level,
+            $message,
+            array(
+                'source'             => 'woo-product-feed-pro',
+                'shipping_method'    => $method->id,
+                'shipping_method_id' => isset( $method->instance_id ) ? (int) $method->instance_id : 0,
+            )
+        );
+    }
+
+    /**
      * Get the shipping method data.
      *
+     * Public by contract, not only by visibility. Integrations price shipping
+     * methods that live outside `WC_Shipping_Zones` — see
+     * `AdTribes\PFP\Integrations\WC_Vendors` — by calling this with their own
+     * method and package, so the signature must not change silently.
+     *
      * @since 13.4.0
-     * @access private
+     * @since 13.6.0 Documented as a public seam for integrations.
+     * @access public
      *
      * @param object $method            The shipping method object.
      * @param array  $shipping_zone     The shipping zone data.
@@ -520,7 +714,10 @@ class Shipping_Data extends Abstract_Class {
          * @return array
          */
         $package = apply_filters( 'adt_product_feed_shipping_package', $package, $method, $shipping_zone, $feed );
-        $method->calculate_shipping( $package );
+
+        if ( ! $this->_calculate_shipping_rates( $method, $package ) ) {
+            return $shipping_method_data;
+        }
 
         foreach ( $method->rates as $rate ) {
             $shipping = array(
@@ -614,7 +811,13 @@ class Shipping_Data extends Abstract_Class {
              * Filter the shipping array.
              * This filter is used to modify the shipping data before it is added to the main shipping data array.
              *
-             * @since 13.3.9.
+             * Return an empty array to drop the rate from the feed entirely.
+             *
+             * @since 13.3.9
+             * @since 13.6.0 An empty return value now drops the row instead of
+             *               emitting an empty one. Callbacks that returned an
+             *               empty array and relied on the row still being
+             *               written must return the row unchanged instead.
              *
              * @param array  $shipping The shipping data.
              * @param object $rate     The shipping rate object.
@@ -622,7 +825,10 @@ class Shipping_Data extends Abstract_Class {
              * @param array  $package  The package data containing product information.
              * @return array
              */
-            $shipping_method_data[] = apply_filters( 'adt_product_feed_shipping_array', array_filter( $shipping ), $rate, $feed, $package );
+            $shipping_row = apply_filters( 'adt_product_feed_shipping_array', array_filter( $shipping ), $rate, $feed, $package );
+            if ( ! empty( $shipping_row ) ) {
+                $shipping_method_data[] = $shipping_row;
+            }
         }
 
         return $shipping_method_data;
@@ -823,7 +1029,10 @@ class Shipping_Data extends Abstract_Class {
             $shipping['price'] = $this->_calculate_shipping_price( $rate, $feed, $feed_channel, $shipping_currency );
 
             /** This filter is documented in includes/Classes/Shipping_Data.php */
-            $pickup_data[] = apply_filters( 'adt_product_feed_shipping_array', array_filter( $shipping ), $rate, $feed, $package );
+            $shipping_row = apply_filters( 'adt_product_feed_shipping_array', array_filter( $shipping ), $rate, $feed, $package );
+            if ( ! empty( $shipping_row ) ) {
+                $pickup_data[] = $shipping_row;
+            }
         }
 
         return $pickup_data;
@@ -1088,5 +1297,8 @@ class Shipping_Data extends Abstract_Class {
     public function run() {
         // Register filter to exclude transit time attributes from feed configuration.
         add_filter( 'adt_feed_get_attributes', array( $this, 'exclude_transit_time_attributes' ), 10, 1 );
+
+        // Give every batch a clean skip list. See `$_stalled_shipping_methods`.
+        add_action( 'adt_before_product_feed_batch_processing', array( $this, 'reset_stalled_shipping_methods' ) );
     }
 }

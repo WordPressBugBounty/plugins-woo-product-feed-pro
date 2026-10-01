@@ -62,16 +62,3 @@ export const getContainerValidationClasses = (
 export const hasValidationErrors = (errors: string[]): boolean => {
   return errors.length > 0;
 };
-
-/**
- * Scroll to the first validation error element
- */
-export const scrollToFirstError = (selector: string = '.adt-field-error, .adt-validation-error'): void => {
-  const firstErrorElement = document.querySelector(selector);
-  if (firstErrorElement) {
-    firstErrorElement.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    });
-  }
-};

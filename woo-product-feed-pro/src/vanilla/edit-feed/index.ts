@@ -34,11 +34,15 @@ import './style.scss';
         ? '<span class="adt-loader adt-loader-secondary adt-loader-sm adt-tw-inline-block"></span>'
         : '';
 
-      // Create a new notice with WordPress standard classes
+      // Create a new notice with WordPress standard classes.
+      // The paragraph is a flex row, which holds the loading spinner beside the
+      // text. The message is wrapped, because without the wrapper its text, its
+      // <br> separators and any <a> it holds each become a flex item of their
+      // own, and the sentence breaks apart into a spaced row.
       const noticeClass = `notice notice-${type} is-dismissible woosea-admin-notice`;
       const noticeHtml = `
         <div class="${noticeClass}" id="${id}">
-          <p style="display: flex; align-items: center; gap: 8px;">${loadingHtml}${message}</p>
+          <p style="display: flex; align-items: center; gap: 8px;">${loadingHtml}<span>${message}</span></p>
           <button type="button" class="notice-dismiss">
             <span class="screen-reader-text">${__('Dismiss this notice.', 'woo-product-feed-pro')}</span>
           </button>
@@ -360,8 +364,10 @@ import './style.scss';
         isSubmittingForm = true;
       });
 
-      // Track clicks on tab navigation links to avoid showing warnings
-      $('.woo-product-feed-pro-nav-tab-wrapper .nav-tab').on('click', function () {
+      // Track clicks on tab navigation links to avoid showing warnings.
+      // A notice can also link to another tab of this page, and a notice is
+      // added after this handler is bound, so the handler is delegated.
+      $(d).on('click', '.woo-product-feed-pro-nav-tab-wrapper .nav-tab, .woosea-admin-notice a[href]', function () {
         // @ts-ignore
         // The link is within the edit feed page tabs, so temporarily disable the warning
         const linkHref = $(this).attr('href');

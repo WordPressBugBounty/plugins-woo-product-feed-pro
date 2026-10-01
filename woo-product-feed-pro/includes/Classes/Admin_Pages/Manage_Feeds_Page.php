@@ -71,6 +71,18 @@ class Manage_Feeds_Page extends Admin_Page {
             array(
                 'adtNonce'            => wp_create_nonce( 'adt_nonce' ),
                 'feedPollingInterval' => apply_filters( 'adt_pfp_feed_polling_interval', 5000 ),
+                /**
+                 * Filter the time, in milliseconds, that the browser waits for one feed batch.
+                 *
+                 * The browser stops the request and reports the failure after this time,
+                 * so a batch that never answers cannot leave the feed on "Processing".
+                 *
+                 * @since 13.6.0
+                 *
+                 * @param int $timeout The timeout in milliseconds. Default 120000.
+                 * @return int
+                 */
+                'feedBatchTimeout'    => absint( apply_filters( 'adt_pfp_feed_batch_timeout', 120000 ) ),
             )
         );
 

@@ -377,7 +377,14 @@ class Vite_App {
         }
 
         $this->enqueue_scripts();
+
+        /*
+         * Both hooks. `wp_head` never fires in wp-admin, and every Vue app in
+         * this plugin is an admin screen - see the HMR registration above, which
+         * already pairs them for the same reason.
+         */
         add_action( 'wp_head', array( $this, 'preload_imports' ), 20 );
+        add_action( 'admin_head', array( $this, 'preload_imports' ), 20 );
     }
 
     /**
@@ -465,23 +472,65 @@ class Vite_App {
 
                 printf( '<link rel="modulepreload" crossorigin="anonymous" href="%s" />', esc_url( $file_url ) );
 
-                /***************************************************************************
-                 * Enqueue styles of directly imported components
-                 ***************************************************************************
-                 *
-                 * We manually enqueue the styles of the components that (were generated
-                 * from their `<style>` tag) are directly imported into another component.
-                 * This is because the styles are not automatically enqueued/loaded at
-                 * runtime unlike the dynamically imported components.
-                 */
-                $import_styles = $this->manifest[ $import ]['css'] ?? null;
-                if ( ! empty( $import_styles ) ) {
-                    foreach ( $import_styles as $import_style ) {
-                        $sanitized_key = sanitize_title_with_dashes( basename( $import_style ) );
-                        $css_url       = $this->base_url . $import_style;
-                        wp_enqueue_style( "$this->script_handle-import-$sanitized_key", $css_url, array(), filemtime( ADT_PFP_PLUGIN_FILE ) );
-                    }
+            }
+        }
+    }
+
+    /**
+     * Enqueue the stylesheets of every chunk this entry pulls in.
+     *
+     * Vite splits CSS by chunk. An entry's own `css` array covers only the styles
+     * compiled into that chunk: anything imported by more than one entry - a
+     * shared component, or a library stylesheet such as vue-select's - is emitted
+     * as a separate chunk, listed under `imports` rather than on the entry. Those
+     * files have to be enqueued explicitly or they never reach the page.
+     *
+     * This walks the whole import closure rather than one level, because Vite is
+     * free to nest shared chunks, and it runs during the enqueue phase rather than
+     * from a head hook so it behaves the same on the front end and in wp-admin.
+     *
+     * @since 13.5.8
+     * @return void
+     */
+    protected function enqueue_imported_styles() {
+
+        if ( $this->is_hmr || empty( $this->manifest ) ) {
+            return;
+        }
+
+        $pending = array( $this->entry_file_path );
+        $seen    = array();
+
+        while ( ! empty( $pending ) ) {
+            $chunk_key = array_shift( $pending );
+
+            if ( isset( $seen[ $chunk_key ] ) || ! isset( $this->manifest[ $chunk_key ] ) ) {
+                continue;
+            }
+
+            $seen[ $chunk_key ] = true;
+            $chunk              = $this->manifest[ $chunk_key ];
+
+            /*
+             * The entry's own CSS is already enqueued by enqueue_main_script();
+             * enqueueing it again is harmless because the handle is identical, but
+             * skip it so the handles stay predictable.
+             */
+            if ( $chunk_key !== $this->entry_file_path ) {
+                foreach ( (array) ( $chunk['css'] ?? array() ) as $chunk_style ) {
+                    $sanitized_key = sanitize_title_with_dashes( basename( $chunk_style ) );
+
+                    wp_enqueue_style(
+                        "$this->script_handle-import-$sanitized_key",
+                        $this->base_url . $chunk_style,
+                        array(),
+                        filemtime( ADT_PFP_PLUGIN_FILE )
+                    );
                 }
+            }
+
+            foreach ( (array) ( $chunk['imports'] ?? array() ) as $nested ) {
+                $pending[] = $nested;
             }
         }
     }
@@ -508,6 +557,8 @@ class Vite_App {
         $this->enqueue_hmr_vite_client();
 
         $this->enqueue_main_script();
+
+        $this->enqueue_imported_styles();
     }
 
     /**
